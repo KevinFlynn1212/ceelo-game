@@ -1594,7 +1594,7 @@ const PhysicsDice = {
   engine: null,
   canvas: null,
   ctx: null,
-  diceSize: 50,
+  diceSize: 80,
   bodies: [],
   values: [1, 1, 1],
   animating: false,
@@ -1626,97 +1626,26 @@ const PhysicsDice = {
     const staticBodies = Matter.Composite.allBodies(this.engine.world).filter(b => b.isStatic);
     staticBodies.forEach(b => Matter.Composite.remove(this.engine.world, b));
 
-    // Ground — the alley floor, placed at 72% of alley height (well above the HUD boundary)
-    const groundY = h * 0.72;
+    // Simple containment box — keeps dice in the center of the alley
+    // Ground — dice land at 60% height (mid-alley, clearly visible)
+    const groundY = h * 0.60;
     Matter.Composite.add(this.engine.world,
-      Matter.Bodies.rectangle(w/2, groundY + 30, w * 3, 60, { isStatic: true })
-    );
-    
-    // Bottom wall — absolute floor, nothing escapes below
-    Matter.Composite.add(this.engine.world,
-      Matter.Bodies.rectangle(w/2, h + 30, w * 3, 60, { isStatic: true })
+      Matter.Bodies.rectangle(w / 2, groundY + 30, w, 60, { isStatic: true, restitution: 0.4 })
     );
 
-    // Left wall — angled to match perspective (converges from 25% at bottom to 45% at top)
-    // Create as a series of rectangles along the wall line
-    for (let i = 0; i < 6; i++) {
-      const t = i / 6;
-      const x = w * (0.25 + (0.45 - 0.25) * t); // 25% to 45%
-      const y = h * (1.0 - (1.0 - 0.33) * t);    // 100% to 33%
-      Matter.Composite.add(this.engine.world,
-        Matter.Bodies.rectangle(x - 15, y, 30, h * 0.12, {
-          isStatic: true,
-          angle: 0.22  // slight angle matching perspective
-        })
-      );
-    }
-
-    // Right wall — angled to match perspective (converges from 75% at bottom to 52% at top)
-    for (let i = 0; i < 6; i++) {
-      const t = i / 6;
-      const x = w * (0.75 - (0.75 - 0.52) * t); // 75% to 52%
-      const y = h * (1.0 - (1.0 - 0.33) * t);
-      Matter.Composite.add(this.engine.world,
-        Matter.Bodies.rectangle(x + 15, y, 30, h * 0.12, {
-          isStatic: true,
-          angle: -0.22
-        })
-      );
-    }
-
-    // Ceiling — prevent dice from leaving top
+    // Left wall — at 30% width (alley walkway edge)
     Matter.Composite.add(this.engine.world,
-      Matter.Bodies.rectangle(w/2, -30, w * 3, 60, { isStatic: true })
+      Matter.Bodies.rectangle(w * 0.28, h / 2, 30, h, { isStatic: true, restitution: 0.6 })
     );
 
-    // === OBSTACLES matching the alley photo (scaled to fit above ground at 72%) ===
-
-    // 1. Left menu stand (angled board) — lower left
+    // Right wall — at 70% width (other alley edge)
     Matter.Composite.add(this.engine.world,
-      Matter.Bodies.rectangle(w * 0.18, groundY - 12, 70, 16, {
-        isStatic: true, angle: 0.5, restitution: 0.7,
-        label: 'menu-stand'
-      })
+      Matter.Bodies.rectangle(w * 0.72, h / 2, 30, h, { isStatic: true, restitution: 0.6 })
     );
 
-    // 2. "もと" box lantern — right side ground level
+    // Ceiling
     Matter.Composite.add(this.engine.world,
-      Matter.Bodies.rectangle(w * 0.68, groundY - 20, 45, 30, {
-        isStatic: true, restitution: 0.5,
-        label: 'box-lantern'
-      })
-    );
-
-    // 3. Barrel — far right
-    Matter.Composite.add(this.engine.world,
-      Matter.Bodies.circle(w * 0.80, groundY - 15, 20, {
-        isStatic: true, restitution: 0.6,
-        label: 'barrel'
-      })
-    );
-
-    // 4. Plant pot base — right mid-ground
-    Matter.Composite.add(this.engine.world,
-      Matter.Bodies.circle(w * 0.75, groundY - 25, 16, {
-        isStatic: true, restitution: 0.4,
-        label: 'plant-pot'
-      })
-    );
-
-    // 5. Ground bollard light — left of center
-    Matter.Composite.add(this.engine.world,
-      Matter.Bodies.rectangle(w * 0.36, groundY - 12, 14, 18, {
-        isStatic: true, restitution: 0.5,
-        label: 'bollard'
-      })
-    );
-
-    // 6. Sandbag cluster — left of center ground
-    Matter.Composite.add(this.engine.world,
-      Matter.Bodies.circle(w * 0.31, groundY - 10, 14, {
-        isStatic: true, restitution: 0.3,
-        label: 'sandbags'
-      })
+      Matter.Bodies.rectangle(w / 2, -30, w, 60, { isStatic: true })
     );
   },
 
@@ -1731,17 +1660,12 @@ const PhysicsDice = {
     this.bodies.forEach(b => Matter.Composite.remove(this.engine.world, b));
     this.bodies = [];
 
-    // Dice start near the BOTTOM of the alley (close to player's hands)
-    // and roll AWAY (upward on screen) toward the vanishing point
-    // Each die gets a slightly different angle like a real street throw
-    const spreadX = w * 0.15; // horizontal spread
-    const startY = h * 0.88;  // near the very bottom — player's hand level
-    
+    // Dice thrown from bottom center — roll up into mid-alley
     for (let i = 0; i < 3; i++) {
-      const offsetX = (i - 1) * spreadX + (Math.random() - 0.5) * 40;
+      const offsetX = (i - 1) * 60 + (Math.random() - 0.5) * 30;
       const die = Matter.Bodies.rectangle(
         w * 0.5 + offsetX,
-        startY + Math.random() * 15,
+        h * 0.75,  // start in lower portion
         s, s,
         {
           restitution: 0.65,   // bouncy enough to ricochet off walls
@@ -1753,12 +1677,10 @@ const PhysicsDice = {
         }
       );
 
-      // Throw UPWARD (away from player into the alley) with slight horizontal scatter
-      // Like tossing dice underhand down a narrow alley
-      const throwAngle = (Math.random() - 0.5) * 0.6; // scatter angle
+      // Throw upward into the alley with slight horizontal scatter
       Matter.Body.applyForce(die, die.position, {
-        x: Math.sin(throwAngle) * 0.12,
-        y: -0.30 - Math.random() * 0.12,  // strong upward = rolling away
+        x: (Math.random() - 0.5) * 0.06,
+        y: -0.20 - Math.random() * 0.08,
       });
 
       // Good spin — dice tumble as they roll
@@ -1813,7 +1735,7 @@ const PhysicsDice = {
 
     positions.forEach((pos, i) => {
       const yRatio = pos.y / h;
-      const scale = 0.45 + yRatio * 0.55;
+      const scale = 0.75 + yRatio * 0.25;
       this.draw3dDie(ctx, pos.x, pos.y, this.diceSize, values[i], 0, scale);
     });
   },
@@ -1935,7 +1857,7 @@ const PhysicsDice = {
     
     this.bodies.forEach((body, i) => {
       const yRatio = body.position.y / canvasH;
-      const scale = 0.45 + yRatio * 0.55;
+      const scale = 0.75 + yRatio * 0.25;
       const faceVal = this.animating ? Math.ceil(Math.random() * 6) : this.values[i];
       this.draw3dDie(ctx, body.position.x, body.position.y, this.diceSize, faceVal, body.angle, scale);
     });
@@ -1948,7 +1870,7 @@ const PhysicsDice = {
     
     this.bodies.forEach((body, i) => {
       const yRatio = body.position.y / canvasH;
-      const scale = 0.45 + yRatio * 0.55;
+      const scale = 0.75 + yRatio * 0.25;
       this.draw3dDie(ctx, body.position.x, body.position.y, this.diceSize, this.values[i], 0, scale);
     });
   },
