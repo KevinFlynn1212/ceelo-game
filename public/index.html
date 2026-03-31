@@ -1104,7 +1104,7 @@
 
   socket.on('room_state', (state) => {
     roomState = state;
-    currentRoom = state;
+    currentRoom = state.id;
     renderGameState(state);
     showScreen('game');
   });
