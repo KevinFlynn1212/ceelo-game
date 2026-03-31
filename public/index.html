@@ -630,6 +630,25 @@
 
   .hud-slot.done { opacity: 0.65; }
 
+  .hud-mini-dice {
+    display: flex;
+    gap: 3px;
+    justify-content: center;
+  }
+  .mini-die {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    background: var(--ivory);
+    color: #1a0e00;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.5);
+  }
+
   .hud-slot-empty {
     color: rgba(120, 90, 40, 0.3);
     font-family: 'Cinzel', serif;
@@ -1299,10 +1318,17 @@
         const statusClass = player.done ? 'done' : (state.currentTurnIndex === idx ? 'rolling' : '');
         const youTag = player.id === myId ? '<span class="you-tag">YOU</span>' : '';
 
+        // Show mini dice if player has rolled
+        const lastRoll = player.rolls && player.rolls.length > 0 ? player.rolls[player.rolls.length - 1] : null;
+        const miniDiceHtml = lastRoll 
+          ? `<div class="hud-mini-dice">${lastRoll.map(d => `<span class="mini-die">${d}</span>`).join('')}</div>`
+          : '';
+        
         slot.innerHTML = `
           <div class="hud-avatar">${escHtml(initial)}</div>
           <div class="hud-name">${escHtml(player.name)}${youTag}</div>
           <div class="hud-balance">金${(player.balance || 0).toLocaleString()}</div>
+          ${miniDiceHtml}
           <div class="hud-result">${escHtml(resultText)}</div>
           <div class="hud-status ${statusClass}">${statusText}</div>
         `;
@@ -1578,12 +1604,17 @@ const PhysicsDice = {
       .filter(b => b.isStatic);
     staticBodies.forEach(b => Matter.Composite.remove(this.engine.world, b));
 
-    const groundY = h * 0.50;
+    const groundY = h * 0.82;
     const wallThickness = 60;
 
-    // Ground (where dice land — bottom 85% of alley)
+    // Ground — near bottom of alley section (acts as floor, dice can't escape below)
     Matter.Composite.add(this.engine.world,
       Matter.Bodies.rectangle(w / 2, groundY + wallThickness / 2, w * 3, wallThickness, { isStatic: true })
+    );
+    
+    // Ceiling — keeps dice in scene  
+    Matter.Composite.add(this.engine.world,
+      Matter.Bodies.rectangle(w / 2, -wallThickness / 2, w * 3, wallThickness, { isStatic: true })
     );
 
     // Left boundary wall
@@ -1625,7 +1656,7 @@ const PhysicsDice = {
     for (let i = 0; i < 3; i++) {
       const die = Matter.Bodies.rectangle(
         w * 0.3 + i * (s + 15) + Math.random() * 60,
-        h * 0.75,  // start in lower third of alley
+        h * 0.78,  // start near ground of alley
         s, s,
         {
           restitution: 0.55,
@@ -1636,10 +1667,10 @@ const PhysicsDice = {
         }
       );
 
-      // Apply upward throw force — dice fly up into the center of the alley
+      // Apply upward throw force — dice fly up into the center of the alley then fall back
       Matter.Body.applyForce(die, die.position, {
-        x: (Math.random() - 0.5) * 0.15,
-        y: -0.25 - Math.random() * 0.08,
+        x: (Math.random() - 0.5) * 0.12,
+        y: -0.35 - Math.random() * 0.1,
       });
 
       // Add spin
@@ -1682,7 +1713,7 @@ const PhysicsDice = {
     const h = this.canvas.height;
     const s = this.diceSize;
     const half = s / 2;
-    const groundY = h * 0.50;
+    const groundY = h * 0.75;
     const ctx = this.ctx;
 
     ctx.clearRect(0, 0, w, h);
