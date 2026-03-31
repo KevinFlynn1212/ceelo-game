@@ -1,72 +1,101 @@
-# 🎲 CEE-LO — Multiplayer Street Dice
+# 骰子 · CEE-LO · 京都
+### Multiplayer Street Dice — Kyoto Alley Edition
 
-A fully playable multiplayer Cee-lo dice game built with **Node.js + Socket.io**.
-Dark theme, street-game vibes, mobile-friendly.
+A visually atmospheric, fully multiplayer Cee-lo dice game set in a dark lantern-lit alley in old Kyoto.
 
-## Quick Start
+## Features
 
-```bash
-cd ceelo-game
-npm install
-npm start
-```
+### 🎨 Visual Theme
+- **Kyoto night alley** atmosphere — deep blacks, warm amber lantern glows, gold accents
+- **Animated background canvas** — swaying lantern glow effects, drifting mist, firefly sparks
+- **3D CSS dice** — realistic ivory dice with proper pip/dot patterns, tumble animation on roll, bounce on landing
+- **Cinzel Decorative** font for the dramatic title, atmospheric typography throughout
 
-Then open **http://localhost:3000** in your browser (or on your local network).
+### 🐉 Dragon Celebration (4-5-6)
+- Rolling 4-5-6 triggers an **epic dragon animation** — 🐉 flies across the screen
+- Gold & fire **particle trail** behind the dragon using canvas
+- Screen flash and dramatic glow effects
+- **3–4 second celebration** then fades out
 
----
+### 🔊 Sound Effects (Web Audio API — no external files)
+All sounds are synthesised with oscillators and noise generators:
+- Dice rattle/shaking when rolling
+- Thud when dice land
+- Win ascending arpeggio
+- Lose descending sad tone
+- Epic 4-5-6 dragon fanfare
+- Chat message ping
+- Player join chime
+- 🔊/🔇 **Mute button** (floating)
 
-## Rules — Classic Cee-lo
+### 💰 Play Money Betting System
+- Every player starts with **金10,000** (kin coins)
+- **Ante** auto-deducted at round start (host configurable, default 金100)
+- **Raise** before your first roll — optional, adds to the pot
+  - Quick chips: +100, +500, +1K, +2.5K
+- **Winner takes the pot** (ties split evenly)
+- Balances shown on scoreboard and lobby
+- **Rebuy** back to 金10,000 when you run out
+- `WalletService` abstraction — designed to swap to a real-money backend
 
-Each player rolls 3 dice per turn (up to 3 attempts if no valid combo):
+### 💬 In-Game Chat
+- Real-time chat via Socket.io (always open)
+- Player names colour-coded consistently
+- **System messages** for all game events (joins, rolls, wins, raises)
+- Auto-scroll, emoji support, max 200 chars per message
+- **Collapsible drawer on mobile** — chat toggle FAB with unread badge
 
-| Roll          | Result                              |
-|---------------|-------------------------------------|
-| **4-5-6**     | 🎉 Instant Win — best possible      |
-| **1-2-3**     | 💀 Instant Loss — worst possible    |
-| **Trips**     | 🔥 Three of a kind (6-6-6 > 5-5-5 … > 1-1-1) |
-| **Pair + N**  | 🎯 Your "point" is N (higher point wins) |
-| **No combo**  | Re-roll — up to 3 attempts, then bust |
+### 👁 Spectator Mode
+- Join any room as a spectator (even mid-game)
+- See all rolls, balances, and chat in real time
+- Spectators can chat but cannot roll or bet
+- Spectator count shown in room and scoreboard
 
-**Winner** = highest score each round.
-**Ties** = shared win if multiple players have identical scores.
-
----
-
-## How to Play
-
-1. **Create a room** → share the 4-letter room code with friends
-2. Friends **join** using the same code
-3. **Host** starts the game (minimum 2 players, max 6)
-4. Players roll **in turn** — animated dice, results visible to all
-5. After everyone rolls, the **winner is announced**
-6. Host can start the **next round**
-
----
+### 📱 Mobile UI
+- Fully responsive — great on phones
+- Touch-friendly large tap targets
+- Dice area front and center on small screens
+- Chat slides in from the right as a drawer
+- Backdrop click to close chat drawer
 
 ## Tech Stack
+- **Backend**: Node.js + Express + Socket.io
+- **Frontend**: Single `public/index.html` (embedded CSS + JS, no build step)
+- All visuals: pure CSS + Canvas (no image dependencies)
+- All audio: Web Audio API synthesis (no external audio files)
 
-- **Backend:** Node.js + Express + Socket.io
-- **Frontend:** Single HTML file (`public/index.html`) — embedded CSS + JS
-- **No database** — all state in memory (rooms reset on server restart)
-- **Fonts:** Oswald + Inter via Google Fonts
-
-## Ports & Config
-
-| Env var | Default | Description          |
-|---------|---------|----------------------|
-| `PORT`  | `3000`  | HTTP server port     |
+## Running
 
 ```bash
-PORT=8080 npm start
+npm install
+npm start
+# → http://localhost:3000
 ```
 
-## Project Structure
+For development with auto-restart:
+```bash
+npm run dev
+```
 
-```
-ceelo-game/
-├── server.js          # Game server + socket logic
-├── package.json
-├── README.md
-└── public/
-    └── index.html     # Full frontend (CSS + JS embedded)
-```
+## Game Rules
+
+| Roll    | Result                                    |
+|---------|-------------------------------------------|
+| 4-5-6   | 🐉 Dragon Roll — instant win (score 1000) |
+| 1-2-3   | 💀 Instant loss (score -1)                |
+| Trips   | 🔥 Three of a kind — higher is better    |
+| Pair+N  | 🎯 Your point — odd die value            |
+| Nothing | 🎲 Re-roll — up to 3 times, then bust    |
+
+- Each player rolls up to 3 times per round until they get a valid combo or bust
+- Highest score wins the pot
+- Ties split the pot equally
+- Players take turns in join order
+
+## Architecture Notes
+
+### Wallet Abstraction
+Money logic lives entirely in `WalletService` in `server.js`. To connect a real database or payment backend, replace the in-memory wallet with async calls to your payment service — the game logic calls only `debit`, `credit`, `rebuy`, and `canAfford`.
+
+### State
+All game state is server-authoritative. The client only renders; it never modifies state directly.

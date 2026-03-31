@@ -1,7 +1,7 @@
 {
   "name": "ceelo-game",
-  "version": "1.0.0",
-  "description": "Multiplayer Cee-lo dice game with real-time socket.io",
+  "version": "2.0.0",
+  "description": "Multiplayer Cee-lo dice game — Kyoto alley theme, real-time with Socket.io",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
