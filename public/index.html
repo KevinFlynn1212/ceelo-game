@@ -1799,125 +1799,168 @@ const PhysicsDice = {
     this.values = values;
     const w = this.canvas.width;
     const h = this.canvas.height;
-    const s = this.diceSize;
-    const half = s / 2;
     const ctx = this.ctx;
 
     ctx.clearRect(0, 0, w, h);
 
-    // Static dice at rest position — mid-alley, slightly spread
-    const restY = h * 0.58;
+    // Static 3D dice at rest position — mid-alley, slightly spread
+    const restY = h * 0.55;
     const positions = [
-      { x: w * 0.38, y: restY },
-      { x: w * 0.50, y: restY - 5 },
-      { x: w * 0.62, y: restY + 3 },
+      { x: w * 0.35, y: restY },
+      { x: w * 0.50, y: restY - 8 },
+      { x: w * 0.65, y: restY + 4 },
     ];
 
     positions.forEach((pos, i) => {
-      ctx.save();
-      ctx.translate(pos.x, pos.y);
-      // Perspective scale for static display
       const yRatio = pos.y / h;
-      const scale = 0.4 + yRatio * 0.6;
-      ctx.scale(scale, scale);
-      ctx.rotate(0);
-
-      ctx.shadowColor = 'rgba(0,0,0,0.7)';
-      ctx.shadowBlur = 12;
-      ctx.shadowOffsetY = 4;
-      ctx.fillStyle = '#f5efd8';
-      ctx.beginPath();
-      ctx.roundRect(-half, -half, s, s, 8);
-      ctx.fill();
-      ctx.shadowColor = 'transparent';
-      ctx.strokeStyle = 'rgba(180,160,120,0.5)';
-      ctx.lineWidth = 1;
-      ctx.stroke();
-
-      this.drawPips(ctx, values[i], half);
-      ctx.restore();
+      const scale = 0.45 + yRatio * 0.55;
+      this.draw3dDie(ctx, pos.x, pos.y, this.diceSize, values[i], 0, scale);
     });
+  },
+
+  // ── 3D Isometric Dice Drawing ──
+  // Each die is drawn as a 3D cube: top face + right face + left face
+  // Opposite faces on a die sum to 7: 1↔6, 2↔5, 3↔4
+  
+  draw3dDie(ctx, x, y, s, topVal, angle, scale) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(scale, scale);
+    
+    // Isometric dimensions
+    const top = s;         // top face size
+    const depth = s * 0.4; // how tall the side faces are
+    const hw = top / 2;    // half width
+    
+    // Ground shadow
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,0.6)';
+    ctx.shadowBlur = 15;
+    ctx.shadowOffsetX = 5;
+    ctx.shadowOffsetY = 8;
+    ctx.fillStyle = 'rgba(0,0,0,0)';
+    ctx.fillRect(-hw - 2, -hw - 2, top + 4, top + depth + 4);
+    ctx.restore();
+    
+    // Determine side face values based on top value
+    // Standard die: opposite faces sum to 7
+    // We pick plausible side faces based on top
+    const rightVal = topVal <= 3 ? topVal + 1 : topVal - 1;
+    const frontVal = topVal === 1 ? 3 : topVal === 6 ? 4 : (7 - topVal) > 3 ? 2 : 5;
+    
+    // ── FRONT FACE (bottom visible face) ──
+    ctx.fillStyle = '#d4cbb0'; // slightly darker ivory
+    ctx.strokeStyle = 'rgba(120,100,60,0.4)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(-hw, 0);           // top-left of front
+    ctx.lineTo(hw, 0);            // top-right of front
+    ctx.lineTo(hw, depth);        // bottom-right
+    ctx.lineTo(-hw, depth);       // bottom-left
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    
+    // Front face pips (smaller, darker — it's a side face)
+    this.drawFacePips(ctx, frontVal, 0, depth / 2, hw * 0.8, depth * 0.35, 0.08 * s, '#2a1a00');
+    
+    // ── RIGHT FACE (side visible face) ──
+    ctx.fillStyle = '#bfb698'; // darker — shadowed side
+    ctx.beginPath();
+    ctx.moveTo(hw, -top + depth);     // top of right face  
+    ctx.lineTo(hw + depth * 0.5, -top);  // top-right (offset for 3D)
+    ctx.lineTo(hw + depth * 0.5, depth * 0.5);   // bottom-right
+    ctx.lineTo(hw, depth);                         // bottom-left (joins front)
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    
+    // Right face pips
+    const rx = hw + depth * 0.25;
+    const ry = (-top + depth * 1.5) / 2;
+    this.drawFacePips(ctx, rightVal, rx, ry, depth * 0.18, (top - depth) * 0.3, 0.06 * s, '#2a1a00');
+    
+    // ── TOP FACE (main face — shows the value) ──
+    ctx.fillStyle = '#f5efd8'; // bright ivory — well lit
+    ctx.beginPath();
+    ctx.moveTo(-hw, -top + depth);                    // back-left
+    ctx.lineTo(depth * 0.5, -top);                    // back-right (offset)
+    ctx.lineTo(hw + depth * 0.5, -top);               // far back-right
+    ctx.lineTo(hw, -top + depth);                      // front-right (joins right face)
+    ctx.closePath();
+    // Simpler: draw top as a parallelogram
+    ctx.fill();
+    ctx.stroke();
+    
+    // Actually let's use a cleaner approach — top face as a slightly tilted square
+    ctx.fillStyle = '#f5efd8';
+    ctx.beginPath();
+    ctx.moveTo(-hw, -top + depth);            // front-left
+    ctx.lineTo(-hw + depth * 0.5, -top);      // back-left
+    ctx.lineTo(hw + depth * 0.5, -top);       // back-right
+    ctx.lineTo(hw, -top + depth);              // front-right
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    
+    // Top face pips (main — this is the value shown)
+    const topCx = depth * 0.25;   // center x of top face (offset due to perspective)
+    const topCy = -top + depth / 2; // center y
+    this.drawFacePips(ctx, topVal, topCx, topCy, hw * 0.65, (top - depth) * 0.35, 0.1 * s, '#1a0e00');
+    
+    // Highlight edge on top
+    ctx.strokeStyle = 'rgba(255,255,240,0.3)';
+    ctx.lineWidth = 0.5;
+    ctx.beginPath();
+    ctx.moveTo(-hw, -top + depth);
+    ctx.lineTo(-hw + depth * 0.5, -top);
+    ctx.stroke();
+    
+    ctx.restore();
+  },
+  
+  // Draw pips on any face, centered at (cx, cy), spread by (sx, sy), pip radius r
+  drawFacePips(ctx, val, cx, cy, sx, sy, r, color) {
+    const v = parseInt(val, 10);
+    if (!v || v < 1 || v > 6) return;
+    
+    const pip = (px, py) => {
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(cx + px, cy + py, r, 0, Math.PI * 2);
+      ctx.fill();
+    };
+    
+    if (v === 1) { pip(0, 0); }
+    if (v === 2) { pip(-sx, -sy); pip(sx, sy); }
+    if (v === 3) { pip(-sx, -sy); pip(0, 0); pip(sx, sy); }
+    if (v === 4) { pip(-sx, -sy); pip(sx, -sy); pip(-sx, sy); pip(sx, sy); }
+    if (v === 5) { pip(-sx, -sy); pip(sx, -sy); pip(0, 0); pip(-sx, sy); pip(sx, sy); }
+    if (v === 6) { pip(-sx, -sy); pip(sx, -sy); pip(-sx, 0); pip(sx, 0); pip(-sx, sy); pip(sx, sy); }
   },
 
   draw() {
     const ctx = this.ctx;
     ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-
     const canvasH = this.canvas.height;
+    
     this.bodies.forEach((body, i) => {
-      ctx.save();
-      ctx.translate(body.position.x, body.position.y);
-      
-      // PERSPECTIVE SCALING: dice get smaller as they roll away (higher on screen)
-      // At bottom (y = canvasH): scale = 1.0 (full size, close to player)
-      // At top (y = 0): scale = 0.4 (far away down the alley)
-      const yRatio = body.position.y / canvasH; // 0=top, 1=bottom
-      const scale = 0.4 + yRatio * 0.6;         // 0.4 to 1.0
-      ctx.scale(scale, scale);
-      ctx.rotate(body.angle);
-
-      const s = this.diceSize;
-      const half = s / 2;
-
-      ctx.shadowColor = 'rgba(0,0,0,' + (0.4 + yRatio * 0.4) + ')';
-      ctx.shadowBlur = 8 + yRatio * 8;
-      ctx.shadowOffsetY = 2 + yRatio * 4;
-
-      ctx.fillStyle = '#f5efd8';
-      ctx.beginPath();
-      ctx.roundRect(-half, -half, s, s, 8);
-      ctx.fill();
-
-      ctx.shadowColor = 'transparent';
-      ctx.strokeStyle = 'rgba(180,160,120,0.5)';
-      ctx.lineWidth = 1;
-      ctx.stroke();
-
-      // Show random tumbling face while animating
+      const yRatio = body.position.y / canvasH;
+      const scale = 0.45 + yRatio * 0.55;
       const faceVal = this.animating ? Math.ceil(Math.random() * 6) : this.values[i];
-      this.drawPips(ctx, faceVal, half);
-
-      ctx.restore();
+      this.draw3dDie(ctx, body.position.x, body.position.y, this.diceSize, faceVal, body.angle, scale);
     });
   },
 
   drawFinal() {
     const ctx = this.ctx;
+    ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     const canvasH = this.canvas.height;
-    ctx.clearRect(0, 0, this.canvas.width, canvasH);
-
+    
     this.bodies.forEach((body, i) => {
-      ctx.save();
-      ctx.translate(body.position.x, body.position.y);
-      
-      // Perspective scale for final position
       const yRatio = body.position.y / canvasH;
-      const scale = 0.4 + yRatio * 0.6;
-      ctx.scale(scale, scale);
-      
-      // Snap to nearest 90° for clean final display
-      const snappedAngle = Math.round(body.angle / (Math.PI / 2)) * (Math.PI / 2);
-      ctx.rotate(snappedAngle);
-
-      const s = this.diceSize;
-      const half = s / 2;
-
-      ctx.shadowColor = 'rgba(0,0,0,' + (0.4 + yRatio * 0.4) + ')';
-      ctx.shadowBlur = 8 + yRatio * 8;
-      ctx.shadowOffsetY = 2 + yRatio * 4;
-
-      ctx.fillStyle = '#f5efd8';
-      ctx.beginPath();
-      ctx.roundRect(-half, -half, s, s, 8);
-      ctx.fill();
-
-      ctx.shadowColor = 'transparent';
-      ctx.strokeStyle = 'rgba(180,160,120,0.5)';
-      ctx.lineWidth = 1;
-      ctx.stroke();
-
-      this.drawPips(ctx, this.values[i], half);
-      ctx.restore();
+      const scale = 0.45 + yRatio * 0.55;
+      this.draw3dDie(ctx, body.position.x, body.position.y, this.diceSize, this.values[i], 0, scale);
     });
   },
 
@@ -1932,6 +1975,7 @@ const PhysicsDice = {
     this.animating = false;
   },
 
+  // Legacy pip drawing (kept for static display)
   drawPips(ctx, val, half) {
     const v = parseInt(val, 10);
     if (!v || v < 1 || v > 6) return;
