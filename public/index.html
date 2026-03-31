@@ -344,13 +344,15 @@
     overflow: hidden;
   }
 
-  /* ── TOP: Alley scene (80vh) ── */
+  /* ── TOP: Alley scene (flex-grows to fill above HUD) ── */
   .alley-section {
     position: relative;
-    height: 80vh;
+    flex: 1 1 auto;
+    min-height: 0;
     background: url('/alley-bg.jpg') center center / cover no-repeat;
-    flex-shrink: 0;
+    flex-shrink: 1;
     overflow: hidden;
+    clip-path: inset(0);
   }
 
   /* Dark gradient overlay for contrast */
@@ -577,14 +579,18 @@
   ═══════════════════════════════ */
   .player-hud {
     height: 20vh;
-    min-height: 120px;
+    min-height: 100px;
+    max-height: 20vh;
     background: rgba(5, 2, 0, 0.97);
-    border-top: 1px solid rgba(180, 120, 20, 0.35);
+    border-top: 2px solid rgba(180, 120, 20, 0.5);
     display: flex;
     align-items: stretch;
     padding: 8px;
     flex-shrink: 0;
+    flex-grow: 0;
     overflow: hidden;
+    position: relative;
+    z-index: 10;
   }
 
   /* 5-slot flex row */
@@ -934,8 +940,7 @@
     .hud-slot { padding: 5px 2px; }
     .hud-avatar { width: 24px; height: 24px; font-size: 0.65rem; border-width: 1px; }
     .hud-balance { display: none; }
-    .alley-section { height: 75vh; }
-    .player-hud { height: 25vh; }
+    .player-hud { height: 25vh; max-height: 25vh; }
   }
 </style>
 </head>
@@ -986,6 +991,7 @@
         <span>⏱ <span id="game-timer" class="timer">—</span></span>
       </div>
       <div class="game-info-actions">
+        <button class="btn-outline" id="btn-add-bot" style="padding:4px 12px;font-size:0.78rem;" title="Add bot player">🤖+</button>
         <button class="chat-toggle-btn" id="btn-chat-toggle" title="Open chat">💬</button>
         <button class="btn-outline" id="btn-leave" style="padding:4px 12px;font-size:0.78rem;">Leave</button>
       </div>
@@ -1489,6 +1495,21 @@
     socket.emit('get_lobby');
   });
 
+  // ===== ADD BOT =====
+  document.getElementById('btn-add-bot').addEventListener('click', () => {
+    if (!currentRoom) return;
+    fetch('/api/bot/add', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ roomId: currentRoom }),
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.error) showError(data.error);
+    })
+    .catch(() => showError('Failed to add bot'));
+  });
+
   // ===== CHAT PANEL TOGGLE =====
   function openChatPanel() {
     document.getElementById('chat-panel').classList.add('open');
@@ -1603,11 +1624,15 @@ const PhysicsDice = {
     const staticBodies = Matter.Composite.allBodies(this.engine.world).filter(b => b.isStatic);
     staticBodies.forEach(b => Matter.Composite.remove(this.engine.world, b));
 
-    // Ground — the alley floor. Use a series of segments to match the perspective trapezoid
-    // Main ground plane at 82% height
-    const groundY = h * 0.82;
+    // Ground — the alley floor, placed at 72% of alley height (well above the HUD boundary)
+    const groundY = h * 0.72;
     Matter.Composite.add(this.engine.world,
-      Matter.Bodies.rectangle(w/2, groundY + 30, w, 60, { isStatic: true })
+      Matter.Bodies.rectangle(w/2, groundY + 30, w * 3, 60, { isStatic: true })
+    );
+    
+    // Bottom wall — absolute floor, nothing escapes below
+    Matter.Composite.add(this.engine.world,
+      Matter.Bodies.rectangle(w/2, h + 30, w * 3, 60, { isStatic: true })
     );
 
     // Left wall — angled to match perspective (converges from 25% at bottom to 45% at top)
@@ -1642,11 +1667,11 @@ const PhysicsDice = {
       Matter.Bodies.rectangle(w/2, -30, w * 3, 60, { isStatic: true })
     );
 
-    // === OBSTACLES matching the alley photo ===
+    // === OBSTACLES matching the alley photo (scaled to fit above ground at 72%) ===
 
     // 1. Left menu stand (angled board) — lower left
     Matter.Composite.add(this.engine.world,
-      Matter.Bodies.rectangle(w * 0.14, h * 0.86, 80, 18, {
+      Matter.Bodies.rectangle(w * 0.18, groundY - 12, 70, 16, {
         isStatic: true, angle: 0.5, restitution: 0.7,
         label: 'menu-stand'
       })
@@ -1654,7 +1679,7 @@ const PhysicsDice = {
 
     // 2. "もと" box lantern — right side ground level
     Matter.Composite.add(this.engine.world,
-      Matter.Bodies.rectangle(w * 0.70, h * 0.78, 50, 35, {
+      Matter.Bodies.rectangle(w * 0.68, groundY - 20, 45, 30, {
         isStatic: true, restitution: 0.5,
         label: 'box-lantern'
       })
@@ -1662,7 +1687,7 @@ const PhysicsDice = {
 
     // 3. Barrel — far right
     Matter.Composite.add(this.engine.world,
-      Matter.Bodies.circle(w * 0.85, h * 0.83, 22, {
+      Matter.Bodies.circle(w * 0.80, groundY - 15, 20, {
         isStatic: true, restitution: 0.6,
         label: 'barrel'
       })
@@ -1670,7 +1695,7 @@ const PhysicsDice = {
 
     // 4. Plant pot base — right mid-ground
     Matter.Composite.add(this.engine.world,
-      Matter.Bodies.circle(w * 0.77, h * 0.74, 18, {
+      Matter.Bodies.circle(w * 0.75, groundY - 25, 16, {
         isStatic: true, restitution: 0.4,
         label: 'plant-pot'
       })
@@ -1678,7 +1703,7 @@ const PhysicsDice = {
 
     // 5. Ground bollard light — left of center
     Matter.Composite.add(this.engine.world,
-      Matter.Bodies.rectangle(w * 0.36, h * 0.70, 14, 18, {
+      Matter.Bodies.rectangle(w * 0.36, groundY - 12, 14, 18, {
         isStatic: true, restitution: 0.5,
         label: 'bollard'
       })
@@ -1686,7 +1711,7 @@ const PhysicsDice = {
 
     // 6. Sandbag cluster — left of center ground
     Matter.Composite.add(this.engine.world,
-      Matter.Bodies.circle(w * 0.31, h * 0.72, 16, {
+      Matter.Bodies.circle(w * 0.31, groundY - 10, 14, {
         isStatic: true, restitution: 0.3,
         label: 'sandbags'
       })
@@ -1708,7 +1733,7 @@ const PhysicsDice = {
     for (let i = 0; i < 3; i++) {
       const die = Matter.Bodies.rectangle(
         w * 0.4 + i * (s + 15) + Math.random() * (w * 0.2 - (s + 15) * 2),
-        h * 0.92,  // very bottom — player's hand position
+        h * 0.68,  // start just below the ground line
         s, s,
         {
           restitution: 0.55,
@@ -1770,9 +1795,9 @@ const PhysicsDice = {
     ctx.clearRect(0, 0, w, h);
 
     const positions = [
-      { x: w * 0.38, y: h * 0.70 },
-      { x: w * 0.50, y: h * 0.70 },
-      { x: w * 0.62, y: h * 0.70 },
+      { x: w * 0.38, y: h * 0.62 },
+      { x: w * 0.50, y: h * 0.62 },
+      { x: w * 0.62, y: h * 0.62 },
     ];
 
     positions.forEach((pos, i) => {

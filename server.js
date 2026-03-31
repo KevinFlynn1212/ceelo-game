@@ -1126,6 +1126,67 @@ io.on('connection', socket => {
   }
 });
 
+// ─── Bot Player ───────────────────────────────────────────────────────────────────
+const BOT_NAMES = ['🤖 Sagan', '🤖 Yuki', '🤖 Dice-san', '🤖 Kenji', '🤖 Miko'];
+let botCounter = 0;
+
+function spawnBot(roomId) {
+  const Client = require('socket.io-client');
+  const botName = BOT_NAMES[botCounter % BOT_NAMES.length];
+  botCounter++;
+  
+  const bot = Client(`http://localhost:${PORT}`, { forceNew: true });
+  
+  bot.on('connect', () => {
+    console.log(`[BOT] ${botName} connecting to ${roomId}`);
+    bot.emit('join_room', { name: botName, roomId, spectator: false });
+  });
+
+  bot.on('room_state', (state) => {
+    const me = state.players.find(p => p.name === botName);
+    if (!me) return;
+
+    // Auto-roll when it's our turn
+    if (state.state === 'rolling' && !me.done) {
+      const myIdx = state.players.findIndex(p => p.name === botName);
+      if (myIdx === state.currentTurnIndex) {
+        // Random delay 500-1500ms to feel human
+        setTimeout(() => bot.emit('roll_dice'), 500 + Math.random() * 1000);
+      }
+    }
+  });
+
+  // Auto-accept re-ante (50% chance)
+  bot.on('re_ante_offer', () => {
+    setTimeout(() => {
+      if (Math.random() > 0.5) bot.emit('re_ante_accept');
+      else bot.emit('re_ante_decline');
+    }, 500 + Math.random() * 1000);
+  });
+
+  // Auto-roll in shootout
+  bot.on('shootout_turn', () => {
+    setTimeout(() => bot.emit('shootout_roll'), 500 + Math.random() * 1000);
+  });
+
+  bot.on('disconnect', () => {
+    console.log(`[BOT] ${botName} disconnected`);
+  });
+
+  return { bot, name: botName };
+}
+
+// API endpoint to add a bot
+app.post('/api/bot/add', express.json(), (req, res) => {
+  const roomId = req.body.roomId || 'room-100';
+  const room = rooms.get(roomId);
+  if (!room) return res.status(404).json({ error: 'Room not found' });
+  if (room.players.length >= MAX_PLAYERS) return res.status(400).json({ error: 'Room full' });
+  
+  const botInfo = spawnBot(roomId);
+  res.json({ ok: true, botName: botInfo.name, roomId });
+});
+
 // ─── Start ────────────────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () =>
