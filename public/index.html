@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CEE-LO</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@400;700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -13,39 +14,55 @@
     --paper: #f0e8d0;
     --red: #cc2200;
     --bg: #050302;
-    --card: rgba(20, 14, 4, 0.88);
-    --border: rgba(245, 200, 66, 0.35);
+    --card: rgba(16, 10, 4, 0.92);
+    --border: rgba(180, 120, 20, 0.22);
+    --border-bright: rgba(245, 200, 66, 0.45);
     --text: #e8dcc8;
-    --muted: #8a7a5a;
+    --muted: #9a8a6a;
     --green: #4caf50;
+    --ivory: #f5efd8;
   }
 
   body {
-    font-family: system-ui, -apple-system, sans-serif;
+    font-family: 'Lato', system-ui, -apple-system, sans-serif;
     background: var(--bg);
     color: var(--text);
     min-height: 100vh;
     overflow-x: hidden;
   }
 
-  /* Ambient glows */
-  body::before, body::after {
+  /* ── Layered lantern glow overlay ── */
+  body::before {
     content: '';
     position: fixed;
-    border-radius: 50%;
-    filter: blur(120px);
+    inset: 0;
+    background:
+      radial-gradient(ellipse 900px 700px at -5% -5%, rgba(220,100,0,.12) 0%, transparent 65%),
+      radial-gradient(ellipse 700px 600px at 105% -5%, rgba(200,80,0,.10) 0%, transparent 65%),
+      radial-gradient(ellipse 500px 350px at 50% 0%, rgba(160,90,10,.06) 0%, transparent 60%),
+      radial-gradient(ellipse 100% 40% at 50% 110%, rgba(0,0,0,.55) 0%, transparent 70%);
     pointer-events: none;
     z-index: 0;
   }
-  body::before {
-    width: 600px; height: 600px;
-    background: radial-gradient(circle, rgba(180,100,0,0.18) 0%, transparent 70%);
-    top: -200px; left: -200px;
-  }
+
+  /* ── Wood beam texture ── */
   body::after {
-    width: 500px; height: 500px;
-    background: radial-gradient(circle, rgba(200,140,0,0.12) 0%, transparent 70%);
-    bottom: -150px; right: -150px;
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      90deg,
+      transparent 0px,
+      transparent 58px,
+      rgba(160, 100, 10, 0.018) 58px,
+      rgba(160, 100, 10, 0.018) 60px,
+      transparent 60px,
+      transparent 118px,
+      rgba(120, 70, 0, 0.012) 118px,
+      rgba(120, 70, 0, 0.012) 120px
+    );
+    pointer-events: none;
+    z-index: 0;
   }
 
   .screen {
@@ -59,76 +76,122 @@
   }
   .screen.active { display: flex; }
 
-  /* ===== LOGIN ===== */
-  #screen-login { flex-direction: column; gap: 24px; }
+  /* ═══════════════════════════════
+     LOGIN SCREEN
+  ═══════════════════════════════ */
+  #screen-login { flex-direction: column; gap: 20px; }
+
+  .login-lanterns {
+    text-align: center;
+    font-size: 2.2rem;
+    letter-spacing: 0.3em;
+    filter: drop-shadow(0 0 18px rgba(255, 140, 0, 0.55));
+    animation: lanternSway 4s ease-in-out infinite;
+  }
+
+  @keyframes lanternSway {
+    0%, 100% { filter: drop-shadow(0 0 16px rgba(255,140,0,0.5)); }
+    50% { filter: drop-shadow(0 0 28px rgba(255,160,20,0.75)); }
+  }
 
   .logo {
-    font-size: clamp(4rem, 12vw, 7rem);
+    font-family: 'Cinzel Decorative', serif;
     font-weight: 900;
+    font-size: clamp(3.5rem, 11vw, 6.5rem);
     color: var(--gold);
-    letter-spacing: 0.15em;
-    text-shadow: 0 0 40px rgba(245,200,66,0.6), 0 0 80px rgba(245,200,66,0.2);
+    letter-spacing: 8px;
+    text-shadow:
+      0 0 30px rgba(245,200,66,0.7),
+      0 0 70px rgba(245,160,0,0.3),
+      0 4px 8px rgba(0,0,0,0.6);
     text-align: center;
+    line-height: 1.1;
   }
+
   .logo-sub {
     text-align: center;
     color: var(--muted);
-    font-size: 0.85rem;
-    letter-spacing: 0.3em;
-    text-transform: uppercase;
-    margin-top: -16px;
+    font-family: 'Lato', sans-serif;
+    font-style: italic;
+    font-weight: 300;
+    font-size: 0.9rem;
+    letter-spacing: 0.25em;
+    margin-top: -10px;
+    opacity: 0.85;
   }
 
   .login-card {
     background: var(--card);
     border: 1px solid var(--border);
-    border-radius: 12px;
+    border-radius: 14px;
     padding: 32px 40px;
     display: flex;
     flex-direction: column;
     gap: 16px;
     width: 100%;
     max-width: 360px;
+    backdrop-filter: blur(6px);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(245,200,66,0.04);
   }
 
+  /* ═══════════════════════════════
+     INPUTS
+  ═══════════════════════════════ */
   input[type="text"], input[type="number"] {
-    background: rgba(255,255,255,0.05);
+    background: rgba(10, 6, 2, 0.75);
     border: 1px solid var(--border);
     border-radius: 8px;
-    color: var(--text);
+    color: var(--paper);
+    font-family: 'Lato', sans-serif;
     font-size: 1rem;
     padding: 12px 16px;
     width: 100%;
     outline: none;
-    transition: border-color 0.2s;
+    transition: border-color 0.2s, box-shadow 0.2s;
   }
   input[type="text"]:focus, input[type="number"]:focus {
     border-color: var(--gold);
+    box-shadow: 0 0 0 3px rgba(245,200,66,0.12);
   }
   input[type="text"]::placeholder { color: var(--muted); }
 
+  /* ═══════════════════════════════
+     BUTTONS
+  ═══════════════════════════════ */
   .btn {
-    background: var(--gold);
-    color: #1a1000;
+    background: linear-gradient(135deg, #f5c842 0%, #d4a010 50%, #c8940a 100%);
+    color: #1a0e00;
     border: none;
     border-radius: 8px;
-    font-size: 1rem;
+    font-family: 'Cinzel', serif;
+    font-size: 0.9rem;
     font-weight: 700;
     padding: 12px 24px;
     cursor: pointer;
     transition: all 0.2s;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
+    box-shadow: 0 4px 16px rgba(200,148,10,0.35), 0 2px 4px rgba(0,0,0,0.4);
   }
-  .btn:hover { background: #ffd84a; transform: translateY(-1px); }
-  .btn:active { transform: translateY(0); }
-  .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+  .btn:hover {
+    background: linear-gradient(135deg, #ffd84a 0%, #e8b820 50%, #d4a010 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 24px rgba(200,148,10,0.5), 0 2px 6px rgba(0,0,0,0.4);
+  }
+  .btn:active { transform: translateY(0); box-shadow: 0 2px 8px rgba(200,148,10,0.3); }
+  .btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
 
   .btn-outline {
     background: transparent;
     border: 1px solid var(--border);
-    color: var(--text);
+    color: var(--muted);
     border-radius: 8px;
+    font-family: 'Lato', sans-serif;
     font-size: 0.85rem;
     padding: 8px 16px;
     cursor: pointer;
@@ -137,18 +200,28 @@
   .btn-outline:hover { border-color: var(--gold); color: var(--gold); }
 
   .btn-red {
-    background: var(--red);
+    background: linear-gradient(135deg, #e03010, #aa1a00);
     color: #fff;
+    box-shadow: 0 4px 14px rgba(200,30,0,0.4);
   }
-  .btn-red:hover { background: #e03010; }
+  .btn-red:hover {
+    background: linear-gradient(135deg, #f04020, #cc2200);
+    box-shadow: 0 6px 20px rgba(200,30,0,0.55);
+  }
 
   .btn-green {
-    background: var(--green);
+    background: linear-gradient(135deg, #5dbf61, #3a9e3e);
     color: #fff;
+    box-shadow: 0 4px 14px rgba(60,160,60,0.4);
   }
-  .btn-green:hover { background: #5dbf61; }
+  .btn-green:hover {
+    background: linear-gradient(135deg, #6dce72, #4caf50);
+    box-shadow: 0 6px 20px rgba(60,160,60,0.55);
+  }
 
-  /* ===== LOBBY ===== */
+  /* ═══════════════════════════════
+     LOBBY
+  ═══════════════════════════════ */
   #screen-lobby {
     flex-direction: column;
     align-items: stretch;
@@ -171,10 +244,12 @@
   }
 
   .lobby-title {
-    font-size: 1.6rem;
-    font-weight: 800;
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 1.4rem;
+    font-weight: 700;
     color: var(--gold);
-    letter-spacing: 0.1em;
+    letter-spacing: 0.12em;
+    text-shadow: 0 0 20px rgba(245,200,66,0.4);
   }
 
   .balance-display {
@@ -182,7 +257,9 @@
     border: 1px solid var(--border);
     border-radius: 8px;
     padding: 8px 20px;
+    font-family: 'Lato', sans-serif;
     font-size: 0.9rem;
+    backdrop-filter: blur(6px);
   }
   .balance-display span { color: var(--gold); font-weight: 700; font-size: 1.1rem; }
 
@@ -195,30 +272,42 @@
   .room-card {
     background: var(--card);
     border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 20px;
+    border-radius: 14px;
+    padding: 22px;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.25s;
     display: flex;
     flex-direction: column;
     gap: 8px;
+    backdrop-filter: blur(6px);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
   }
   .room-card:hover {
-    border-color: var(--gold);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(245,200,66,0.15);
+    border-color: rgba(220,160,30,0.55);
+    transform: translateY(-3px);
+    box-shadow: 0 10px 32px rgba(200,148,10,0.2), 0 0 0 1px rgba(220,160,30,0.15);
   }
 
   .room-card-name {
-    font-size: 1.2rem;
-    font-weight: 800;
+    font-family: 'Cinzel', serif;
+    font-size: 1.15rem;
+    font-weight: 700;
     color: var(--gold);
   }
   .room-card-ante {
-    font-size: 0.8rem;
+    font-family: 'Cinzel', serif;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--gold);
+    text-shadow: 0 0 12px rgba(245,200,66,0.3);
+  }
+  .room-card-ante-label {
+    font-family: 'Lato', sans-serif;
+    font-size: 0.7rem;
     color: var(--muted);
     text-transform: uppercase;
-    letter-spacing: 0.1em;
+    letter-spacing: 0.12em;
+    margin-top: -6px;
   }
   .room-card-info {
     font-size: 0.9rem;
@@ -226,21 +315,25 @@
     justify-content: space-between;
     margin-top: 4px;
   }
-  .room-card-players { color: var(--paper); }
-  .room-card-pot { color: var(--gold); font-weight: 600; }
+  .room-card-players { color: var(--paper); font-family: 'Lato', sans-serif; }
+  .room-card-pot { color: var(--gold); font-weight: 700; font-family: 'Lato', sans-serif; }
   .room-card-state {
-    font-size: 0.75rem;
+    font-family: 'Lato', sans-serif;
+    font-size: 0.7rem;
     padding: 3px 10px;
     border-radius: 20px;
-    background: rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.06);
     align-self: flex-start;
     text-transform: uppercase;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.1em;
+    font-weight: 700;
   }
-  .room-card-state.waiting { color: var(--green); }
-  .room-card-state.active { color: var(--gold); }
+  .room-card-state.waiting { color: var(--green); background: rgba(76,175,80,0.12); }
+  .room-card-state.active { color: var(--gold); background: rgba(245,200,66,0.1); }
 
-  /* ===== GAME ===== */
+  /* ═══════════════════════════════
+     GAME SCREEN
+  ═══════════════════════════════ */
   #screen-game {
     flex-direction: column;
     align-items: stretch;
@@ -260,15 +353,17 @@
     justify-content: space-between;
     padding: 12px 20px;
     border-bottom: 1px solid var(--border);
-    background: rgba(5,3,2,0.9);
+    background: rgba(5,3,2,0.94);
+    backdrop-filter: blur(8px);
     flex-shrink: 0;
     flex-wrap: wrap;
     gap: 8px;
   }
 
   .game-room-name {
+    font-family: 'Cinzel', serif;
     font-size: 1.1rem;
-    font-weight: 800;
+    font-weight: 700;
     color: var(--gold);
   }
 
@@ -278,7 +373,7 @@
     font-size: 0.85rem;
     flex-wrap: wrap;
   }
-  .game-stat { color: var(--muted); }
+  .game-stat { color: var(--muted); font-family: 'Lato', sans-serif; }
   .game-stat span { color: var(--paper); font-weight: 600; }
   .game-stat .val-gold { color: var(--gold); }
 
@@ -299,95 +394,132 @@
     padding: 16px;
   }
 
-  /* Dice area */
+  /* ── Dice area ── */
   .dice-section {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 16px;
-    padding: 20px 0;
+    gap: 20px;
+    padding: 24px 0;
   }
 
   .dice-container {
     display: flex;
-    gap: 16px;
+    gap: 20px;
     align-items: center;
     justify-content: center;
   }
 
+  /* ── Individual die ── */
   .die {
     width: 72px;
     height: 72px;
-    background: linear-gradient(145deg, #2a2010, #1a1408);
-    border: 2px solid var(--border);
-    border-radius: 14px;
+    background: linear-gradient(145deg, #faf5e4, #f0e8d0);
+    border: 2px solid rgba(180,140,60,0.35);
+    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 2rem;
+    font-size: 0; /* numbers hidden — pips handle display */
     font-weight: 900;
-    color: var(--paper);
+    color: transparent;
     position: relative;
-    transition: transform 0.1s;
-    box-shadow: inset 0 2px 4px rgba(0,0,0,0.5), 0 4px 12px rgba(0,0,0,0.4);
-  }
-  .die.rolling {
-    animation: shake 0.1s infinite;
-    border-color: var(--gold);
-    color: var(--gold);
-  }
-  .die.landed {
-    animation: bounce 0.4s ease-out;
-    border-color: var(--gold);
-  }
-  @keyframes shake {
-    0%, 100% { transform: translate(0,0) rotate(0deg); }
-    25% { transform: translate(-2px, 1px) rotate(-3deg); }
-    75% { transform: translate(2px, -1px) rotate(3deg); }
-  }
-  @keyframes bounce {
-    0% { transform: scale(0.85); }
-    50% { transform: scale(1.15); }
-    75% { transform: scale(0.95); }
-    100% { transform: scale(1); }
+    transition: transform 0.12s, border-color 0.2s;
+    box-shadow:
+      inset 0 2px 5px rgba(255,255,255,0.7),
+      inset 0 -3px 5px rgba(180,130,40,0.25),
+      0 6px 18px rgba(0,0,0,0.55),
+      0 2px 5px rgba(0,0,0,0.4),
+      2px 4px 0 rgba(0,0,0,0.25);
+    cursor: default;
+    user-select: none;
   }
 
-  /* pip-based dice */
+  /* "?" state label */
+  .die-unknown {
+    font-size: 1.3rem;
+    font-family: 'Lato', sans-serif;
+    color: rgba(100,80,40,0.55);
+    pointer-events: none;
+  }
+
+  /* Pip dot */
+  .pip {
+    width: 11px;
+    height: 11px;
+    background: #1a0e00;
+    border-radius: 50%;
+    position: absolute;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.5), 0 0 2px rgba(0,0,0,0.2);
+    pointer-events: none;
+  }
+
+  /* Rolling: amber glow + fast tumble */
+  .die.rolling {
+    animation: tumble 0.18s linear infinite;
+    border-color: rgba(245,200,66,0.7);
+    box-shadow:
+      inset 0 2px 5px rgba(255,255,255,0.6),
+      0 6px 18px rgba(0,0,0,0.5),
+      0 0 20px rgba(245,180,0,0.35);
+  }
+
+  /* Landing: scale bounce */
+  .die.landed {
+    animation: landBounce 0.45s ease-out forwards;
+    border-color: rgba(245,200,66,0.6);
+    box-shadow:
+      inset 0 2px 5px rgba(255,255,255,0.7),
+      0 6px 18px rgba(0,0,0,0.5),
+      0 0 14px rgba(245,180,0,0.25);
+  }
+
+  @keyframes tumble {
+    0%   { transform: rotate3d(1,  1, 0,   0deg) scale(0.97); }
+    25%  { transform: rotate3d(1, -1, 0,  90deg) scale(1.02); }
+    50%  { transform: rotate3d(-1, 1, 0, 180deg) scale(0.97); }
+    75%  { transform: rotate3d(1,  1, 1, 270deg) scale(1.02); }
+    100% { transform: rotate3d(1,  1, 0, 360deg) scale(0.97); }
+  }
+
+  @keyframes landBounce {
+    0%   { transform: scale(1.18); }
+    35%  { transform: scale(0.91); }
+    65%  { transform: scale(1.07); }
+    85%  { transform: scale(0.97); }
+    100% { transform: scale(1.00); }
+  }
+
+  /* Legacy pip die (unused but kept) */
   .die-pips {
     width: 72px;
     height: 72px;
-    background: linear-gradient(145deg, #2a2010, #1a1408);
-    border: 2px solid var(--border);
-    border-radius: 14px;
+    background: linear-gradient(145deg, #faf5e4, #f0e8d0);
+    border: 2px solid rgba(180,140,60,0.35);
+    border-radius: 10px;
     display: grid;
     padding: 8px;
     box-shadow: inset 0 2px 4px rgba(0,0,0,0.5), 0 4px 12px rgba(0,0,0,0.4);
     position: relative;
   }
   .die-pips.rolling {
-    animation: shake 0.1s infinite;
+    animation: tumble 0.18s linear infinite;
     border-color: var(--gold);
   }
   .die-pips.landed {
-    animation: bounce 0.4s ease-out;
+    animation: landBounce 0.45s ease-out forwards;
     border-color: var(--gold);
-  }
-  .pip {
-    width: 10px;
-    height: 10px;
-    background: var(--paper);
-    border-radius: 50%;
-    position: absolute;
   }
 
   .result-label {
-    font-size: 1.4rem;
-    font-weight: 800;
+    font-family: 'Cinzel', serif;
+    font-size: 1.35rem;
+    font-weight: 700;
     color: var(--gold);
     text-align: center;
     min-height: 2rem;
-    letter-spacing: 0.05em;
-    text-shadow: 0 0 20px rgba(245,200,66,0.5);
+    letter-spacing: 0.06em;
+    text-shadow: 0 0 24px rgba(245,200,66,0.55), 0 2px 4px rgba(0,0,0,0.5);
   }
 
   .action-area {
@@ -399,10 +531,10 @@
   }
 
   #btn-roll {
-    font-size: 1.1rem;
-    padding: 14px 40px;
+    font-size: 1rem;
+    padding: 14px 44px;
     border-radius: 10px;
-    min-width: 160px;
+    min-width: 168px;
   }
 
   .reante-buttons {
@@ -416,15 +548,18 @@
 
   .reante-label {
     color: var(--gold);
+    font-family: 'Cinzel', serif;
     font-weight: 700;
     font-size: 0.9rem;
     text-align: center;
     width: 100%;
+    letter-spacing: 0.05em;
   }
 
   .timer {
+    font-family: 'Lato', sans-serif;
     font-size: 1.5rem;
-    font-weight: 800;
+    font-weight: 700;
     color: var(--paper);
     font-variant-numeric: tabular-nums;
     min-width: 3ch;
@@ -433,18 +568,19 @@
   .timer.urgent { color: var(--red); animation: pulse 0.5s infinite; }
   @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
 
-  /* Players list */
+  /* ── Players list ── */
   .players-section {
     border-top: 1px solid var(--border);
     padding-top: 16px;
     margin-top: 8px;
   }
   .players-title {
+    font-family: 'Cinzel', serif;
     font-size: 0.75rem;
     text-transform: uppercase;
-    letter-spacing: 0.15em;
+    letter-spacing: 0.2em;
     color: var(--muted);
-    margin-bottom: 10px;
+    margin-bottom: 12px;
   }
 
   .player-row {
@@ -454,54 +590,71 @@
     padding: 10px 12px;
     border-radius: 8px;
     margin-bottom: 6px;
-    background: rgba(255,255,255,0.03);
+    background: rgba(255,255,255,0.025);
     border: 1px solid transparent;
-    transition: all 0.2s;
+    transition: all 0.25s;
     flex-wrap: wrap;
   }
   .player-row.active-turn {
-    border-color: var(--gold);
-    background: rgba(245,200,66,0.07);
+    border-left: 3px solid var(--gold);
+    border-color: rgba(180,120,20,0.25);
+    border-left-color: var(--gold);
+    background: rgba(245,200,66,0.06);
+    box-shadow: inset 0 0 24px rgba(245,160,0,0.07);
   }
   .player-row.is-me {
-    border-color: rgba(245,200,66,0.25);
+    border-color: rgba(245,200,66,0.2);
   }
-  .player-row.done { opacity: 0.7; }
+  .player-row.done { opacity: 0.65; }
 
   .player-avatar {
-    width: 32px;
-    height: 32px;
+    width: 34px;
+    height: 34px;
     border-radius: 50%;
-    background: linear-gradient(135deg, var(--gold-dim), #3a2800);
+    background: linear-gradient(135deg, rgba(200,148,10,0.4), rgba(40,25,0,0.8));
+    border: 2px solid rgba(180,120,20,0.3);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-weight: 800;
+    font-family: 'Cinzel', serif;
+    font-weight: 700;
     font-size: 0.85rem;
     color: var(--gold);
     flex-shrink: 0;
+    transition: border-color 0.2s, box-shadow 0.2s;
   }
+  .player-row.active-turn .player-avatar {
+    border-color: var(--gold);
+    box-shadow: 0 0 10px rgba(245,200,66,0.4);
+  }
+
   .player-name {
+    font-family: 'Lato', sans-serif;
     font-weight: 600;
     font-size: 0.9rem;
+    color: var(--paper);
     flex: 1;
     min-width: 80px;
   }
   .player-name .you-tag {
-    font-size: 0.7rem;
+    font-size: 0.68rem;
     color: var(--gold);
     background: rgba(245,200,66,0.15);
-    padding: 1px 6px;
+    padding: 1px 7px;
     border-radius: 10px;
     margin-left: 6px;
+    font-family: 'Cinzel', serif;
+    letter-spacing: 0.05em;
   }
   .player-balance {
+    font-family: 'Lato', sans-serif;
     font-size: 0.85rem;
     color: var(--muted);
     min-width: 60px;
     text-align: right;
   }
   .player-result {
+    font-family: 'Lato', sans-serif;
     font-size: 0.85rem;
     font-weight: 700;
     color: var(--paper);
@@ -509,32 +662,38 @@
     text-align: center;
   }
   .player-status {
-    font-size: 0.75rem;
-    padding: 2px 8px;
+    font-family: 'Lato', sans-serif;
+    font-size: 0.72rem;
+    padding: 2px 9px;
     border-radius: 10px;
-    background: rgba(255,255,255,0.06);
+    background: rgba(255,255,255,0.05);
     color: var(--muted);
     flex-shrink: 0;
+    letter-spacing: 0.05em;
   }
-  .player-status.done { background: rgba(76,175,80,0.15); color: var(--green); }
-  .player-status.rolling { background: rgba(245,200,66,0.15); color: var(--gold); }
+  .player-status.done { background: rgba(76,175,80,0.14); color: var(--green); }
+  .player-status.rolling { background: rgba(245,200,66,0.14); color: var(--gold); }
 
-  /* Right: Chat */
+  /* ═══════════════════════════════
+     CHAT PANEL
+  ═══════════════════════════════ */
   .game-chat {
     width: 280px;
     flex-shrink: 0;
     border-left: 1px solid var(--border);
     display: flex;
     flex-direction: column;
-    background: rgba(5,3,2,0.7);
+    background: rgba(4, 2, 1, 0.82);
+    backdrop-filter: blur(6px);
   }
 
   .chat-header {
     padding: 12px 16px;
     border-bottom: 1px solid var(--border);
-    font-size: 0.75rem;
+    font-family: 'Cinzel', serif;
+    font-size: 0.72rem;
     text-transform: uppercase;
-    letter-spacing: 0.15em;
+    letter-spacing: 0.2em;
     color: var(--muted);
   }
 
@@ -544,29 +703,31 @@
     padding: 12px;
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 5px;
   }
 
-  .chat-messages::-webkit-scrollbar { width: 4px; }
+  .chat-messages::-webkit-scrollbar { width: 3px; }
   .chat-messages::-webkit-scrollbar-track { background: transparent; }
-  .chat-messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  .chat-messages::-webkit-scrollbar-thumb { background: rgba(180,120,20,0.25); border-radius: 2px; }
 
   .chat-msg {
+    font-family: 'Lato', sans-serif;
     font-size: 0.8rem;
-    line-height: 1.4;
+    line-height: 1.45;
     padding: 6px 10px;
     border-radius: 8px;
     word-break: break-word;
   }
   .chat-msg.system {
-    color: var(--muted);
+    color: rgba(155,130,80,0.75);
     font-style: italic;
-    background: rgba(255,255,255,0.03);
-    font-size: 0.75rem;
+    background: rgba(255,255,255,0.02);
+    font-size: 0.74rem;
   }
   .chat-msg.player {
-    background: rgba(255,255,255,0.05);
-    border-left: 2px solid var(--border);
+    color: var(--paper);
+    background: rgba(255,255,255,0.04);
+    border-left: 2px solid rgba(180,120,20,0.3);
   }
   .chat-msg .msg-name {
     color: var(--gold);
@@ -579,20 +740,24 @@
     border-top: 1px solid var(--border);
     display: flex;
     gap: 6px;
+    background: rgba(4, 2, 1, 0.6);
   }
   .chat-input-area input {
     flex: 1;
     padding: 8px 12px;
     font-size: 0.85rem;
+    background: rgba(8, 5, 2, 0.85);
   }
   .chat-input-area .btn {
     padding: 8px 14px;
     font-size: 0.8rem;
   }
 
-  /* ===== WINNER OVERLAY ===== */
+  /* ═══════════════════════════════
+     WINNER OVERLAY
+  ═══════════════════════════════ */
   #screen-winner {
-    background: rgba(5,3,2,0.92);
+    background: rgba(5,3,2,0.94);
     flex-direction: column;
     gap: 24px;
     z-index: 100;
@@ -600,7 +765,7 @@
 
   .winner-card {
     background: var(--card);
-    border: 1px solid var(--gold);
+    border: 1px solid rgba(245,200,66,0.5);
     border-radius: 16px;
     padding: 32px 40px;
     max-width: 480px;
@@ -609,19 +774,42 @@
     flex-direction: column;
     align-items: center;
     gap: 20px;
-    box-shadow: 0 0 60px rgba(245,200,66,0.2);
+    backdrop-filter: blur(8px);
+    box-shadow: 0 0 80px rgba(245,200,66,0.2), 0 20px 60px rgba(0,0,0,0.7);
   }
 
   .winner-crown { font-size: 3rem; }
-  .winner-title { color: var(--muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.2em; }
-  .winner-name { font-size: 2rem; font-weight: 900; color: var(--gold); text-align: center; }
-  .winner-result { font-size: 1.1rem; color: var(--paper); }
+  .winner-title {
+    font-family: 'Cinzel', serif;
+    color: var(--muted);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.25em;
+  }
+  .winner-name {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 1.9rem;
+    font-weight: 900;
+    color: var(--gold);
+    text-align: center;
+    text-shadow: 0 0 30px rgba(245,200,66,0.5);
+  }
+  .winner-result {
+    font-family: 'Lato', sans-serif;
+    font-size: 1.1rem;
+    color: var(--paper);
+  }
   .winner-pot {
+    font-family: 'Cinzel', serif;
     font-size: 1.5rem;
-    font-weight: 800;
+    font-weight: 700;
     color: var(--gold);
   }
-  .winner-rake { font-size: 0.8rem; color: var(--muted); }
+  .winner-rake {
+    font-family: 'Lato', sans-serif;
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
 
   .winner-rankings {
     width: 100%;
@@ -636,66 +824,81 @@
     padding: 8px 12px;
     background: rgba(255,255,255,0.04);
     border-radius: 8px;
+    font-family: 'Lato', sans-serif;
     font-size: 0.85rem;
   }
   .rank-num { color: var(--muted); width: 20px; font-weight: 700; }
-  .rank-name { flex: 1; }
+  .rank-name { flex: 1; color: var(--paper); }
   .rank-result { color: var(--gold); font-weight: 600; }
 
-  /* Error toast */
+  /* ═══════════════════════════════
+     ERROR TOAST
+  ═══════════════════════════════ */
   #error-toast {
     position: fixed;
     bottom: 20px;
     left: 50%;
     transform: translateX(-50%) translateY(100px);
-    background: var(--red);
+    background: linear-gradient(135deg, #e03010, #aa1a00);
     color: white;
-    padding: 10px 20px;
+    padding: 10px 22px;
     border-radius: 8px;
+    font-family: 'Lato', sans-serif;
     font-size: 0.9rem;
-    font-weight: 600;
+    font-weight: 700;
     z-index: 200;
     transition: transform 0.3s;
     pointer-events: none;
+    box-shadow: 0 4px 20px rgba(200,30,0,0.5);
   }
   #error-toast.show { transform: translateX(-50%) translateY(0); }
 
-  /* Round history */
+  /* ═══════════════════════════════
+     ROUND HISTORY
+  ═══════════════════════════════ */
   .round-history {
     margin-top: 8px;
-    padding: 10px;
-    background: rgba(255,255,255,0.03);
+    padding: 10px 14px;
+    background: rgba(255,255,255,0.025);
+    border: 1px solid var(--border);
     border-radius: 8px;
+    font-family: 'Lato', sans-serif;
     font-size: 0.75rem;
     color: var(--muted);
   }
   .round-history-title {
-    font-size: 0.7rem;
+    font-family: 'Cinzel', serif;
+    font-size: 0.68rem;
     text-transform: uppercase;
-    letter-spacing: 0.1em;
-    margin-bottom: 4px;
+    letter-spacing: 0.12em;
+    margin-bottom: 5px;
+    color: rgba(155,130,80,0.7);
   }
 
-  /* Spectator banner */
+  /* ═══════════════════════════════
+     SPECTATOR BANNER
+  ═══════════════════════════════ */
   .spectator-banner {
     display: none;
-    background: rgba(245,200,66,0.1);
+    background: rgba(245,200,66,0.08);
     border: 1px solid var(--border);
     border-radius: 8px;
     padding: 8px 16px;
     text-align: center;
+    font-family: 'Lato', sans-serif;
     font-size: 0.85rem;
     color: var(--gold);
     margin: 8px 0;
   }
   .spectator-banner.visible { display: block; }
 
-  /* Responsive */
+  /* ═══════════════════════════════
+     RESPONSIVE
+  ═══════════════════════════════ */
   @media (max-width: 768px) {
     .game-chat { display: none; }
     .game-body { flex-direction: column; }
     .die, .die-pips { width: 60px; height: 60px; }
-    .die { font-size: 1.6rem; }
     .game-header { padding: 8px 12px; }
     .lobby-header { padding: 12px 0 10px; }
     .rooms-grid { grid-template-columns: 1fr 1fr; }
@@ -706,7 +909,7 @@
 
   @media (max-width: 480px) {
     .rooms-grid { grid-template-columns: 1fr; }
-    .logo { font-size: 3.5rem; }
+    .logo { font-size: 3rem; }
   }
 </style>
 </head>
@@ -717,8 +920,9 @@
 
 <!-- ===== SCREEN 1: LOGIN ===== -->
 <div id="screen-login" class="screen active">
+  <div class="login-lanterns">🏮 🏮</div>
   <div class="logo">CEE-LO</div>
-  <div class="logo-sub">The Dice Game</div>
+  <div class="logo-sub">骰子 · Street Dice</div>
   <div class="login-card">
     <input type="text" id="input-name" placeholder="Enter your name" maxlength="20" autocomplete="off">
     <button class="btn" id="btn-enter-lobby">Enter Lobby</button>
@@ -731,7 +935,7 @@
     <div class="lobby-title">🎲 CEE-LO</div>
     <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
       <div class="balance-display">Balance: $<span id="lobby-balance">—</span></div>
-      <div id="lobby-player-name" style="color:var(--muted);font-size:0.85rem;"></div>
+      <div id="lobby-player-name" style="color:var(--muted);font-size:0.85rem;font-family:'Lato',sans-serif;"></div>
     </div>
   </div>
   <div class="rooms-grid" id="rooms-grid"></div>
@@ -922,7 +1126,7 @@
     const grid = document.getElementById('rooms-grid');
     grid.innerHTML = '';
     if (!rooms || !rooms.length) {
-      grid.innerHTML = '<div style="color:var(--muted);padding:20px;">No rooms available</div>';
+      grid.innerHTML = '<div style="color:var(--muted);padding:20px;font-family:\'Lato\',sans-serif;">No rooms available</div>';
       return;
     }
     rooms.forEach(room => {
@@ -932,13 +1136,14 @@
       const stateLabel = room.state === 'waiting' ? 'Waiting' : 'In Progress';
       card.innerHTML = `
         <div class="room-card-name">${escHtml(room.name)}</div>
-        <div class="room-card-ante">Ante: $${room.ante}</div>
+        <div class="room-card-ante">$${room.ante}</div>
+        <div class="room-card-ante-label">Ante per round</div>
         <div class="room-card-info">
           <span class="room-card-players">👥 ${room.playerCount}/${room.maxPlayers}</span>
           <span class="room-card-pot">$${room.pot || 0}</span>
         </div>
         <span class="room-card-state ${stateClass}">${stateLabel}</span>
-        ${room.spectatorCount > 0 ? `<div style="font-size:0.75rem;color:var(--muted);">👁 ${room.spectatorCount} watching</div>` : ''}
+        ${room.spectatorCount > 0 ? `<div style="font-size:0.75rem;color:var(--muted);font-family:'Lato',sans-serif;">👁 ${room.spectatorCount} watching</div>` : ''}
       `;
       card.addEventListener('click', () => joinRoom(room.id));
       grid.appendChild(card);
@@ -1305,5 +1510,117 @@
 
 })();
 </script>
+
+<!-- ═══════════════════════════════════════════════════
+     VISUAL ENHANCEMENT: Pip-based dice face renderer
+     Pure visual layer — no game logic, no socket events
+═══════════════════════════════════════════════════ -->
+<script>
+(function() {
+  'use strict';
+
+  // Pip positions as [left%, top%] within the die face
+  // Classic die face layouts
+  var PIP_LAYOUTS = {
+    1: [
+      [50, 50]
+    ],
+    2: [
+      [72, 28],
+      [28, 72]
+    ],
+    3: [
+      [72, 28],
+      [50, 50],
+      [28, 72]
+    ],
+    4: [
+      [28, 28], [72, 28],
+      [28, 72], [72, 72]
+    ],
+    5: [
+      [28, 28], [72, 28],
+      [50, 50],
+      [28, 72], [72, 72]
+    ],
+    6: [
+      [28, 22], [72, 22],
+      [28, 50], [72, 50],
+      [28, 78], [72, 78]
+    ]
+  };
+
+  function buildPips(value) {
+    var v = parseInt(value, 10);
+    if (!v || v < 1 || v > 6) {
+      return '<span class="die-unknown">?</span>';
+    }
+    var positions = PIP_LAYOUTS[v];
+    var html = '';
+    for (var i = 0; i < positions.length; i++) {
+      var x = positions[i][0];
+      var y = positions[i][1];
+      html += '<span class="pip" style="left:' + x + '%;top:' + y + '%;transform:translate(-50%,-50%)"></span>';
+    }
+    return html;
+  }
+
+  function applyFace(dieEl, rawValue) {
+    var v = parseInt(rawValue, 10);
+
+    // Remove old die-N class
+    dieEl.className = dieEl.className.replace(/\bdie-[1-6]\b/g, '').replace(/\s+/g, ' ').trim();
+
+    if (v >= 1 && v <= 6) {
+      dieEl.classList.add('die-' + v);
+    }
+
+    // Set flag to prevent observer re-entry
+    dieEl._pipRendering = true;
+    dieEl.innerHTML = buildPips(rawValue);
+    dieEl._pipRendering = false;
+  }
+
+  function watchDie(dieEl) {
+    if (!dieEl) return;
+
+    // Render initial state
+    applyFace(dieEl, dieEl.textContent.trim());
+
+    var observer = new MutationObserver(function() {
+      if (dieEl._pipRendering) return;
+
+      // Read the raw text value set by game JS
+      var raw = dieEl.textContent.trim();
+
+      // Only re-render if it looks like a number or "?"
+      if (raw === '?' || (raw.length <= 2 && /^[1-6]$/.test(raw))) {
+        applyFace(dieEl, raw);
+      }
+    });
+
+    observer.observe(dieEl, {
+      childList: true,
+      characterData: true,
+      subtree: true
+    });
+  }
+
+  // Wait for DOM to be ready, then set up observers
+  function init() {
+    ['die-0', 'die-1', 'die-2'].forEach(function(id) {
+      watchDie(document.getElementById(id));
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+
+})();
+</script>
+
 </body>
 </html>
