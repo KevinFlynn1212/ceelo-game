@@ -344,10 +344,10 @@
     overflow: hidden;
   }
 
-  /* ── TOP: Alley scene (70vh) ── */
+  /* ── TOP: Alley scene (80vh) ── */
   .alley-section {
     position: relative;
-    height: 70vh;
+    height: 80vh;
     background: url('/alley-bg.jpg') center center / cover no-repeat;
     flex-shrink: 0;
     overflow: hidden;
@@ -576,7 +576,7 @@
      BOTTOM: PLAYER HUD (30vh)
   ═══════════════════════════════ */
   .player-hud {
-    height: 30vh;
+    height: 20vh;
     min-height: 120px;
     background: rgba(5, 2, 0, 0.97);
     border-top: 1px solid rgba(180, 120, 20, 0.35);
@@ -915,8 +915,8 @@
     .hud-slot { padding: 5px 2px; }
     .hud-avatar { width: 24px; height: 24px; font-size: 0.65rem; border-width: 1px; }
     .hud-balance { display: none; }
-    .alley-section { height: 65vh; }
-    .player-hud { height: 35vh; }
+    .alley-section { height: 75vh; }
+    .player-hud { height: 25vh; }
   }
 </style>
 </head>
@@ -1578,7 +1578,7 @@ const PhysicsDice = {
       .filter(b => b.isStatic);
     staticBodies.forEach(b => Matter.Composite.remove(this.engine.world, b));
 
-    const groundY = h * 0.85;
+    const groundY = h * 0.68;
     const wallThickness = 60;
 
     // Ground (where dice land — bottom 85% of alley)
@@ -1621,25 +1621,25 @@ const PhysicsDice = {
     this.bodies.forEach(b => Matter.Composite.remove(this.engine.world, b));
     this.bodies = [];
 
-    // Create 3 dice thrown from bottom (player's hand) toward the alley
+    // Create 3 dice thrown from bottom (player's hand) up into the alley
     for (let i = 0; i < 3; i++) {
       const die = Matter.Bodies.rectangle(
-        w * 0.3 + i * (s + 20) + Math.random() * 40,
-        h + 20,  // start below screen
+        w * 0.3 + i * (s + 15) + Math.random() * 60,
+        h * 0.9,  // start near bottom of alley
         s, s,
         {
-          restitution: 0.6,
-          friction: 0.3,
+          restitution: 0.55,
+          friction: 0.4,
           density: 0.002,
           angle: Math.random() * Math.PI * 2,
           chamfer: { radius: 8 },
         }
       );
 
-      // Apply upward throw force with slight random horizontal drift
+      // Apply upward throw force — dice fly up into the alley
       Matter.Body.applyForce(die, die.position, {
-        x: (Math.random() - 0.5) * 0.08,
-        y: -0.12 - Math.random() * 0.04,
+        x: (Math.random() - 0.5) * 0.12,
+        y: -0.18 - Math.random() * 0.06,
       });
 
       // Add spin
@@ -1682,7 +1682,7 @@ const PhysicsDice = {
     const h = this.canvas.height;
     const s = this.diceSize;
     const half = s / 2;
-    const groundY = h * 0.85;
+    const groundY = h * 0.65;
     const ctx = this.ctx;
 
     ctx.clearRect(0, 0, w, h);
