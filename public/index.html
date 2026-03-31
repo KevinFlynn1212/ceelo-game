@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CEE-LO</title>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@400;700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.20.0/matter.min.js"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -347,23 +348,37 @@
   .alley-section {
     position: relative;
     height: 70vh;
+    background: url('/alley-bg.jpg') center center / cover no-repeat;
     flex-shrink: 0;
     overflow: hidden;
   }
 
+  /* Dark gradient overlay for contrast */
+  .alley-section::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.1) 40%, rgba(0,0,0,0.4) 100%);
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  /* Physics dice canvas — transparent overlay */
   #alley-canvas {
     position: absolute;
     top: 0; left: 0;
     width: 100%;
     height: 100%;
     display: block;
+    background: transparent;
+    z-index: 2;
   }
 
   /* ── Room info bar (thin dark strip at top) ── */
   .game-info-bar {
     position: absolute;
     top: 0; left: 0; right: 0;
-    z-index: 10;
+    z-index: 3;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -435,7 +450,7 @@
     top: 44px;
     left: 50%;
     transform: translateX(-50%);
-    z-index: 10;
+    z-index: 3;
     display: none;
     background: rgba(245,200,66,0.08);
     border: 1px solid var(--border);
@@ -450,124 +465,13 @@
   }
   .spectator-banner.visible { display: block; }
 
-  /* ── Dice zone (absolute over canvas, lower center) ── */
-  .dice-zone {
+  /* ── Result label (floats over dice landing area) ── */
+  .result-label {
     position: absolute;
-    bottom: 90px;
+    bottom: 72px;
     left: 50%;
     transform: translateX(-50%);
-    z-index: 10;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .dice-container {
-    display: flex;
-    gap: 16px;
-    align-items: center;
-    justify-content: center;
-    background: rgba(20, 14, 6, 0.5);
-    padding: 14px 22px;
-    border-radius: 14px;
-    border: 1px solid rgba(160, 110, 30, 0.2);
-    backdrop-filter: blur(4px);
-    box-shadow: 0 0 60px rgba(0,0,0,0.6), 0 8px 30px rgba(0,0,0,0.5);
-  }
-
-  /* ── Individual die ── */
-  .die {
-    width: 72px;
-    height: 72px;
-    background: linear-gradient(145deg, #faf5e4, #f0e8d0);
-    border: 2px solid rgba(180,140,60,0.35);
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0;
-    font-weight: 900;
-    color: transparent;
-    position: relative;
-    transition: transform 0.12s, border-color 0.2s;
-    box-shadow:
-      inset 0 2px 5px rgba(255,255,255,0.7),
-      inset 0 -3px 5px rgba(180,130,40,0.25),
-      0 6px 18px rgba(0,0,0,0.55),
-      0 2px 5px rgba(0,0,0,0.4),
-      2px 4px 0 rgba(0,0,0,0.25);
-    cursor: default;
-    user-select: none;
-  }
-
-  .die-unknown {
-    font-size: 1.3rem;
-    font-family: 'Lato', sans-serif;
-    color: rgba(100,80,40,0.55);
-    pointer-events: none;
-  }
-
-  .pip {
-    width: 11px;
-    height: 11px;
-    background: #1a0e00;
-    border-radius: 50%;
-    position: absolute;
-    box-shadow: inset 0 1px 3px rgba(0,0,0,0.5), 0 0 2px rgba(0,0,0,0.2);
-    pointer-events: none;
-  }
-
-  .die.rolling {
-    animation: tumble 0.18s linear infinite;
-    border-color: rgba(245,200,66,0.7);
-    box-shadow:
-      inset 0 2px 5px rgba(255,255,255,0.6),
-      0 6px 18px rgba(0,0,0,0.5),
-      0 0 20px rgba(245,180,0,0.35);
-  }
-
-  .die.landed {
-    animation: landBounce 0.45s ease-out forwards;
-    border-color: rgba(245,200,66,0.6);
-    box-shadow:
-      inset 0 2px 5px rgba(255,255,255,0.7),
-      0 6px 18px rgba(0,0,0,0.5),
-      0 0 14px rgba(245,180,0,0.25);
-  }
-
-  @keyframes tumble {
-    0%   { transform: rotate3d(1,  1, 0,   0deg) scale(0.97); }
-    25%  { transform: rotate3d(1, -1, 0,  90deg) scale(1.02); }
-    50%  { transform: rotate3d(-1, 1, 0, 180deg) scale(0.97); }
-    75%  { transform: rotate3d(1,  1, 1, 270deg) scale(1.02); }
-    100% { transform: rotate3d(1,  1, 0, 360deg) scale(0.97); }
-  }
-
-  @keyframes landBounce {
-    0%   { transform: scale(1.18); }
-    35%  { transform: scale(0.91); }
-    65%  { transform: scale(1.07); }
-    85%  { transform: scale(0.97); }
-    100% { transform: scale(1.00); }
-  }
-
-  /* Legacy pip die (kept for compatibility) */
-  .die-pips {
-    width: 72px;
-    height: 72px;
-    background: linear-gradient(145deg, #faf5e4, #f0e8d0);
-    border: 2px solid rgba(180,140,60,0.35);
-    border-radius: 10px;
-    display: grid;
-    padding: 8px;
-    box-shadow: inset 0 2px 4px rgba(0,0,0,0.5), 0 4px 12px rgba(0,0,0,0.4);
-    position: relative;
-  }
-  .die-pips.rolling { animation: tumble 0.18s linear infinite; border-color: var(--gold); }
-  .die-pips.landed  { animation: landBounce 0.45s ease-out forwards; border-color: var(--gold); }
-
-  .result-label {
+    z-index: 3;
     font-family: 'Cinzel', serif;
     font-size: 1.2rem;
     font-weight: 700;
@@ -576,6 +480,8 @@
     min-height: 1.6rem;
     letter-spacing: 0.06em;
     text-shadow: 0 0 24px rgba(245,200,66,0.6), 0 0 50px rgba(245,200,66,0.25), 0 2px 4px rgba(0,0,0,0.6);
+    white-space: nowrap;
+    pointer-events: none;
   }
 
   /* ── Roll button (floats at bottom of alley) ── */
@@ -584,7 +490,7 @@
     bottom: 18px;
     left: 50%;
     transform: translateX(-50%);
-    z-index: 10;
+    z-index: 3;
   }
 
   #btn-roll {
@@ -994,7 +900,6 @@
   ═══════════════════════════════ */
   @media (max-width: 768px) {
     .chat-panel { width: 280px; }
-    .die { width: 60px; height: 60px; }
     .hud-name { font-size: 0.68rem; }
     .hud-avatar { width: 28px; height: 28px; font-size: 0.75rem; }
     #btn-roll { padding: 11px 30px; font-size: 0.9rem; }
@@ -1046,10 +951,10 @@
 <!-- ===== SCREEN 3: GAME ===== -->
 <div id="screen-game" class="screen">
 
-  <!-- TOP SECTION (70vh): Alley Scene -->
+  <!-- TOP SECTION (70vh): Alley Scene — photo background + physics canvas overlay -->
   <div class="alley-section">
 
-    <!-- Full-width background canvas -->
+    <!-- Physics dice canvas — transparent overlay on top of photo -->
     <canvas id="alley-canvas"></canvas>
 
     <!-- Room info bar (thin dark strip at top) -->
@@ -1070,15 +975,8 @@
     <!-- Spectator notice -->
     <div class="spectator-banner" id="spectator-banner">👁 Spectating — you are not in this round</div>
 
-    <!-- Dice landing zone (positioned over canvas, lower center) -->
-    <div class="dice-zone">
-      <div class="dice-container" id="dice-container">
-        <div class="die" id="die-0">?</div>
-        <div class="die" id="die-1">?</div>
-        <div class="die" id="die-2">?</div>
-      </div>
-      <div class="result-label" id="result-label"></div>
-    </div>
+    <!-- Result label (floated above roll button, below dice landing area) -->
+    <div class="result-label" id="result-label"></div>
 
     <!-- Roll button floating at bottom -->
     <div class="roll-btn-wrapper">
@@ -1157,7 +1055,7 @@
   let timerInterval = null;
   let animating = false;
   let winnerDismissTimer = null;
-  let alleyStarted = false;
+  let physicsDiceReady = false;
 
   // ===== SOCKET =====
   const socket = io();
@@ -1231,14 +1129,11 @@
       el.style.display = 'flex';
       el.classList.add('active');
     }
-    // Start alley canvas when game screen first shown
-    if (name === 'game' && !alleyStarted) {
-      alleyStarted = true;
+    // Initialize PhysicsDice when game screen is first shown
+    if (name === 'game' && !physicsDiceReady) {
+      physicsDiceReady = true;
       setTimeout(() => {
-        if (typeof resizeAlley === 'function') {
-          resizeAlley();
-          drawAlley();
-        }
+        PhysicsDice.init(document.getElementById('alley-canvas'));
       }, 60);
     }
   }
@@ -1319,7 +1214,7 @@
       document.getElementById('lobby-balance').textContent = me.balance;
     }
 
-    // Dice — show my current roll if any
+    // Dice — show my current roll if any (static display, no animation)
     if (me && me.rolls && me.rolls.length === 3 && !animating) {
       displayDice(me.rolls);
       if (me.result) {
@@ -1421,46 +1316,33 @@
   }
 
   // ===== DICE =====
+  // Show dice statically (state sync / reconnect) — places dice at fixed positions
   function displayDice(values) {
-    for (let i = 0; i < 3; i++) {
-      const die = document.getElementById('die-' + i);
-      if (die && values[i] !== undefined) {
-        die.textContent = values[i] || '?';
-      }
-    }
+    if (!physicsDiceReady) return;
+    PhysicsDice.showStatic(values);
   }
 
+  // Animate dice via physics engine
   function animateDice(finalValues, evaluation) {
     animating = true;
-    const dies = [0,1,2].map(i => document.getElementById('die-' + i));
-    dies.forEach(d => { d.classList.add('rolling'); d.classList.remove('landed'); });
 
-    const duration = 700;
+    // Disable roll button during animation
+    const btn = document.getElementById('btn-roll');
+    if (btn) { btn.disabled = true; btn.textContent = '🎲 Rolling...'; }
 
-    const interval = setInterval(() => {
-      dies.forEach(d => { d.textContent = Math.ceil(Math.random() * 6); });
-    }, 60);
-
-    setTimeout(() => {
-      clearInterval(interval);
-      dies.forEach((d, i) => {
-        d.textContent = finalValues[i];
-        d.classList.remove('rolling');
-        d.classList.add('landed');
-      });
+    PhysicsDice.throwDice(finalValues, () => {
+      animating = false;
       if (evaluation) {
         document.getElementById('result-label').textContent =
           (evaluation.emoji || '') + ' ' + (evaluation.label || '');
       }
-      animating = false;
-
       setTimeout(() => {
         if (roomState) {
           const me = roomState.players ? roomState.players.find(p => p.id === myId) : null;
           updateRollButton(roomState, me);
         }
       }, 200);
-    }, duration);
+    });
   }
 
   // ===== TIMER =====
@@ -1482,7 +1364,6 @@
   }
 
   // ===== RE-ANTE =====
-  // id="reante-buttons" is on the overlay div; .visible shows/hides it
   function showReAnteOffer() {
     document.getElementById('reante-buttons').classList.add('visible');
   }
@@ -1546,14 +1427,11 @@
   function dismissWinner() {
     if (winnerDismissTimer) { clearTimeout(winnerDismissTimer); winnerDismissTimer = null; }
     showScreen('game');
-    [0,1,2].forEach(i => {
-      const d = document.getElementById('die-' + i);
-      d.textContent = '?';
-      d.classList.remove('rolling','landed');
-    });
+    // Clear physics canvas and result label for new round
+    PhysicsDice.clear();
     document.getElementById('result-label').textContent = '';
     const btn = document.getElementById('btn-roll');
-    if (btn.textContent.includes('Done') || btn.textContent === '✓ Done') {
+    if (btn && (btn.textContent.includes('Done') || btn.textContent === '✓ Done')) {
       btn.textContent = '🎲 THROW DICE';
       btn.disabled = true;
     }
@@ -1573,10 +1451,8 @@
     currentRoom = null;
     roomState = null;
     isSpectator = false;
-    [0,1,2].forEach(i => {
-      const d = document.getElementById('die-'+i);
-      d.textContent = '?'; d.classList.remove('rolling','landed');
-    });
+    // Clear physics canvas
+    PhysicsDice.clear();
     document.getElementById('result-label').textContent = '';
     hideReAnteOffer();
     clearChat();
@@ -1662,218 +1538,282 @@
 </script>
 
 <!-- ═══════════════════════════════════════════════════
-     VISUAL: Pip-based dice face renderer
-     Pure visual layer — no game logic, no socket events
+     PHYSICS DICE SYSTEM
+     Matter.js-based dice rolling on the alley canvas
 ═══════════════════════════════════════════════════ -->
 <script>
-(function() {
-  'use strict';
+// Physics dice system
+const PhysicsDice = {
+  engine: null,
+  canvas: null,
+  ctx: null,
+  diceSize: 50,
+  bodies: [],
+  values: [1, 1, 1],
+  animating: false,
 
-  var PIP_LAYOUTS = {
-    1: [[50, 50]],
-    2: [[72, 28], [28, 72]],
-    3: [[72, 28], [50, 50], [28, 72]],
-    4: [[28, 28], [72, 28], [28, 72], [72, 72]],
-    5: [[28, 28], [72, 28], [50, 50], [28, 72], [72, 72]],
-    6: [[28, 22], [72, 22], [28, 50], [72, 50], [28, 78], [72, 78]]
-  };
+  init(canvas) {
+    this.canvas = canvas;
+    this.ctx = canvas.getContext('2d');
+    this.engine = Matter.Engine.create({ gravity: { x: 0, y: 0.8 } });
 
-  function buildPips(value) {
-    var v = parseInt(value, 10);
-    if (!v || v < 1 || v > 6) {
-      return '<span class="die-unknown">?</span>';
+    this.resize();
+    window.addEventListener('resize', () => this.resize());
+  },
+
+  resize() {
+    if (!this.canvas) return;
+    const parent = this.canvas.parentElement;
+    this.canvas.width = parent.clientWidth;
+    this.canvas.height = parent.clientHeight;
+    this.setupWalls();
+  },
+
+  setupWalls() {
+    const w = this.canvas.width;
+    const h = this.canvas.height;
+
+    // Remove old static bodies (walls) but keep dice bodies
+    const staticBodies = Matter.Composite.allBodies(this.engine.world)
+      .filter(b => b.isStatic);
+    staticBodies.forEach(b => Matter.Composite.remove(this.engine.world, b));
+
+    const groundY = h * 0.85;
+    const wallThickness = 60;
+
+    // Ground (where dice land — bottom 85% of alley)
+    Matter.Composite.add(this.engine.world,
+      Matter.Bodies.rectangle(w / 2, groundY + wallThickness / 2, w * 3, wallThickness, { isStatic: true })
+    );
+
+    // Left boundary wall
+    Matter.Composite.add(this.engine.world,
+      Matter.Bodies.rectangle(-10, h / 2, 60, h * 2, { isStatic: true })
+    );
+    // Right boundary wall
+    Matter.Composite.add(this.engine.world,
+      Matter.Bodies.rectangle(w + 10, h / 2, 60, h * 2, { isStatic: true })
+    );
+
+    // Cobblestone bumps at ground level (alley texture)
+    // Left curb
+    Matter.Composite.add(this.engine.world,
+      Matter.Bodies.rectangle(w * 0.2, groundY - 5, 20, 15, { isStatic: true, angle: 0.1 })
+    );
+    // Right curb
+    Matter.Composite.add(this.engine.world,
+      Matter.Bodies.rectangle(w * 0.75, groundY - 5, 20, 15, { isStatic: true, angle: -0.1 })
+    );
+    // Center bump
+    Matter.Composite.add(this.engine.world,
+      Matter.Bodies.rectangle(w * 0.45, groundY - 3, 15, 10, { isStatic: true, angle: 0.2 })
+    );
+  },
+
+  throwDice(finalValues, callback) {
+    this.animating = true;
+    this.values = finalValues;
+    const w = this.canvas.width;
+    const h = this.canvas.height;
+    const s = this.diceSize;
+
+    // Remove old dice bodies
+    this.bodies.forEach(b => Matter.Composite.remove(this.engine.world, b));
+    this.bodies = [];
+
+    // Create 3 dice thrown from bottom (player's hand) toward the alley
+    for (let i = 0; i < 3; i++) {
+      const die = Matter.Bodies.rectangle(
+        w * 0.3 + i * (s + 20) + Math.random() * 40,
+        h + 20,  // start below screen
+        s, s,
+        {
+          restitution: 0.6,
+          friction: 0.3,
+          density: 0.002,
+          angle: Math.random() * Math.PI * 2,
+          chamfer: { radius: 8 },
+        }
+      );
+
+      // Apply upward throw force with slight random horizontal drift
+      Matter.Body.applyForce(die, die.position, {
+        x: (Math.random() - 0.5) * 0.08,
+        y: -0.12 - Math.random() * 0.04,
+      });
+
+      // Add spin
+      Matter.Body.setAngularVelocity(die, (Math.random() - 0.5) * 0.4);
+
+      this.bodies.push(die);
+      Matter.Composite.add(this.engine.world, die);
     }
-    var positions = PIP_LAYOUTS[v];
-    var html = '';
-    for (var i = 0; i < positions.length; i++) {
-      var x = positions[i][0];
-      var y = positions[i][1];
-      html += '<span class="pip" style="left:' + x + '%;top:' + y + '%;transform:translate(-50%,-50%)"></span>';
-    }
-    return html;
-  }
 
-  function applyFace(dieEl, rawValue) {
-    var v = parseInt(rawValue, 10);
-    dieEl.className = dieEl.className.replace(/\bdie-[1-6]\b/g, '').replace(/\s+/g, ' ').trim();
-    if (v >= 1 && v <= 6) { dieEl.classList.add('die-' + v); }
-    dieEl._pipRendering = true;
-    dieEl.innerHTML = buildPips(rawValue);
-    dieEl._pipRendering = false;
-  }
+    // Run physics simulation
+    let frame = 0;
+    const maxFrames = 120; // ~2 seconds at 60fps
 
-  function watchDie(dieEl) {
-    if (!dieEl) return;
-    applyFace(dieEl, dieEl.textContent.trim());
+    const step = () => {
+      Matter.Engine.update(this.engine, 1000 / 60);
+      this.draw();
+      frame++;
 
-    var observer = new MutationObserver(function() {
-      if (dieEl._pipRendering) return;
-      var raw = dieEl.textContent.trim();
-      if (raw === '?' || (raw.length <= 2 && /^[1-6]$/.test(raw))) {
-        applyFace(dieEl, raw);
+      const settled = this.bodies.every(b =>
+        Math.abs(b.velocity.x) < 0.3 && Math.abs(b.velocity.y) < 0.3
+      );
+
+      if ((settled && frame > 30) || frame >= maxFrames) {
+        this.animating = false;
+        this.drawFinal();
+        if (callback) callback();
+      } else {
+        requestAnimationFrame(step);
       }
+    };
+
+    requestAnimationFrame(step);
+  },
+
+  // Show dice at fixed positions without animation (state sync / reconnect)
+  showStatic(values) {
+    if (!this.ctx) return;
+    this.values = values;
+    const w = this.canvas.width;
+    const h = this.canvas.height;
+    const s = this.diceSize;
+    const half = s / 2;
+    const groundY = h * 0.85;
+    const ctx = this.ctx;
+
+    ctx.clearRect(0, 0, w, h);
+
+    const positions = [
+      { x: w * 0.35, y: groundY - half - 10 },
+      { x: w * 0.50, y: groundY - half - 10 },
+      { x: w * 0.65, y: groundY - half - 10 },
+    ];
+
+    positions.forEach((pos, i) => {
+      ctx.save();
+      ctx.translate(pos.x, pos.y);
+      ctx.rotate(0);
+
+      ctx.shadowColor = 'rgba(0,0,0,0.7)';
+      ctx.shadowBlur = 12;
+      ctx.shadowOffsetY = 4;
+      ctx.fillStyle = '#f5efd8';
+      ctx.beginPath();
+      ctx.roundRect(-half, -half, s, s, 8);
+      ctx.fill();
+      ctx.shadowColor = 'transparent';
+      ctx.strokeStyle = 'rgba(180,160,120,0.5)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      this.drawPips(ctx, values[i], half);
+      ctx.restore();
     });
+  },
 
-    observer.observe(dieEl, { childList: true, characterData: true, subtree: true });
-  }
+  draw() {
+    const ctx = this.ctx;
+    ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-  function init() {
-    ['die-0', 'die-1', 'die-2'].forEach(function(id) {
-      watchDie(document.getElementById(id));
+    this.bodies.forEach((body, i) => {
+      ctx.save();
+      ctx.translate(body.position.x, body.position.y);
+      ctx.rotate(body.angle);
+
+      const s = this.diceSize;
+      const half = s / 2;
+
+      ctx.shadowColor = 'rgba(0,0,0,0.7)';
+      ctx.shadowBlur = 12;
+      ctx.shadowOffsetY = 4;
+
+      ctx.fillStyle = '#f5efd8';
+      ctx.beginPath();
+      ctx.roundRect(-half, -half, s, s, 8);
+      ctx.fill();
+
+      ctx.shadowColor = 'transparent';
+      ctx.strokeStyle = 'rgba(180,160,120,0.5)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      // Show random tumbling face while animating
+      const faceVal = this.animating ? Math.ceil(Math.random() * 6) : this.values[i];
+      this.drawPips(ctx, faceVal, half);
+
+      ctx.restore();
     });
-  }
+  },
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-  } else {
-    init();
-  }
-})();
-</script>
+  drawFinal() {
+    const ctx = this.ctx;
+    ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-<!-- ═══════════════════════════════════════════════════
-     ALLEY SCENE RENDERER
-     Canvas-based first-person alley with lanterns, neon, cobblestones, steam
-═══════════════════════════════════════════════════ -->
-<script>
-// Alley scene renderer
-const alleyCanvas = document.getElementById('alley-canvas');
-const actx = alleyCanvas.getContext('2d');
-let alleyParticles = [];
+    this.bodies.forEach((body, i) => {
+      ctx.save();
+      ctx.translate(body.position.x, body.position.y);
+      // Snap to nearest 90° for clean final display
+      const snappedAngle = Math.round(body.angle / (Math.PI / 2)) * (Math.PI / 2);
+      ctx.rotate(snappedAngle);
 
-function resizeAlley() {
-  const rect = alleyCanvas.parentElement.getBoundingClientRect();
-  alleyCanvas.width = rect.width * window.devicePixelRatio;
-  alleyCanvas.height = rect.height * window.devicePixelRatio;
-  actx.scale(window.devicePixelRatio, window.devicePixelRatio);
-}
+      const s = this.diceSize;
+      const half = s / 2;
 
-function drawAlley() {
-  const w = alleyCanvas.width / window.devicePixelRatio;
-  const h = alleyCanvas.height / window.devicePixelRatio;
-  const vx = w * 0.5;   // vanishing point x
-  const vy = h * 0.25;  // vanishing point y
+      ctx.shadowColor = 'rgba(0,0,0,0.7)';
+      ctx.shadowBlur = 12;
+      ctx.shadowOffsetY = 4;
 
-  // Sky
-  actx.fillStyle = '#040208';
-  actx.fillRect(0, 0, w, h);
+      ctx.fillStyle = '#f5efd8';
+      ctx.beginPath();
+      ctx.roundRect(-half, -half, s, s, 8);
+      ctx.fill();
 
-  // Left wall
-  actx.beginPath();
-  actx.moveTo(0, h);
-  actx.lineTo(0, 0);
-  actx.lineTo(vx - 30, vy);
-  actx.lineTo(vx - 30, h);
-  actx.fillStyle = '#1a1008';
-  actx.fill();
+      ctx.shadowColor = 'transparent';
+      ctx.strokeStyle = 'rgba(180,160,120,0.5)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
 
-  // Right wall
-  actx.beginPath();
-  actx.moveTo(w, h);
-  actx.lineTo(w, 0);
-  actx.lineTo(vx + 30, vy);
-  actx.lineTo(vx + 30, h);
-  actx.fillStyle = '#160e06';
-  actx.fill();
-
-  // Ground
-  actx.beginPath();
-  actx.moveTo(0, h);
-  actx.lineTo(vx - 30, vy + 60);
-  actx.lineTo(vx + 30, vy + 60);
-  actx.lineTo(w, h);
-  actx.fillStyle = '#1c1610';
-  actx.fill();
-
-  // Cobblestone grid
-  for (let row = 0; row < 12; row++) {
-    const t = row / 12;
-    const y = vy + 60 + (h - vy - 60) * t;
-    const halfW = 30 + (w/2 - 30) * t;
-    const cx = w/2;
-    const stoneW = 20 + 40 * t;
-    const stoneH = 4 + 10 * t;
-    for (let col = -6; col <= 6; col++) {
-      const sx = cx + col * stoneW * 1.1 + (row % 2 ? stoneW * 0.5 : 0);
-      if (sx > cx - halfW && sx < cx + halfW) {
-        actx.fillStyle = `rgba(${40+Math.random()*20},${32+Math.random()*15},${24+Math.random()*10},0.8)`;
-        actx.beginPath();
-        actx.roundRect(sx - stoneW/2, y - stoneH/2, stoneW, stoneH, 3);
-        actx.fill();
-        actx.strokeStyle = 'rgba(0,0,0,0.4)';
-        actx.lineWidth = 0.5;
-        actx.stroke();
-      }
-    }
-  }
-
-  // Lanterns
-  const lanterns = [
-    { x: vx - 80, y: vy + 40,  r: 12, color: '#ff6600' },
-    { x: vx + 70, y: vy + 30,  r: 10, color: '#ff4400' },
-    { x: vx - 40, y: vy + 100, r: 15, color: '#ff5500' },
-    { x: vx + 50, y: vy + 120, r: 14, color: '#ee4400' },
-  ];
-  lanterns.forEach(l => {
-    // Glow pool
-    const grad = actx.createRadialGradient(l.x, l.y, 0, l.x, l.y, l.r * 8);
-    grad.addColorStop(0, l.color + '40');
-    grad.addColorStop(1, 'transparent');
-    actx.fillStyle = grad;
-    actx.fillRect(l.x - l.r*8, l.y - l.r*8, l.r*16, l.r*16);
-    // Lantern body
-    actx.fillStyle = l.color;
-    actx.beginPath();
-    actx.ellipse(l.x, l.y, l.r * 0.7, l.r, 0, 0, Math.PI * 2);
-    actx.fill();
-    // String
-    actx.strokeStyle = '#666';
-    actx.lineWidth = 1;
-    actx.beginPath();
-    actx.moveTo(l.x, l.y - l.r);
-    actx.lineTo(l.x, l.y - l.r - 20);
-    actx.stroke();
-  });
-
-  // Neon signs
-  actx.save();
-  actx.shadowColor = '#00ccff';
-  actx.shadowBlur = 20;
-  actx.font = 'bold 18px sans-serif';
-  actx.fillStyle = '#00eeff';
-  actx.fillText('骰子', vx - 120, vy + 20);
-  actx.shadowColor = '#ff44aa';
-  actx.shadowBlur = 20;
-  actx.fillStyle = '#ff66bb';
-  actx.fillText('勝負', vx + 80, vy + 50);
-  actx.restore();
-
-  // Steam particles
-  if (alleyParticles.length < 15) {
-    alleyParticles.push({
-      x: vx + (Math.random() - 0.5) * 100,
-      y: h * 0.7 + Math.random() * h * 0.2,
-      r: 10 + Math.random() * 30,
-      vy: -0.2 - Math.random() * 0.3,
-      alpha: 0.03 + Math.random() * 0.04,
+      this.drawPips(ctx, this.values[i], half);
+      ctx.restore();
     });
+  },
+
+  // Clear canvas and remove dice bodies
+  clear() {
+    if (!this.ctx || !this.canvas) return;
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    this.bodies.forEach(b => {
+      try { Matter.Composite.remove(this.engine.world, b); } catch(e) {}
+    });
+    this.bodies = [];
+    this.animating = false;
+  },
+
+  drawPips(ctx, val, half) {
+    const v = parseInt(val, 10);
+    if (!v || v < 1 || v > 6) return;
+
+    const pip = (x, y) => {
+      ctx.fillStyle = '#1a0e00';
+      ctx.beginPath();
+      ctx.arc(x, y, half * 0.13, 0, Math.PI * 2);
+      ctx.fill();
+    };
+
+    const p = half * 0.55;
+
+    if (v === 1) { pip(0, 0); }
+    if (v === 2) { pip(-p, -p); pip(p, p); }
+    if (v === 3) { pip(-p, -p); pip(0, 0); pip(p, p); }
+    if (v === 4) { pip(-p, -p); pip(p, -p); pip(-p, p); pip(p, p); }
+    if (v === 5) { pip(-p, -p); pip(p, -p); pip(0, 0); pip(-p, p); pip(p, p); }
+    if (v === 6) { pip(-p, -p); pip(p, -p); pip(-p, 0); pip(p, 0); pip(-p, p); pip(p, p); }
   }
-  alleyParticles.forEach(p => {
-    actx.fillStyle = `rgba(200,180,150,${p.alpha})`;
-    actx.beginPath();
-    actx.ellipse(p.x, p.y, p.r, p.r * 0.6, 0, 0, Math.PI * 2);
-    actx.fill();
-    p.y += p.vy;
-    p.x += (Math.random() - 0.5) * 0.3;
-    p.alpha -= 0.0003;
-  });
-  alleyParticles = alleyParticles.filter(p => p.alpha > 0);
-
-  requestAnimationFrame(drawAlley);
-}
-
-window.addEventListener('resize', resizeAlley);
-// drawAlley() is called by showScreen('game') via the alleyStarted guard
+};
 </script>
 
 </body>
