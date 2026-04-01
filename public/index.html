@@ -473,68 +473,65 @@
   }
   .alley-winner-overlay {
     position: absolute;
-    top: 12px;
-    left: 50%;
-    transform: translateX(-50%);
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
     z-index: 50;
     pointer-events: none;
-    width: max-content;
-    max-width: 96vw;
   }
   .alley-winner-card {
     background: linear-gradient(160deg, rgba(20,14,2,0.97), rgba(10,6,1,0.97));
     border: 2px solid rgba(245,200,66,0.8);
-    border-radius: 14px;
-    padding: 14px 36px;
+    border-radius: 18px;
+    padding: 28px 40px;
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
     align-items: center;
-    gap: 20px;
-    min-width: 280px;
+    gap: 10px;
+    min-width: 300px;
     box-shadow: 0 0 60px rgba(245,200,66,0.4), 0 0 120px rgba(245,200,66,0.15), 0 20px 50px rgba(0,0,0,0.9);
     animation: alleyWinIn 0.55s cubic-bezier(0.175,0.885,0.32,1.275) forwards;
   }
-  .aw-left { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
-  .aw-right { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
   .alley-winner-label {
     font-family: 'Cinzel', serif;
-    font-size: 0.7rem; font-weight: 700;
+    font-size: 0.72rem; font-weight: 700;
     color: var(--muted);
-    letter-spacing: 0.25em;
+    letter-spacing: 0.3em;
     text-transform: uppercase;
+    text-align: center;
   }
   .alley-winner-name {
     font-family: 'Cinzel Decorative', serif;
-    font-size: 1.6rem; font-weight: 900;
+    font-size: 2rem; font-weight: 900;
     color: #ffffff;
-    text-shadow: 0 0 24px rgba(255,255,255,0.3);
+    text-shadow: 0 0 30px rgba(255,255,255,0.4);
+    text-align: center;
     line-height: 1.1;
-    white-space: nowrap;
   }
   .alley-winner-dice {
-    display: flex; gap: 6px; align-items: center;
+    display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin: 4px 0;
   }
   .aw-die {
-    width: 38px; height: 38px;
+    width: 40px; height: 40px;
     background: radial-gradient(circle at 38% 35%, #ff4545, #991010);
     border-radius: 6px;
     display: flex; align-items: center; justify-content: center;
-    font-size: 1.2rem; color: white; font-weight: 900;
+    font-size: 1.3rem; color: white; font-weight: 900;
     box-shadow: 0 3px 10px rgba(0,0,0,0.6), inset 0 1px 2px rgba(255,120,120,0.2);
   }
   .alley-winner-result {
-    font-family: 'Cinzel', serif; font-size: 0.8rem; font-weight: 700;
-    color: rgba(255,255,255,0.7); letter-spacing: 0.06em;
+    font-family: 'Cinzel', serif; font-size: 0.95rem; font-weight: 700;
+    color: #ffffff; text-align: center; letter-spacing: 0.06em;
   }
   .alley-winner-pot {
-    font-family: 'Cinzel', serif; font-size: 1.5rem; font-weight: 900;
+    font-family: 'Cinzel', serif; font-size: 1.7rem; font-weight: 900;
     color: #ffd700;
     text-shadow: 0 0 24px rgba(255,215,0,0.7);
-    white-space: nowrap;
+    text-align: center;
   }
   .alley-winner-sub {
-    font-family: 'Lato', sans-serif; font-size: 0.72rem;
+    font-family: 'Lato', sans-serif; font-size: 0.78rem;
     color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase;
+    text-align: center;
   }
   .alley-winner-overlay.hiding .alley-winner-card {
     animation: alleyWinOut 0.4s ease-in forwards;
@@ -1297,16 +1294,12 @@
   <!-- Winner overlay — direct child of #screen-game (outside clip-path alley) -->
   <div id="alley-winner" class="alley-winner-overlay" style="display:none;">
     <div class="alley-winner-card">
-      <div class="aw-left">
-        <div class="alley-winner-label" id="aw-label">🏆 WINNER 🏆</div>
-        <div class="alley-winner-name" id="aw-name"></div>
-        <div class="alley-winner-result" id="aw-result"></div>
-      </div>
+      <div class="alley-winner-label" id="aw-label">🏆 WINNER 🏆</div>
+      <div class="alley-winner-name" id="aw-name"></div>
       <div class="alley-winner-dice" id="aw-dice"></div>
-      <div class="aw-right">
-        <div class="alley-winner-pot" id="aw-pot"></div>
-        <div class="alley-winner-sub" id="aw-sub">Congratulations!</div>
-      </div>
+      <div class="alley-winner-result" id="aw-result"></div>
+      <div class="alley-winner-pot" id="aw-pot"></div>
+      <div class="alley-winner-sub" id="aw-sub">Congratulations!</div>
     </div>
   </div>
 
@@ -1368,6 +1361,7 @@
   let physicsDiceReady = false;
   let _diceRevealedFor = new Set(); // player IDs whose dice are safe to show in HUD
   let _animatingForPlayer = null;   // player ID currently mid-animation
+  let _coinLaunchedFor = new Set(); // player IDs who've had seat coin burst this round
 
   // ===== SOCKET =====
   const socket = io();
@@ -1650,9 +1644,11 @@
         if (isActiveTurn) slot.classList.add('active-turn');
         if (player.done) slot.classList.add('done');
         if (isWinner) {
-          const wasWinner = slot.classList.contains('is-winner');
           slot.classList.add('is-winner');
-          if (!wasWinner) launchCoinsFromSeat(slot);
+          if (!_coinLaunchedFor.has(player.id)) {
+            _coinLaunchedFor.add(player.id);
+            launchCoinsFromSeat(slot);
+          }
         }
 
         const initial = (player.name || '?')[0].toUpperCase();
@@ -2249,6 +2245,7 @@
     // Hide dice and clear result label for new round
     clearDice();
     _diceRevealedFor.clear();
+    _coinLaunchedFor.clear();
     _animatingForPlayer = null;
     const rl = document.getElementById('result-label');
     if (rl) { rl.style.visibility = ''; rl.textContent = ''; }
