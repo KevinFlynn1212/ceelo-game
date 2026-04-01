@@ -626,13 +626,20 @@
   }
 
   @keyframes winnerGlow {
-    0%,100% { box-shadow: 0 0 14px rgba(76,175,80,0.45); }
-    50%      { box-shadow: 0 0 36px rgba(76,175,80,0.8), 0 0 60px rgba(76,175,80,0.25); }
+    0%,100% { box-shadow: 0 0 18px rgba(76,175,80,0.6), inset 0 0 18px rgba(76,175,80,0.1); }
+    50%      { box-shadow: 0 0 40px rgba(76,175,80,0.95), 0 0 70px rgba(76,175,80,0.35), inset 0 0 30px rgba(76,175,80,0.15); }
   }
   .hud-slot.is-winner {
     border: 3px solid #4caf50 !important;
-    background: rgba(76,175,80,0.1);
-    animation: winnerGlow 0.9s ease-in-out infinite;
+    background: rgba(76,175,80,0.22) !important;
+    animation: winnerGlow 0.8s ease-in-out infinite;
+  }
+  .hud-action.act-win {
+    background: rgba(76,175,80,0.45) !important;
+    color: #ffffff !important;
+    font-size: 0.72rem !important;
+    letter-spacing: 0.12em;
+    border: 1px solid rgba(76,175,80,0.7);
   }
 
   .hud-slot.done:not(.is-winner) { opacity: 0.6; }
@@ -1138,6 +1145,8 @@
   let animating = false;
   let winnerDismissTimer = null;
   let physicsDiceReady = false;
+  let _diceRevealedFor = new Set(); // player IDs whose dice are safe to show in HUD
+  let _animatingForPlayer = null;   // player ID currently mid-animation
 
   // ===== SOCKET =====
   const socket = io();
@@ -1174,11 +1183,29 @@
     }
   });
 
-  socket.on('re_ante_offer', ({ playerId, timerEnd }) => {
+  socket.on('re_ante_offer', ({ playerId, timerEnd, ante }) => {
     if (playerId === myId) {
       startTimer(timerEnd);
-      // Delay popup 2s so player sees their roll first before being asked to re-ante
-      setTimeout(() => showReAnteOffer(), 2000);
+      // Delay popup 2s so player sees their roll first
+      setTimeout(() => {
+        // Build hand description from current room state
+        let handDesc = 'your current roll';
+        if (roomState) {
+          const me = roomState.players && roomState.players.find(p => p.id === myId);
+          if (me && me.result) {
+            const t = me.result.type || '';
+            const anteCost = ante || roomState.ante || '';
+            if      (t === '456')   handDesc = '🌟 Strungflowers!';
+            else if (t === 'trips') handDesc = `⚡ Trips ${me.result.point || ''}`;
+            else if (t === 'point') handDesc = `Point ${me.result.point || ''}`;
+            else if (t === '123')   handDesc = '🐉 Dancing Dragon';
+            else if (t === 'none')  handDesc = 'No combo';
+          }
+        }
+        const label = document.getElementById('reante-label');
+        if (label) label.innerHTML = `You rolled <strong>${handDesc}</strong><br><span style="font-size:0.85em;opacity:0.75;">Re-ante to roll again?</span>`;
+        showReAnteOffer();
+      }, 2000);
     }
   });
 
@@ -1405,14 +1432,18 @@
 
         const youTag = player.id === myId ? '<span class="you-tag">YOU</span>' : '';
         const lastRoll = player.rolls && player.rolls.length > 0 ? player.rolls[player.rolls.length - 1] : null;
-        const miniDiceHtml = lastRoll
+        // Only show mini dice after animation finishes for this player
+        const diceVisible = lastRoll && (player.id !== _animatingForPlayer) && _diceRevealedFor.has(player.id);
+        // Other players' dice (not animating locally) always show
+        const showDice = lastRoll && (player.id !== myId || diceVisible);
+        const miniDiceHtml = showDice
           ? `<div class="hud-mini-dice">${lastRoll.map(d => `<span class="mini-die">${d}</span>`).join('')}</div>`
           : '';
 
-        // 5-segment border ring — segments light up as time elapses
+        // 5-segment border ring — shows in ACTIVE slot for ALL viewers
         // Perimeter of 96x96 rx=9 rect ≈ 368 units; each segment = 73.6
         let drainRing = '';
-        if (isActiveTurn && roomState && roomState.timerEnd && roomState.timerEnd > Date.now()) {
+        if (isActiveTurn && state.timerEnd && state.timerEnd > Date.now()) {
           const perim = 368, seg = perim / 5; // ~73.6 each
           // 5 rects each covering 20% of the border using stroke-dasharray offset
           const segs = [0,1,2,3,4].map(i =>
@@ -1563,6 +1594,7 @@
 
   function animateDice(finalValues, evaluation) {
     animating = true;
+    _animatingForPlayer = myId; // track who is currently animating
     const btn = document.getElementById('btn-roll');
     if (btn) { btn.disabled = true; btn.textContent = '🎲 Rolling...'; }
     const { renderer, scene, camera, dice, finalRot } = ensureThree();
@@ -1621,6 +1653,9 @@
             if (doneCount === 3) {
               stopDiceRattle();
               animating = false;
+              _diceRevealedFor.add(myId);
+              _animatingForPlayer = null;
+              if (roomState) renderPlayers(roomState); // refresh HUD now that dice are done
               if (evaluation) document.getElementById('result-label').textContent = (evaluation.emoji||'') + ' ' + (evaluation.label||'');
               setTimeout(() => {
                 if (roomState) { const me = roomState.players?.find(p=>p.id===myId); updateRollButton(roomState, me); }
@@ -1733,6 +1768,8 @@
     showScreen('game');
     // Hide dice and clear result label for new round
     clearDice();
+    _diceRevealedFor.clear(); // reset so dice don't show prematurely next round
+    _animatingForPlayer = null;
     document.getElementById('result-label').textContent = '';
     const btn = document.getElementById('btn-roll');
     if (btn && (btn.textContent.includes('Done') || btn.textContent === '✓ Done')) {
