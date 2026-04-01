@@ -1955,6 +1955,75 @@
     renderer.render(scene, camera);
   }
 
+  // ─── Ambient city soundscape ──────────────────────────────────────────────
+  let _ambientStarted = false;
+  function startAmbientSound() {
+    if (_ambientStarted) return;
+    _ambientStarted = true;
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+
+      // Low city rumble — brown noise
+      const bufSize = 4096;
+      const rumble = ctx.createScriptProcessor(bufSize, 1, 1);
+      let lastOut = 0;
+      rumble.onaudioprocess = (e) => {
+        const out = e.outputBuffer.getChannelData(0);
+        for (let i = 0; i < bufSize; i++) {
+          const w = Math.random() * 2 - 1;
+          out[i] = (lastOut + 0.02 * w) / 1.02;
+          lastOut = out[i];
+          out[i] *= 3.5;
+        }
+      };
+      const rumbleGain = ctx.createGain();
+      rumbleGain.gain.value = 0.025;
+      // Low-pass filter — muffled city block away
+      const lpf = ctx.createBiquadFilter();
+      lpf.type = 'lowpass'; lpf.frequency.value = 180;
+      rumble.connect(lpf); lpf.connect(rumbleGain); rumbleGain.connect(ctx.destination);
+
+      // Mid-range city texture — slightly higher noise layer
+      const texture = ctx.createScriptProcessor(bufSize, 1, 1);
+      let t2last = 0;
+      texture.onaudioprocess = (e) => {
+        const out = e.outputBuffer.getChannelData(0);
+        for (let i = 0; i < bufSize; i++) {
+          const w = Math.random() * 2 - 1;
+          out[i] = (t2last + 0.06 * w) / 1.06;
+          t2last = out[i];
+          out[i] *= 2;
+        }
+      };
+      const texGain = ctx.createGain();
+      texGain.gain.value = 0.012;
+      const bpf = ctx.createBiquadFilter();
+      bpf.type = 'bandpass'; bpf.frequency.value = 600; bpf.Q.value = 0.4;
+      texture.connect(bpf); bpf.connect(texGain); texGain.connect(ctx.destination);
+
+      // Occasional distant siren / wind sweep
+      function windGust() {
+        const osc = ctx.createOscillator();
+        const g   = ctx.createGain();
+        const wf  = ctx.createBiquadFilter();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(120 + Math.random()*80, ctx.currentTime);
+        wf.type = 'bandpass'; wf.frequency.value = 300; wf.Q.value = 0.3;
+        g.gain.setValueAtTime(0, ctx.currentTime);
+        g.gain.linearRampToValueAtTime(0.018, ctx.currentTime + 1.5);
+        g.gain.linearRampToValueAtTime(0,     ctx.currentTime + 4.5);
+        osc.connect(wf); wf.connect(g); g.connect(ctx.destination);
+        osc.start(); osc.stop(ctx.currentTime + 5);
+        setTimeout(windGust, 14000 + Math.random() * 20000);
+      }
+      setTimeout(windGust, 8000 + Math.random() * 10000);
+
+    } catch(e) { console.warn('Ambient audio failed:', e); }
+  }
+  // Start on any first interaction
+  document.addEventListener('click', startAmbientSound, { once: true });
+  document.addEventListener('keydown', startAmbientSound, { once: true });
+
   // ─── Real dice sounds ─────────────────────────────────────────────────────
   const _rollSfx = new Audio('/dice-roll.wav');
   _rollSfx.preload = 'auto'; _rollSfx.volume = 0.6;
