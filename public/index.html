@@ -1974,6 +1974,7 @@
   let _segTimers = [];
   let _roundCountdownInterval = null;
   function showRoundStartCountdown(roundNum) {
+    if (_blockGameScreen) return; // don't overlap winner card
     const overlay = document.getElementById('round-start-overlay');
     const label   = document.getElementById('round-start-label');
     const count   = document.getElementById('round-start-count');
