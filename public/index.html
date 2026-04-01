@@ -1462,13 +1462,15 @@
   // Classic craps table view: rotateX(30deg) rotateY(-30deg) base shows
   // top face + front face + right face simultaneously
   // Each value just rotates from this base to bring the right face to center-front
+  // Final resting rotations — face value facing STRAIGHT at player, easy to read
+  // face-1=front, face-2=bottom, face-3=left, face-4=right, face-5=top, face-6=back
   const VALUE_ROTATIONS = {
-    1: 'rotateX(30deg) rotateY(-30deg)',        // face-1 is front
-    2: 'rotateX(30deg) rotateY(-30deg) rotateZ(90deg)',   // face-2 visible
-    3: 'rotateX(30deg) rotateY(60deg)',         // face-3 front
-    4: 'rotateX(30deg) rotateY(-120deg)',       // face-4 front
-    5: 'rotateX(-60deg) rotateY(-30deg)',       // face-5 top
-    6: 'rotateX(30deg) rotateY(150deg)',        // face-6 front
+    1: 'rotateX(0deg) rotateY(0deg)',      // face-1 already faces front
+    2: 'rotateX(-90deg) rotateY(0deg)',    // rotate bottom face to front
+    3: 'rotateX(0deg) rotateY(90deg)',     // rotate left face to front
+    4: 'rotateX(0deg) rotateY(-90deg)',    // rotate right face to front
+    5: 'rotateX(90deg) rotateY(0deg)',     // rotate top face to front
+    6: 'rotateX(0deg) rotateY(180deg)',    // rotate back face to front
   };
   
   function buildDiceFaces() {
