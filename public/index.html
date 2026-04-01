@@ -2031,35 +2031,33 @@
       }
       setTimeout(windGust, 8000 + Math.random() * 10000);
 
-      // Real distant siren — single pass, very slow fades, stops well before clip ends
-      const _sirenSfx = new Audio('/siren.wav');
-      _sirenSfx.loop = false;
-      _sirenSfx.volume = 0;
+      // Distant siren via Web Audio API — proper gain ramp, guaranteed no abrupt cutoff
+      let _sirenBuffer = null;
+      fetch('/siren.wav').then(r => r.arrayBuffer()).then(buf => {
+        const tempCtx = new (window.AudioContext || window.webkitAudioContext)();
+        return tempCtx.decodeAudioData(buf);
+      }).then(decoded => { _sirenBuffer = decoded; }).catch(()=>{});
+
       function distantSiren() {
-        _sirenSfx.currentTime = 0;
-        _sirenSfx.volume = 0;
-        _sirenSfx.play().catch(()=>{});
-        const maxVol = 0.012; // barely there — very distant
-        let v = 0;
-        let fadingOut = false;
-        // Very slow fade in over 4s
-        const fadeIn = setInterval(() => {
-          if (fadingOut) { clearInterval(fadeIn); return; }
-          v = Math.min(v + 0.0002, maxVol);
-          _sirenSfx.volume = v;
-          if (v >= maxVol) clearInterval(fadeIn);
-        }, 50);
-        // Start fade out at 3s — very slow 5s fade to zero, stops at 8s total (well before any clip end)
-        setTimeout(() => {
-          fadingOut = true;
-          clearInterval(fadeIn);
-          const fadeOut = setInterval(() => {
-            v = Math.max(v - 0.00015, 0);
-            _sirenSfx.volume = v;
-            if (v <= 0) { clearInterval(fadeOut); _sirenSfx.pause(); }
-          }, 50);
-        }, 3000);
-        // Schedule next siren far apart
+        if (!_sirenBuffer) { setTimeout(distantSiren, 5000); return; }
+        try {
+          const ctx = new (window.AudioContext || window.webkitAudioContext)();
+          const source = ctx.createBufferSource();
+          source.buffer = _sirenBuffer;
+          const gain = ctx.createGain();
+          gain.gain.setValueAtTime(0, ctx.currentTime);
+          // Fade in over 3s to very quiet
+          gain.gain.linearRampToValueAtTime(0.012, ctx.currentTime + 3);
+          // Hold briefly then fade out over 4s — completely silent by 7s
+          gain.gain.setValueAtTime(0.012, ctx.currentTime + 3.5);
+          gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 7.5);
+          gain.gain.setValueAtTime(0, ctx.currentTime + 7.6);
+          source.connect(gain);
+          gain.connect(ctx.destination);
+          source.start(0);
+          // Hard stop at 7.6s — no chance of clip ending on its own
+          source.stop(ctx.currentTime + 7.6);
+        } catch(e) {}
         setTimeout(distantSiren, 50000 + Math.random() * 70000);
       }
       setTimeout(distantSiren, 20000 + Math.random() * 30000);
