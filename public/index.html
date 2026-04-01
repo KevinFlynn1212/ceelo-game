@@ -357,73 +357,67 @@
   }
 
   /* Dark gradient overlay for contrast */
-  /* ── Atmosphere: Steam ── */
+  /* ── Atmosphere: Steam from manhole ── */
   @keyframes steamRise {
-    0%   { transform: translateY(0) scaleX(1);   opacity: 0; }
-    15%  { opacity: 0.45; }
-    85%  { opacity: 0.12; }
-    100% { transform: translateY(-110px) scaleX(2.2); opacity: 0; }
+    0%   { transform: translateY(0) scaleX(1) rotate(var(--srot,0deg)); opacity: 0; }
+    12%  { opacity: 0.5; }
+    80%  { opacity: 0.08; }
+    100% { transform: translateY(-90px) scaleX(2.8) rotate(calc(var(--srot,0deg) + 15deg)); opacity: 0; }
+  }
+  /* Subtle warm glow at the manhole source */
+  .manhole-glow {
+    position: absolute;
+    bottom: 14%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px; height: 14px;
+    background: radial-gradient(ellipse, rgba(255,180,60,0.25) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 2;
+    filter: blur(4px);
   }
   .steam-puff {
     position: absolute;
-    bottom: 8%;
-    width: 28px;
-    height: 55px;
-    background: radial-gradient(ellipse at center, rgba(210,215,230,0.55) 0%, transparent 70%);
+    width: var(--sw, 22px);
+    height: 50px;
+    background: radial-gradient(ellipse at center, rgba(200,210,220,0.5) 0%, transparent 68%);
     border-radius: 50%;
     animation: steamRise var(--sd, 4s) ease-out infinite;
     animation-delay: var(--sdelay, 0s);
     pointer-events: none;
     z-index: 2;
-    filter: blur(6px);
+    filter: blur(7px);
   }
 
-  /* ── Atmosphere: Neon sign ── */
+  /* ── Atmosphere: Distant neon sign ── */
   @keyframes neonFlicker {
-    0%,18%,20%,22%,25%,53%,55%,100% {
-      opacity: 1;
-      text-shadow:
-        0 0 6px #ff2dff, 0 0 14px #ff2dff, 0 0 30px #ff2dff,
-        0 0 60px #c900c9, 0 0 4px #fff;
+    0%,18%,20%,22%,26%,52%,55%,100% {
+      opacity: 0.75;
+      filter: blur(1.5px) brightness(1.2);
+      text-shadow: 0 0 8px #ff2dff, 0 0 20px #ff2dff, 0 0 40px #c900c9;
     }
-    19%,24%,54% { opacity: 0.3; text-shadow: none; }
-    21%         { opacity: 0.8; }
-  }
-  @keyframes neonFlicker2 {
-    0%,40%,42%,70%,100% {
-      opacity: 1;
-      text-shadow:
-        0 0 6px #00f7ff, 0 0 14px #00f7ff, 0 0 28px #00f7ff,
-        0 0 55px #0099aa, 0 0 4px #fff;
-    }
-    41%,71%,72% { opacity: 0.2; text-shadow: none; }
+    19%,25%,53% { opacity: 0.08; filter: blur(2px) brightness(0.5); text-shadow: none; }
+    21%         { opacity: 0.45; }
   }
   .neon-sign {
     position: absolute;
-    top: 12%;
-    right: 8%;
+    /* Upper-center: perspective vanishing point of most alley shots */
+    top: 18%;
+    left: 50%;
+    transform: translateX(-50%);
     font-family: 'Courier New', monospace;
-    font-size: 1.05rem;
+    font-size: 0.7rem;
     font-weight: bold;
-    letter-spacing: 4px;
-    color: #ff88ff;
+    letter-spacing: 5px;
+    color: #ffaaff;
     pointer-events: none;
     z-index: 3;
-    animation: neonFlicker 6s infinite;
-  }
-  .neon-sign-2 {
-    position: absolute;
-    top: 22%;
-    left: 6%;
-    font-family: 'Courier New', monospace;
-    font-size: 0.75rem;
-    font-weight: bold;
-    letter-spacing: 3px;
-    color: #88ffff;
-    pointer-events: none;
-    z-index: 3;
-    animation: neonFlicker2 8s infinite;
-    animation-delay: 1.5s;
+    animation: neonFlicker 7s infinite;
+    /* Extra blur = far away in the alley depth */
+    filter: blur(1.5px) brightness(1.1);
+    opacity: 0.75;
+    white-space: nowrap;
   }
 
   .alley-section::before {
@@ -1316,13 +1310,14 @@
   <div class="alley-section">
 
     <!-- Atmospheric overlays -->
-    <div class="neon-sign">CEE-LO</div>
-    <div class="neon-sign-2">OPEN 24H</div>
-    <div class="steam-puff" style="--sd:3.8s; --sdelay:0s;   left:12%;"></div>
-    <div class="steam-puff" style="--sd:4.5s; --sdelay:1.2s; left:18%;"></div>
-    <div class="steam-puff" style="--sd:5.1s; --sdelay:0.6s; left:15%; width:20px;"></div>
-    <div class="steam-puff" style="--sd:4.2s; --sdelay:2.0s; right:20%;"></div>
-    <div class="steam-puff" style="--sd:3.6s; --sdelay:0.9s; right:14%; width:22px;"></div>
+    <!-- Distant neon sign — small + blurry = far back in alley -->
+    <div class="neon-sign">★ CEE-LO ★</div>
+    <!-- Manhole steam cluster — grouped in center-bottom where alley floor is -->
+    <div class="manhole-glow"></div>
+    <div class="steam-puff" style="--sd:3.9s;--sdelay:0s;   --srot:-8deg; --sw:18px; left:47%; bottom:14%;"></div>
+    <div class="steam-puff" style="--sd:4.8s;--sdelay:0.7s; --srot: 5deg; --sw:24px; left:50%; bottom:14%;"></div>
+    <div class="steam-puff" style="--sd:5.2s;--sdelay:1.4s; --srot:-3deg; --sw:16px; left:53%; bottom:15%;"></div>
+    <div class="steam-puff" style="--sd:4.1s;--sdelay:2.1s; --srot: 9deg; --sw:20px; left:49%; bottom:13%;"></div>
 
     <!-- 3D Dice Container -->
     <div class="dice-3d-container" id="dice-3d-container">
