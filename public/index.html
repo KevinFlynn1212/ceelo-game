@@ -477,6 +477,89 @@
     z-index: 1;
   }
 
+  /* ═══════════════════════════════════════════════════════════════════════════
+     BLUE ALLEY THEME — $10 Alley
+     Deep navy atmosphere, cyan neon, wet blue-lit cobblestones
+     ═══════════════════════════════════════════════════════════════════════════ */
+
+  /* Blue neon flicker animation */
+  @keyframes neonFlickerBlue {
+    0%,14%,16%,19%,22%,24%,38%,40%,65%,67%,100% {
+      opacity: 1;
+      box-shadow: 0 0 6px #0088cc, 0 0 16px #0088cc, 0 0 35px #0066aa,
+                  0 0 70px #004488, inset 0 0 10px rgba(0,150,255,0.15);
+    }
+    15%         { opacity: 0.04; box-shadow: none; }
+    17%         { opacity: 0.7; }
+    18%         { opacity: 0.03; box-shadow: none; }
+    20%,21%     { opacity: 0.5; box-shadow: 0 0 3px #0088cc; }
+    23%         { opacity: 0.06; box-shadow: none; }
+    39%         { opacity: 0.65; box-shadow: 0 0 4px #0088cc; }
+    66%         { opacity: 0.08; box-shadow: none; }
+  }
+  @keyframes neonWashBlue {
+    0%,14%,16%,19%,22%,24%,38%,40%,65%,67%,100% { opacity: 0.22; }
+    15%,18%,23%,66% { opacity: 0.02; }
+    17%,20%,21%,39% { opacity: 0.10; }
+  }
+
+  /* Blue alley background */
+  .theme-blue .alley-section {
+    background: linear-gradient(180deg, #050A12 0%, #0A1525 30%, #0F1520 60%, #0A0E18 100%);
+  }
+
+  /* Blue overlay gradient */
+  .theme-blue .alley-section::before {
+    background: linear-gradient(180deg, rgba(5,10,18,0.4) 0%, rgba(10,21,37,0.15) 40%, rgba(5,10,18,0.5) 100%);
+  }
+
+  /* Neon sign — cyan blue */
+  .theme-blue .neon-rect {
+    color: #66DDFF;
+    animation: neonFlickerBlue 7s infinite;
+    text-shadow:
+      0 0 8px #00AAFF,
+      0 0 18px #0088DD,
+      0 0 35px #0066BB,
+      0 0 70px #0055AA,
+      0 0 120px #003377;
+  }
+
+  /* Blue ambient wash from neon */
+  .theme-blue .neon-blue-wash {
+    background: radial-gradient(ellipse at 90% 30%, rgba(0,170,255,0.22) 0%, rgba(0,100,200,0.08) 45%, transparent 70%);
+    animation: neonWashBlue 7s infinite;
+  }
+
+  /* Blue floor glow */
+  .theme-blue .neon-floor-glow {
+    background: radial-gradient(ellipse at 85% 0%, rgba(0,120,220,0.15) 0%, transparent 60%);
+    animation: neonWashBlue 7s infinite;
+  }
+
+  /* Amber distant glow stays warm (streetlight contrast) but slightly cooler */
+  .theme-blue .distant-amber {
+    width: 50px; height: 50px;
+    background: radial-gradient(circle, rgba(255,184,68,0.55) 0%, rgba(255,150,40,0.15) 40%, transparent 70%);
+    filter: blur(12px);
+  }
+
+  /* Steam puffs — blue-gray tinted */
+  .theme-blue .steam-puff {
+    background: radial-gradient(ellipse at center, rgba(136,153,170,0.7) 0%, rgba(100,120,150,0.35) 50%, transparent 70%);
+  }
+
+  /* Manhole glow — cooler amber in blue alley */
+  .theme-blue .manhole-glow {
+    background: radial-gradient(ellipse, rgba(200,180,100,0.25) 0%, transparent 70%);
+  }
+
+  /* Blue-tinted info bar */
+  .theme-blue .game-info-bar {
+    background: rgba(5, 10, 20, 0.88);
+    border-bottom: 1px solid rgba(0, 140, 220, 0.25);
+  }
+
   /* Three.js canvas is injected directly into .alley-section */
   .dice-3d-container { display: none; } /* hidden — Three.js takes over */
 
@@ -1342,7 +1425,7 @@
 <!-- ===== SCREEN 2: LOBBY ===== -->
 <div id="screen-lobby" class="screen">
   <div class="lobby-header">
-    <div class="lobby-title">🎲 CEE-LO</div>
+    <div class="lobby-title">🎲 CEE-LO <span style="font-size:0.6em;color:var(--muted);font-weight:400;">Choose Your Alley</span></div>
     <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
       <div class="balance-display">Balance: $<span id="lobby-balance">—</span></div>
       <div id="lobby-player-name" style="color:var(--muted);font-size:0.85rem;font-family:'Lato',sans-serif;"></div>
@@ -1519,6 +1602,12 @@
     _prevRoomState = state;
     roomState = state;
     currentRoom = state.id;
+
+    // Apply alley theme
+    const gameEl = document.getElementById('screen-game');
+    gameEl.classList.remove('theme-red', 'theme-blue');
+    if (state.theme) gameEl.classList.add('theme-' + state.theme);
+
     renderGameState(state);
 
     // Don't override winner screen while it's showing
@@ -1662,10 +1751,12 @@
     rooms.forEach(room => {
       const card = document.createElement('div');
       card.className = 'room-card';
+      if (room.theme === 'blue') card.style.borderColor = 'rgba(0,140,220,0.4)';
       const stateClass = room.state === 'waiting' ? 'waiting' : 'active';
       const stateLabel = room.state === 'waiting' ? 'Waiting' : 'In Progress';
+      const themeColor = room.theme === 'blue' ? '#00AAFF' : '#ff5500';
       card.innerHTML = `
-        <div class="room-card-name">${escHtml(room.name)}</div>
+        <div class="room-card-name" style="color:${themeColor}">${escHtml(room.name)}</div>
         <div class="room-card-ante">$${room.ante}</div>
         <div class="room-card-ante-label">Ante per round</div>
         <div class="room-card-info">
@@ -1970,9 +2061,16 @@
 
   // ─── Ambient city soundscape ──────────────────────────────────────────────
   let _ambientStarted = false;
+  let _currentTheme = 'red';
+  function getActiveTheme() {
+    const g = document.getElementById('screen-game');
+    if (g && g.classList.contains('theme-blue')) return 'blue';
+    return 'red';
+  }
   function startAmbientSound() {
     if (_ambientStarted) return;
     _ambientStarted = true;
+    _currentTheme = getActiveTheme();
     try {
       const ctx = new (window.AudioContext || window.webkitAudioContext)();
 
@@ -2089,7 +2187,69 @@
         // Next meow well spaced out
         setTimeout(catMeow, 40000 + Math.random() * 70000);
       }
-      setTimeout(catMeow, 20000 + Math.random() * 30000);
+      setTimeout(catMeow, _currentTheme === 'blue' ? 60000 + Math.random() * 90000 : 20000 + Math.random() * 30000);
+
+      // ── Blue alley exclusive sounds ──
+      if (_currentTheme === 'blue') {
+        // Water drip — random single drips
+        function waterDrip() {
+          try {
+            const dCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const t = dCtx.currentTime;
+            const osc = dCtx.createOscillator();
+            const g = dCtx.createGain();
+            const f = dCtx.createBiquadFilter();
+            // Short high-pitched ping
+            osc.type = 'sine';
+            const freq = 2200 + Math.random() * 800;
+            osc.frequency.setValueAtTime(freq, t);
+            osc.frequency.exponentialRampToValueAtTime(freq * 0.4, t + 0.15);
+            f.type = 'bandpass'; f.frequency.value = 2000; f.Q.value = 2;
+            g.gain.setValueAtTime(0.03 + Math.random() * 0.02, t);
+            g.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+            osc.connect(f); f.connect(g); g.connect(dCtx.destination);
+            osc.start(t); osc.stop(t + 0.15);
+          } catch(e) {}
+          // Sometimes double drip
+          if (Math.random() < 0.3) setTimeout(waterDrip, 200 + Math.random() * 400);
+          setTimeout(waterDrip, 4000 + Math.random() * 12000);
+        }
+        setTimeout(waterDrip, 3000 + Math.random() * 6000);
+
+        // Distant thunder — very rare low rumble
+        function distantThunder() {
+          try {
+            const tCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const t = tCtx.currentTime;
+            const dur = 3 + Math.random() * 2;
+            const bufSize = 4096;
+            const noise = tCtx.createScriptProcessor(bufSize, 1, 1);
+            let last = 0;
+            noise.onaudioprocess = (e) => {
+              const out = e.outputBuffer.getChannelData(0);
+              for (let i = 0; i < bufSize; i++) {
+                const w = Math.random() * 2 - 1;
+                out[i] = (last + 0.01 * w) / 1.01;
+                last = out[i]; out[i] *= 5;
+              }
+            };
+            const lpf = tCtx.createBiquadFilter();
+            lpf.type = 'lowpass'; lpf.frequency.value = 80;
+            const g = tCtx.createGain();
+            g.gain.setValueAtTime(0, t);
+            g.gain.linearRampToValueAtTime(0.06, t + 0.3);
+            g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+            noise.connect(lpf); lpf.connect(g); g.connect(tCtx.destination);
+            setTimeout(() => { noise.disconnect(); }, dur * 1000 + 500);
+          } catch(e) {}
+          setTimeout(distantThunder, 60000 + Math.random() * 120000);
+        }
+        setTimeout(distantThunder, 30000 + Math.random() * 60000);
+
+        // Deeper city rumble for blue alley
+        rumbleGain.gain.value = 0.035;
+        lpf.frequency.value = 120;
+      }
 
     } catch(e) { console.warn('Ambient audio failed:', e); }
   }

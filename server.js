@@ -35,12 +35,12 @@ const TIMER_RESULTS_MS      = 6_000;
 const TIMER_SHOOTOUT_RAISE_MS = 5_000;
 const TIMER_BETWEEN_MS      = 2_000;
 
-// Pre-configured room definitions
+// Pre-configured room definitions — each ante level gets its own alley theme
 const ROOM_CONFIGS = [
-  { id: 'room-100',  name: '金100 Table',  ante: 100  },
-  { id: 'room-500',  name: '金500 Table',  ante: 500  },
-  { id: 'room-1000', name: '金1000 Table', ante: 1000 },
-  { id: 'room-5000', name: '金5000 Table', ante: 5000 },
+  { id: 'room-100',  name: '$5 Alley',   ante: 100,  theme: 'red'  },
+  { id: 'room-500',  name: '$10 Alley',  ante: 500,  theme: 'blue' },
+  { id: 'room-1000', name: '金1000 Alley', ante: 1000, theme: 'red'  },
+  { id: 'room-5000', name: '金5000 Alley', ante: 5000, theme: 'blue' },
 ];
 
 // ─── Wallet abstraction ─────────────────────────────────────────────────────────
@@ -77,6 +77,7 @@ function createRoom(config) {
     id:                config.id,
     name:              config.name,
     ante:              config.ante,
+    theme:             config.theme || 'red',
     state:             'lobby',  // lobby | ante | rolling | re_ante | shootout | results
     round:             0,
     pot:               0,
@@ -220,6 +221,7 @@ function getLobbyState() {
       id:             r.id,
       name:           r.name,
       ante:           r.ante,
+      theme:          r.theme,
       state:          r.state,
       round:          r.round,
       pot:            r.pot,
@@ -240,6 +242,7 @@ function serializeRoom(room) {
     id:                room.id,
     name:              room.name,
     ante:              room.ante,
+    theme:             room.theme,
     state:             room.state,
     round:             room.round,
     pot:               room.pot,
