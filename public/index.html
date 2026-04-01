@@ -407,18 +407,22 @@
   }
   .neon-rect {
     position: absolute;
-    top: 28%;
-    right: 8%;
-    width: 18px;
-    height: 58px;
-    border: 2px solid #ff3300;
-    border-radius: 3px;
-    background: rgba(255,50,0,0.07);
+    top: 26%;
+    right: 7%;
+    font-size: 0.95rem;
+    font-weight: 900;
+    writing-mode: vertical-rl;
+    letter-spacing: 4px;
+    color: #ff4400;
     pointer-events: none;
     z-index: 4;
     animation: neonFlicker 7s infinite;
-    /* Glow — slightly softer at distance */
-    filter: drop-shadow(0 0 6px #ff3300) drop-shadow(0 0 16px #ff2200) drop-shadow(0 0 30px #cc1100);
+    text-shadow:
+      0 0 6px #ff4400,
+      0 0 14px #ff3300,
+      0 0 28px #cc2200,
+      0 0 55px #991100;
+    filter: blur(0.4px);
   }
   /* Red ambient wash originating from mid-alley right wall */
   .neon-blue-wash {
@@ -1345,8 +1349,8 @@
   <div class="alley-section">
 
     <!-- Atmospheric overlays -->
-    <!-- Vertical cyan neon rectangle on right wall -->
-    <div class="neon-rect"></div>
+    <!-- Neon sign: 四五六 (4-5-6 Strungflowers) vertical on right wall -->
+    <div class="neon-rect">四五六</div>
     <!-- Blue ambient wash from neon -->
     <div class="neon-blue-wash"></div>
     <!-- Warm amber distant glow (street lamp far end of alley) -->
