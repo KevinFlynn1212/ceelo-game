@@ -370,7 +370,7 @@
     position: absolute;
     bottom: 30%;
     left: 50%;
-    transform: translateX(-50%) rotateX(35deg);
+    transform: translateX(-50%) rotateX(45deg);
     transform-style: preserve-3d;
     display: flex;
     gap: 30px;
@@ -383,10 +383,10 @@
 
   /* Throw animation on the container — dice fly from bottom to resting position */
   @keyframes throwIntoAlley {
-    0%   { bottom: 5%; transform: translateX(-50%) rotateX(15deg) scale(1.5); opacity: 0.7; }
-    40%  { bottom: 35%; transform: translateX(-50%) rotateX(40deg) scale(0.95); opacity: 1; }
-    70%  { bottom: 28%; transform: translateX(-50%) rotateX(38deg) scale(1.02); }
-    100% { bottom: 30%; transform: translateX(-50%) rotateX(35deg) scale(1); opacity: 1; }
+    0%   { bottom: 5%; transform: translateX(-50%) rotateX(20deg) scale(1.5); opacity: 0.7; }
+    40%  { bottom: 35%; transform: translateX(-50%) rotateX(48deg) scale(0.95); opacity: 1; }
+    70%  { bottom: 28%; transform: translateX(-50%) rotateX(43deg) scale(1.02); }
+    100% { bottom: 30%; transform: translateX(-50%) rotateX(45deg) scale(1); opacity: 1; }
   }
   .dice-3d-container.throwing {
     animation: throwIntoAlley 1.2s cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
@@ -1458,14 +1458,17 @@
     6: [1,0,1, 1,0,1, 1,0,1],
   };
   
-  // Rotation to show each face value facing the viewer
+  // Rotation to show each face value on TOP, viewed from above at an angle
+  // The container is already tilted 35° on X, so we rotate the die so the 
+  // correct face points UP (rotateX(-90deg) base) then add a slight Y twist
+  // This way you see the top face + a hint of front + a hint of side = real 3D
   const VALUE_ROTATIONS = {
-    1: 'rotateX(0deg) rotateY(0deg)',
-    2: 'rotateX(-90deg) rotateY(0deg)',
-    3: 'rotateX(0deg) rotateY(90deg)',
-    4: 'rotateX(0deg) rotateY(-90deg)',
-    5: 'rotateX(90deg) rotateY(0deg)',
-    6: 'rotateX(0deg) rotateY(180deg)',
+    1: 'rotateX(-25deg) rotateY(20deg)',
+    2: 'rotateX(-115deg) rotateY(15deg)',
+    3: 'rotateX(-25deg) rotateY(110deg)',
+    4: 'rotateX(-25deg) rotateY(-70deg)',
+    5: 'rotateX(65deg) rotateY(20deg)',
+    6: 'rotateX(-25deg) rotateY(200deg)',
   };
   
   function buildDiceFaces() {
