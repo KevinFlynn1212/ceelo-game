@@ -1612,6 +1612,9 @@
     gameEl.classList.remove('theme-red', 'theme-blue');
     if (state.theme) gameEl.classList.add('theme-' + state.theme);
 
+    // Start ambient sound for this alley's theme (safe — triggered by prior user gesture)
+    startAmbientSound(state.theme || 'red');
+
     renderGameState(state);
 
     // Don't override winner screen while it's showing
@@ -1777,6 +1780,8 @@
 
   function joinRoom(roomId) {
     isSpectator = false;
+    // Stop any previous ambient sound so it restarts with the correct new theme
+    stopAmbientSound();
     socket.emit('join_room', { name: myName, roomId });
     clearChat();
   }
@@ -2071,10 +2076,14 @@
     if (g && g.classList.contains('theme-blue')) return 'blue';
     return 'red';
   }
-  function startAmbientSound() {
+  function stopAmbientSound() {
+    // Reset so next joinRoom starts fresh with the correct theme
+    _ambientStarted = false;
+  }
+  function startAmbientSound(theme) {
     if (_ambientStarted) return;
     _ambientStarted = true;
-    _currentTheme = getActiveTheme();
+    _currentTheme = theme || getActiveTheme();
     try {
       const ctx = new (window.AudioContext || window.webkitAudioContext)();
 
@@ -2258,8 +2267,7 @@
     } catch(e) { console.warn('Ambient audio failed:', e); }
   }
   // Start on any first interaction
-  document.addEventListener('click', startAmbientSound, { once: true });
-  document.addEventListener('keydown', startAmbientSound, { once: true });
+  // Ambient sound is now started when joining an alley (see joinRoom)
 
   // ─── Real dice sounds ─────────────────────────────────────────────────────
   const _rollSfx = new Audio('/dice-roll.wav');
@@ -2768,6 +2776,7 @@
   // ===== LEAVE =====
   document.getElementById('btn-leave').addEventListener('click', () => {
     socket.emit('leave_room');
+    stopAmbientSound(); // reset so next alley starts with correct theme
     currentRoom = null;
     roomState = null;
     isSpectator = false;
