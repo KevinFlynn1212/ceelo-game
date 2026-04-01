@@ -1000,9 +1000,14 @@
     font-family: 'Lato', sans-serif;
     font-size: 0.85rem;
   }
-  .rank-num  { color: var(--muted); width: 20px; font-weight: 700; }
+  .rank-num  { color: var(--muted); width: 24px; font-weight: 700; }
   .rank-name { flex: 1; color: var(--paper); }
   .rank-result { color: var(--gold); font-weight: 600; }
+  .rank-row.rank-winner {
+    background: rgba(76,175,80,0.15);
+    border: 1px solid rgba(76,175,80,0.4);
+  }
+  .rank-row.rank-winner .rank-name { color: #7eff8a; font-weight: 700; }
 
   /* ═══════════════════════════════
      ERROR TOAST
@@ -1223,13 +1228,16 @@
   });
 
   let _prevRoomState = null;
+  let _blockGameScreen = false; // prevents room_state from hiding winner screen
   socket.on('room_state', (state) => {
     const prevState = _prevRoomState;
     _prevRoomState = state;
     roomState = state;
     currentRoom = state.id;
     renderGameState(state);
-    showScreen('game');
+
+    // Don't override winner screen while it's showing
+    if (!_blockGameScreen) showScreen('game');
 
     // Show round-start countdown when game transitions into 'ante' state
     if (state.state === 'ante' && (!prevState || prevState.state !== 'ante')) {
@@ -1289,8 +1297,9 @@
     }
   });
 
-  socket.on('round_end', ({ winner, pot, rake, isTie }) => {
-    showWinner(winner, pot, rake, isTie);
+  socket.on('round_end', (data) => {
+    _blockGameScreen = true;
+    showWinner(data);
   });
 
   socket.on('chat_message', (msg) => {
@@ -1863,51 +1872,89 @@
   });
 
   // ===== WINNER =====
-  function showWinner(winnerId, pot, rake, isTie) {
-    if (!roomState) return;
+  function showWinner(ev) {
+    const { winner, pot, rakeTaken, isTie, allDancing, carryoverPot, results } = ev;
+    const f = n => '金' + (n||0).toLocaleString();
 
-    const winnerPlayer = roomState.players
-      ? roomState.players.find(p => p.id === winnerId)
-      : null;
+    // Header content
+    let crown = '🏆', title = 'Round Winner', nameText = '', resultText = '', potText = '', rakeText = '';
 
-    const winnerName = isTie ? 'TIE!' : (winnerPlayer ? winnerPlayer.name : 'Unknown');
-    const winnerResult = winnerPlayer && winnerPlayer.result
-      ? (winnerPlayer.result.emoji || '') + ' ' + (winnerPlayer.result.label || '')
-      : '';
+    if (allDancing) {
+      crown = '🐉';
+      title = 'ALL DANCING DRAGON!';
+      nameText = 'Everybody loses!';
+      resultText = 'Pot doubles and carries over';
+      potText = `New pot: ${f(carryoverPot)}`;
+    } else if (isTie) {
+      crown = '⚔️';
+      title = 'TIE — SHOOTOUT!';
+      nameText = 'Dead heat!';
+      resultText = 'Tying players shoot it out';
+      potText = `Pot: ${f(pot)} up for grabs`;
+    } else if (winner) {
+      const wp = results && results.find(p => p.id === winner);
+      const isMe = winner === myId;
+      crown = isMe ? '🏆' : '🎉';
+      title = isMe ? 'YOU WIN!' : 'Round Over';
+      nameText = wp ? wp.name : 'Winner';
+      // Result label from event results
+      if (wp && wp.result) {
+        const t = wp.result.type || '';
+        if      (t==='456')   resultText = '🌟 Strungflowers!';
+        else if (t==='trips') resultText = `⚡ Trips ${wp.result.point||''}`;
+        else if (t==='point') resultText = `Point ${wp.result.point||''}`;
+        else if (t==='123')   resultText = '🐉 Dancing Dragon';
+        else                  resultText = wp.result.label || '';
+      }
+      const won = (pot||0) - (rakeTaken||0);
+      potText = `${f(won)} won` + (rakeTaken ? ` · House rake: ${f(rakeTaken)}` : '');
+    } else {
+      title = 'Round Over';
+      nameText = '—';
+    }
 
-    document.getElementById('winner-name').textContent = winnerName;
-    document.getElementById('winner-result').textContent = winnerResult;
-    document.getElementById('winner-pot').textContent = isTie ? 'Pot Carries Over' : ('Won $' + pot);
-    document.getElementById('winner-rake').textContent = rake ? `House rake: $${rake}` : '';
+    document.getElementById('winner-name').innerHTML = `<span style="font-size:2rem;">${crown}</span><br>${escHtml(nameText)}`;
+    document.getElementById('winner-result').textContent = resultText;
+    document.getElementById('winner-pot').textContent = potText;
+    document.getElementById('winner-rake').textContent = winner === myId && !isTie && !allDancing
+      ? (rakeTaken ? `(House rake: ${f(rakeTaken)} deducted)` : '') : '';
+    document.getElementById('winner-title').textContent = title;
 
-    // Rankings
+    // Rankings table from event results
     const rankings = document.getElementById('winner-rankings');
     rankings.innerHTML = '';
-    if (roomState.players) {
-      const sorted = [...roomState.players]
-        .filter(p => p.result)
-        .sort((a, b) => (b.result.score || 0) - (a.result.score || 0));
-
+    if (results && results.length > 0) {
+      const sorted = [...results].sort((a, b) => (b.score||0) - (a.score||0));
       sorted.forEach((p, i) => {
+        const t = p.result && p.result.type || '';
+        let rl = '—';
+        if      (t==='456')   rl = '🌟 Strungflowers';
+        else if (t==='trips') rl = `⚡ Trips ${p.result.point||''}`;
+        else if (t==='point') rl = `point ${p.result.point||''}`;
+        else if (t==='123')   rl = '🐉 Dancing Dragon';
+        else if (t==='bust')  rl = 'bust';
+        else if (t==='none')  rl = 'no combo';
+        else if (p.result)    rl = p.result.label||'—';
+        const isWin = p.id === winner;
         const row = document.createElement('div');
-        row.className = 'rank-row';
+        row.className = 'rank-row' + (isWin ? ' rank-winner' : '');
         row.innerHTML = `
-          <div class="rank-num">#${i+1}</div>
-          <div class="rank-name">${escHtml(p.name)}${p.id === myId ? ' (you)' : ''}</div>
-          <div class="rank-result">${p.result ? (p.result.emoji || '') + ' ' + (p.result.label || '') : '—'}</div>
+          <div class="rank-num">${isWin ? '🏆' : '#' + (i+1)}</div>
+          <div class="rank-name">${escHtml(p.name)}${p.id === myId ? ' <span style="color:var(--gold);font-size:0.75em;">(you)</span>' : ''}</div>
+          <div class="rank-result">${escHtml(rl)}</div>
         `;
         rankings.appendChild(row);
       });
     }
 
     showScreen('winner');
-
     if (winnerDismissTimer) clearTimeout(winnerDismissTimer);
-    winnerDismissTimer = setTimeout(() => { dismissWinner(); }, 6000);
+    winnerDismissTimer = setTimeout(() => dismissWinner(), 8000);
   }
 
   function dismissWinner() {
     if (winnerDismissTimer) { clearTimeout(winnerDismissTimer); winnerDismissTimer = null; }
+    _blockGameScreen = false;
     showScreen('game');
     // Hide dice and clear result label for new round
     clearDice();
