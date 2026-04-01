@@ -374,8 +374,8 @@
     display: flex;
     gap: 36px;
     z-index: 2;
-    perspective: 180px;
-    perspective-origin: 50% -20%;
+    perspective: 400px;
+    perspective-origin: 50% 120%;
     opacity: 0;
     transition: opacity 0.3s;
   }
@@ -422,6 +422,7 @@
     grid-template-rows: repeat(3, 1fr);
     padding: 8px;
     box-sizing: border-box;
+    backface-visibility: hidden;
   }
 
   /* Precision-drilled pips — recessed white circles with depth */
@@ -1459,16 +1460,13 @@
   // Show each face value using an isometric corner view
   // Base: rotateX(-25deg) rotateY(45deg) = classic 3-face corner view
   // Then rotate Y by 90° increments to bring the right face to the front
-  // Classic craps table view: rotateX(30deg) rotateY(-30deg) base shows
-  // top face + front face + right face simultaneously
-  // Each value just rotates from this base to bring the right face to center-front
   const VALUE_ROTATIONS = {
-    1: 'rotateX(30deg) rotateY(-30deg)',        // face-1 is front
-    2: 'rotateX(30deg) rotateY(-30deg) rotateZ(90deg)',   // face-2 visible
-    3: 'rotateX(30deg) rotateY(60deg)',         // face-3 front
-    4: 'rotateX(30deg) rotateY(-120deg)',       // face-4 front
-    5: 'rotateX(-60deg) rotateY(-30deg)',       // face-5 top
-    6: 'rotateX(30deg) rotateY(150deg)',        // face-6 front
+    1: 'rotateX(-25deg) rotateY(45deg)',       // face-1 front-right
+    2: 'rotateX(65deg) rotateY(45deg)',        // face-2 (top) on front
+    3: 'rotateX(-25deg) rotateY(135deg)',      // face-3 on front
+    4: 'rotateX(-25deg) rotateY(-45deg)',      // face-4 on front
+    5: 'rotateX(-115deg) rotateY(45deg)',      // face-5 on front
+    6: 'rotateX(-25deg) rotateY(225deg)',      // face-6 on front
   };
   
   function buildDiceFaces() {
