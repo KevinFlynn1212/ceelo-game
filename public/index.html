@@ -2113,9 +2113,8 @@
       : '';
     awOverlay.classList.remove('hiding');
     awOverlay.style.display = '';
-
-    // Also show detailed rankings in the existing winner screen
-    showScreen('winner');
+    // Stay on game screen so alley + dice stay visible behind the overlay
+    showScreen('game');
 
     // Fly coins if someone won
     if (winner && !isTie && !allDancing) launchCoins(winner === myId ? 30 : 12);
