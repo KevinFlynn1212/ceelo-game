@@ -472,9 +472,9 @@
     100% { transform: translateX(-50%) scale(0.8) translateY(-20px); opacity: 0; }
   }
   .alley-winner-overlay {
-    position: absolute;
+    position: fixed;
     top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
+    transform: translate(-50%, -60%);
     z-index: 50;
     pointer-events: none;
   }
@@ -1647,7 +1647,8 @@
           slot.classList.add('is-winner');
           if (!_coinLaunchedFor.has(player.id)) {
             _coinLaunchedFor.add(player.id);
-            launchCoinsFromSeat(slot);
+            // Delay so slot is in DOM and has a real bounding rect
+            setTimeout(() => launchCoinsFromSeat(slot), 50);
           }
         }
 
@@ -2203,7 +2204,7 @@
           position:fixed;
           left:${cx}px; top:${cy}px;
           font-size:${size}rem;
-          z-index:300;
+          z-index:9999;
           pointer-events:none;
           will-change:transform,opacity;
         `;
