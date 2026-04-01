@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CEE-LO</title>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@400;700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.20.0/matter.min.js"></script>
+
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -365,15 +365,72 @@
     z-index: 1;
   }
 
-  /* Physics dice canvas — transparent overlay */
-  #alley-canvas {
+  /* 3D Dice */
+  .dice-3d-container {
     position: absolute;
-    top: 0; left: 0;
-    width: 100%;
-    height: 100%;
-    display: block;
-    background: transparent;
+    bottom: 28%;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 24px;
     z-index: 2;
+    perspective: 500px;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .dice-3d-container.visible { opacity: 1; }
+
+  .die-3d {
+    width: 64px;
+    height: 64px;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.4s ease-out;
+  }
+  .die-3d.rolling {
+    transition: none;
+  }
+
+  .die-face {
+    position: absolute;
+    width: 64px;
+    height: 64px;
+    background: #cc2222;
+    border: 2px solid #8b0000;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    padding: 8px;
+    box-sizing: border-box;
+    backface-visibility: hidden;
+  }
+
+  .die-face .pip {
+    width: 10px;
+    height: 10px;
+    background: white;
+    border-radius: 50%;
+    align-self: center;
+    justify-self: center;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.3);
+  }
+  .die-face .pip-empty { visibility: hidden; width: 10px; height: 10px; }
+
+  /* 6 cube faces */
+  .face-1 { transform: rotateY(0deg) translateZ(32px); }
+  .face-6 { transform: rotateY(180deg) translateZ(32px); }
+  .face-3 { transform: rotateY(-90deg) translateZ(32px); }
+  .face-4 { transform: rotateY(90deg) translateZ(32px); }
+  .face-2 { transform: rotateX(90deg) translateZ(32px); }
+  .face-5 { transform: rotateX(-90deg) translateZ(32px); }
+
+  @keyframes diceRoll {
+    0%   { transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg); }
+    20%  { transform: rotateX(320deg) rotateY(200deg) rotateZ(100deg); }
+    40%  { transform: rotateX(600deg) rotateY(420deg) rotateZ(250deg); }
+    60%  { transform: rotateX(920deg) rotateY(600deg) rotateZ(370deg); }
+    80%  { transform: rotateX(1200deg) rotateY(800deg) rotateZ(480deg); }
+    100% { transform: rotateX(1440deg) rotateY(1080deg) rotateZ(540deg); }
   }
 
   /* ── Room info bar (thin dark strip at top) ── */
@@ -978,8 +1035,12 @@
   <!-- TOP SECTION (70vh): Alley Scene — photo background + physics canvas overlay -->
   <div class="alley-section">
 
-    <!-- Physics dice canvas — transparent overlay on top of photo -->
-    <canvas id="alley-canvas"></canvas>
+    <!-- 3D Dice Container -->
+    <div class="dice-3d-container" id="dice-3d-container">
+      <div class="die-3d" id="die-0"></div>
+      <div class="die-3d" id="die-1"></div>
+      <div class="die-3d" id="die-2"></div>
+    </div>
 
     <!-- Room info bar (thin dark strip at top) -->
     <div class="game-info-bar">
@@ -1154,12 +1215,10 @@
       el.style.display = 'flex';
       el.classList.add('active');
     }
-    // Initialize PhysicsDice when game screen is first shown
+    // Build 3D dice faces when game screen is first shown
     if (name === 'game' && !physicsDiceReady) {
       physicsDiceReady = true;
-      setTimeout(() => {
-        PhysicsDice.init(document.getElementById('alley-canvas'));
-      }, 60);
+      buildDiceFaces();
     }
   }
 
@@ -1347,34 +1406,108 @@
     // Will be updated via next room_state; no immediate action needed
   }
 
-  // ===== DICE =====
-  // Show dice statically (state sync / reconnect) — places dice at fixed positions
+  // ===== DICE (CSS 3D) =====
+  
+  // Pip grid positions for each face value (3x3 grid, 9 cells)
+  // 1=pip, 0=empty
+  const PIP_GRIDS = {
+    1: [0,0,0, 0,1,0, 0,0,0],
+    2: [0,0,1, 0,0,0, 1,0,0],
+    3: [0,0,1, 0,1,0, 1,0,0],
+    4: [1,0,1, 0,0,0, 1,0,1],
+    5: [1,0,1, 0,1,0, 1,0,1],
+    6: [1,0,1, 1,0,1, 1,0,1],
+  };
+  
+  // Rotation to show each face value facing the viewer
+  const VALUE_ROTATIONS = {
+    1: 'rotateX(0deg) rotateY(0deg)',
+    2: 'rotateX(-90deg) rotateY(0deg)',
+    3: 'rotateX(0deg) rotateY(90deg)',
+    4: 'rotateX(0deg) rotateY(-90deg)',
+    5: 'rotateX(90deg) rotateY(0deg)',
+    6: 'rotateX(0deg) rotateY(180deg)',
+  };
+  
+  function buildDiceFaces() {
+    for (let d = 0; d < 3; d++) {
+      const die = document.getElementById('die-' + d);
+      die.innerHTML = '';
+      for (let face = 1; face <= 6; face++) {
+        const faceEl = document.createElement('div');
+        faceEl.className = 'die-face face-' + face;
+        const grid = PIP_GRIDS[face];
+        for (let c = 0; c < 9; c++) {
+          const cell = document.createElement('span');
+          cell.className = grid[c] ? 'pip' : 'pip-empty';
+          faceEl.appendChild(cell);
+        }
+        die.appendChild(faceEl);
+      }
+    }
+  }
+  
   function displayDice(values) {
     if (!physicsDiceReady) return;
-    PhysicsDice.showStatic(values);
+    const container = document.getElementById('dice-3d-container');
+    container.classList.add('visible');
+    for (let i = 0; i < 3; i++) {
+      const die = document.getElementById('die-' + i);
+      die.classList.remove('rolling');
+      die.style.animation = '';
+      die.style.transform = VALUE_ROTATIONS[values[i]] || '';
+    }
   }
 
-  // Animate dice via physics engine
   function animateDice(finalValues, evaluation) {
     animating = true;
-
-    // Disable roll button during animation
     const btn = document.getElementById('btn-roll');
     if (btn) { btn.disabled = true; btn.textContent = '🎲 Rolling...'; }
 
-    PhysicsDice.throwDice(finalValues, () => {
-      animating = false;
-      if (evaluation) {
-        document.getElementById('result-label').textContent =
-          (evaluation.emoji || '') + ' ' + (evaluation.label || '');
-      }
-      setTimeout(() => {
-        if (roomState) {
-          const me = roomState.players ? roomState.players.find(p => p.id === myId) : null;
-          updateRollButton(roomState, me);
+    const container = document.getElementById('dice-3d-container');
+    container.classList.add('visible');
+    
+    const durations = [1.2, 1.4, 1.6]; // staggered for natural feel
+    let finished = 0;
+    
+    for (let i = 0; i < 3; i++) {
+      const die = document.getElementById('die-' + i);
+      die.classList.add('rolling');
+      die.style.transition = 'none';
+      die.style.animation = `diceRoll ${durations[i]}s cubic-bezier(0.2, 0.8, 0.3, 1)`;
+      
+      die.addEventListener('animationend', function handler() {
+        die.removeEventListener('animationend', handler);
+        die.classList.remove('rolling');
+        die.style.animation = '';
+        die.style.transition = 'transform 0.35s ease-out';
+        die.style.transform = VALUE_ROTATIONS[finalValues[i]] || '';
+        
+        finished++;
+        if (finished === 3) {
+          animating = false;
+          if (evaluation) {
+            document.getElementById('result-label').textContent =
+              (evaluation.emoji || '') + ' ' + (evaluation.label || '');
+          }
+          setTimeout(() => {
+            if (roomState) {
+              const me = roomState.players ? roomState.players.find(p => p.id === myId) : null;
+              updateRollButton(roomState, me);
+            }
+          }, 200);
         }
-      }, 200);
-    });
+      });
+    }
+  }
+
+  function clearDice() {
+    const container = document.getElementById('dice-3d-container');
+    if (container) container.classList.remove('visible');
+    for (let i = 0; i < 3; i++) {
+      const die = document.getElementById('die-' + i);
+      if (die) { die.style.animation = ''; die.style.transform = ''; die.classList.remove('rolling'); }
+    }
   }
 
   // ===== TIMER =====
@@ -1459,8 +1592,8 @@
   function dismissWinner() {
     if (winnerDismissTimer) { clearTimeout(winnerDismissTimer); winnerDismissTimer = null; }
     showScreen('game');
-    // Clear physics canvas and result label for new round
-    PhysicsDice.clear();
+    // Hide dice and clear result label for new round
+    clearDice();
     document.getElementById('result-label').textContent = '';
     const btn = document.getElementById('btn-roll');
     if (btn && (btn.textContent.includes('Done') || btn.textContent === '✓ Done')) {
@@ -1483,8 +1616,8 @@
     currentRoom = null;
     roomState = null;
     isSpectator = false;
-    // Clear physics canvas
-    PhysicsDice.clear();
+    // Hide dice
+    clearDice();
     document.getElementById('result-label').textContent = '';
     hideReAnteOffer();
     clearChat();
@@ -1584,330 +1717,23 @@
 })();
 </script>
 
-<!-- ═══════════════════════════════════════════════════
-     PHYSICS DICE SYSTEM
-     Matter.js-based dice rolling on the alley canvas
-═══════════════════════════════════════════════════ -->
+<!-- Removed PhysicsDice — now using CSS 3D dice above -->
 <script>
-// Physics dice system
-const PhysicsDice = {
-  engine: null,
-  canvas: null,
-  ctx: null,
-  diceSize: 80,
-  bodies: [],
-  values: [1, 1, 1],
-  animating: false,
+// Legacy PhysicsDice stub (prevents errors if anything still references it)
+const PhysicsDice = { init(){}, showStatic(){}, throwDice(v,cb){ if(cb)cb(); }, clear(){} };
+</script>
 
-  init(canvas) {
-    this.canvas = canvas;
-    this.ctx = canvas.getContext('2d');
-    // Low gravity — dice are rolling on flat ground, not falling through air
-    // Positive Y gravity gently pulls dice "back toward player" (deceleration)
-    this.engine = Matter.Engine.create({ gravity: { x: 0, y: 0.25 } });
+<script>
+// PLACEHOLDER — old PhysicsDice code removed
+</script>
 
-    this.resize();
-    window.addEventListener('resize', () => this.resize());
-  },
-
-  resize() {
-    if (!this.canvas) return;
-    const parent = this.canvas.parentElement;
-    this.canvas.width = parent.clientWidth;
-    this.canvas.height = parent.clientHeight;
-    this.setupWalls();
-  },
-
-  setupWalls() {
-    const w = this.canvas.width;
-    const h = this.canvas.height;
-
-    // Remove old static bodies
-    const staticBodies = Matter.Composite.allBodies(this.engine.world).filter(b => b.isStatic);
-    staticBodies.forEach(b => Matter.Composite.remove(this.engine.world, b));
-
-    // Simple containment box — keeps dice in the center of the alley
-    // Ground — dice land at 60% height (mid-alley, clearly visible)
-    const groundY = h * 0.60;
-    Matter.Composite.add(this.engine.world,
-      Matter.Bodies.rectangle(w / 2, groundY + 30, w, 60, { isStatic: true, restitution: 0.4 })
-    );
-
-    // Left wall — at 30% width (alley walkway edge)
-    Matter.Composite.add(this.engine.world,
-      Matter.Bodies.rectangle(w * 0.28, h / 2, 30, h, { isStatic: true, restitution: 0.6 })
-    );
-
-    // Right wall — at 70% width (other alley edge)
-    Matter.Composite.add(this.engine.world,
-      Matter.Bodies.rectangle(w * 0.72, h / 2, 30, h, { isStatic: true, restitution: 0.6 })
-    );
-
-    // Ceiling
-    Matter.Composite.add(this.engine.world,
-      Matter.Bodies.rectangle(w / 2, -30, w, 60, { isStatic: true })
-    );
-  },
-
-  throwDice(finalValues, callback) {
-    this.animating = true;
-    this.values = finalValues;
-    const w = this.canvas.width;
-    const h = this.canvas.height;
-    const s = this.diceSize;
-
-    // Remove old dice bodies
-    this.bodies.forEach(b => Matter.Composite.remove(this.engine.world, b));
-    this.bodies = [];
-
-    // Dice thrown from bottom center — roll up into mid-alley
-    for (let i = 0; i < 3; i++) {
-      const offsetX = (i - 1) * 60 + (Math.random() - 0.5) * 30;
-      const die = Matter.Bodies.rectangle(
-        w * 0.5 + offsetX,
-        h * 0.75,  // start in lower portion
-        s, s,
-        {
-          restitution: 0.65,   // bouncy enough to ricochet off walls
-          friction: 0.35,
-          frictionAir: 0.008,  // air drag — dice slow down as they roll away
-          density: 0.002,
-          angle: Math.random() * Math.PI * 2,
-          // No chamfer — sharp square edges like Vegas craps dice
-        }
-      );
-
-      // Throw upward into the alley with slight horizontal scatter
-      Matter.Body.applyForce(die, die.position, {
-        x: (Math.random() - 0.5) * 0.06,
-        y: -0.20 - Math.random() * 0.08,
-      });
-
-      // Good spin — dice tumble as they roll
-      Matter.Body.setAngularVelocity(die, (Math.random() - 0.5) * 0.6);
-
-      this.bodies.push(die);
-      Matter.Composite.add(this.engine.world, die);
-    }
-
-    // Run physics simulation
-    let frame = 0;
-    const maxFrames = 180; // ~3 seconds at 60fps — gives dice time to bounce around
-
-    const step = () => {
-      Matter.Engine.update(this.engine, 1000 / 60);
-      this.draw();
-      frame++;
-
-      const settled = this.bodies.every(b =>
-        Math.abs(b.velocity.x) < 0.3 && Math.abs(b.velocity.y) < 0.3
-      );
-
-      if ((settled && frame > 30) || frame >= maxFrames) {
-        this.animating = false;
-        this.drawFinal();
-        if (callback) callback();
-      } else {
-        requestAnimationFrame(step);
-      }
-    };
-
-    requestAnimationFrame(step);
-  },
-
-  // Show dice at fixed positions without animation (state sync / reconnect)
-  showStatic(values) {
-    if (!this.ctx) return;
-    this.values = values;
-    const w = this.canvas.width;
-    const h = this.canvas.height;
-    const ctx = this.ctx;
-
-    ctx.clearRect(0, 0, w, h);
-
-    // Static 3D dice at rest position — mid-alley, slightly spread
-    const restY = h * 0.55;
-    const positions = [
-      { x: w * 0.35, y: restY },
-      { x: w * 0.50, y: restY - 8 },
-      { x: w * 0.65, y: restY + 4 },
-    ];
-
-    positions.forEach((pos, i) => {
-      const yRatio = pos.y / h;
-      const scale = 0.75 + yRatio * 0.25;
-      this.draw3dDie(ctx, pos.x, pos.y, this.diceSize, values[i], 0, scale);
-    });
-  },
-
-  // ── 3D Isometric Dice Drawing ──
-  // Each die is drawn as a 3D cube: top face + right face + left face
-  // Opposite faces on a die sum to 7: 1↔6, 2↔5, 3↔4
-  
-  draw3dDie(ctx, x, y, s, topVal, angle, scale) {
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.scale(scale, scale);
-    
-    // Isometric dimensions
-    const top = s;         // top face size
-    const depth = s * 0.4; // how tall the side faces are
-    const hw = top / 2;    // half width
-    
-    // Ground shadow
-    ctx.save();
-    ctx.shadowColor = 'rgba(0,0,0,0.6)';
-    ctx.shadowBlur = 15;
-    ctx.shadowOffsetX = 5;
-    ctx.shadowOffsetY = 8;
-    ctx.fillStyle = 'rgba(0,0,0,0)';
-    ctx.fillRect(-hw - 2, -hw - 2, top + 4, top + depth + 4);
-    ctx.restore();
-    
-    // Determine side face values based on top value
-    // Standard die: opposite faces sum to 7
-    // We pick plausible side faces based on top
-    const rightVal = topVal <= 3 ? topVal + 1 : topVal - 1;
-    const frontVal = topVal === 1 ? 3 : topVal === 6 ? 4 : (7 - topVal) > 3 ? 2 : 5;
-    
-    // ── FRONT FACE (bottom visible face) ── Vegas red, sharp edges
-    ctx.fillStyle = '#9b1b1b'; // dark red — shadowed front
-    ctx.strokeStyle = 'rgba(40,0,0,0.6)';
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.moveTo(-hw, 0);
-    ctx.lineTo(hw, 0);
-    ctx.lineTo(hw, depth);
-    ctx.lineTo(-hw, depth);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-    
-    // Front face pips — white
-    this.drawFacePips(ctx, frontVal, 0, depth / 2, hw * 0.8, depth * 0.35, 0.08 * s, '#ffffff');
-    
-    // ── RIGHT FACE (side visible face) ── darker red — in shadow
-    ctx.fillStyle = '#7a1515'; // deep shadow red
-    ctx.beginPath();
-    ctx.moveTo(hw, -top + depth);
-    ctx.lineTo(hw + depth * 0.5, -top);
-    ctx.lineTo(hw + depth * 0.5, depth * 0.5);
-    ctx.lineTo(hw, depth);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-    
-    // Right face pips — white
-    const rx = hw + depth * 0.25;
-    const ry = (-top + depth * 1.5) / 2;
-    this.drawFacePips(ctx, rightVal, rx, ry, depth * 0.18, (top - depth) * 0.3, 0.06 * s, '#ffffff');
-    
-    // ── TOP FACE (main face — shows the value) ── bright casino red
-    ctx.fillStyle = '#cc2222'; // bright red — well lit top face
-    ctx.beginPath();
-    ctx.moveTo(-hw, -top + depth);
-    ctx.lineTo(-hw + depth * 0.5, -top);
-    ctx.lineTo(hw + depth * 0.5, -top);
-    ctx.lineTo(hw, -top + depth);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-    
-    // Top face pips — bright white
-    const topCx = depth * 0.25;
-    const topCy = -top + depth / 2;
-    this.drawFacePips(ctx, topVal, topCx, topCy, hw * 0.65, (top - depth) * 0.35, 0.1 * s, '#ffffff');
-    
-    // Sharp highlight edge — gives that precision-cut casino look
-    ctx.strokeStyle = 'rgba(255,100,100,0.4)';
-    ctx.lineWidth = 0.8;
-    ctx.beginPath();
-    ctx.moveTo(-hw, -top + depth);
-    ctx.lineTo(-hw + depth * 0.5, -top);
-    ctx.lineTo(hw + depth * 0.5, -top);
-    ctx.stroke();
-    
-    ctx.restore();
-  },
-  
-  // Draw pips on any face, centered at (cx, cy), spread by (sx, sy), pip radius r
-  drawFacePips(ctx, val, cx, cy, sx, sy, r, color) {
-    const v = parseInt(val, 10);
-    if (!v || v < 1 || v > 6) return;
-    
-    const pip = (px, py) => {
-      ctx.fillStyle = color;
-      ctx.beginPath();
-      ctx.arc(cx + px, cy + py, r, 0, Math.PI * 2);
-      ctx.fill();
-    };
-    
-    if (v === 1) { pip(0, 0); }
-    if (v === 2) { pip(-sx, -sy); pip(sx, sy); }
-    if (v === 3) { pip(-sx, -sy); pip(0, 0); pip(sx, sy); }
-    if (v === 4) { pip(-sx, -sy); pip(sx, -sy); pip(-sx, sy); pip(sx, sy); }
-    if (v === 5) { pip(-sx, -sy); pip(sx, -sy); pip(0, 0); pip(-sx, sy); pip(sx, sy); }
-    if (v === 6) { pip(-sx, -sy); pip(sx, -sy); pip(-sx, 0); pip(sx, 0); pip(-sx, sy); pip(sx, sy); }
-  },
-
-  draw() {
-    const ctx = this.ctx;
-    ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    const canvasH = this.canvas.height;
-    
-    this.bodies.forEach((body, i) => {
-      const yRatio = body.position.y / canvasH;
-      const scale = 0.75 + yRatio * 0.25;
-      const faceVal = this.animating ? Math.ceil(Math.random() * 6) : this.values[i];
-      this.draw3dDie(ctx, body.position.x, body.position.y, this.diceSize, faceVal, body.angle, scale);
-    });
-  },
-
-  drawFinal() {
-    const ctx = this.ctx;
-    ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    const canvasH = this.canvas.height;
-    
-    this.bodies.forEach((body, i) => {
-      const yRatio = body.position.y / canvasH;
-      const scale = 0.75 + yRatio * 0.25;
-      this.draw3dDie(ctx, body.position.x, body.position.y, this.diceSize, this.values[i], 0, scale);
-    });
-  },
-
-  // Clear canvas and remove dice bodies
-  clear() {
-    if (!this.ctx || !this.canvas) return;
-    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    this.bodies.forEach(b => {
-      try { Matter.Composite.remove(this.engine.world, b); } catch(e) {}
-    });
-    this.bodies = [];
-    this.animating = false;
-  },
-
-  // Legacy pip drawing (kept for static display)
-  drawPips(ctx, val, half) {
-    const v = parseInt(val, 10);
-    if (!v || v < 1 || v > 6) return;
-
-    const pip = (x, y) => {
-      ctx.fillStyle = '#1a0e00';
-      ctx.beginPath();
-      ctx.arc(x, y, half * 0.13, 0, Math.PI * 2);
-      ctx.fill();
-    };
-
-    const p = half * 0.55;
-
-    if (v === 1) { pip(0, 0); }
-    if (v === 2) { pip(-p, -p); pip(p, p); }
-    if (v === 3) { pip(-p, -p); pip(0, 0); pip(p, p); }
-    if (v === 4) { pip(-p, -p); pip(p, -p); pip(-p, p); pip(p, p); }
-    if (v === 5) { pip(-p, -p); pip(p, -p); pip(0, 0); pip(-p, p); pip(p, p); }
-    if (v === 6) { pip(-p, -p); pip(p, -p); pip(-p, 0); pip(p, 0); pip(-p, p); pip(p, p); }
-  }
-};
+<!-- Old PhysicsDice removed -->
+<script>
+// Stub only
+if (typeof PhysicsDice === 'undefined') {
+  var PhysicsDice = { init(){}, showStatic(){}, throwDice(v,cb){if(cb)cb();}, clear(){} };
+}
+}
 </script>
 
 </body>
