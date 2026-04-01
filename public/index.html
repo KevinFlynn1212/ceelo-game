@@ -463,18 +463,19 @@
   /* ── Result label (floats over dice landing area) ── */
   /* ─── In-alley winner celebration ─── */
   @keyframes alleyWinIn {
-    0%   { transform: translate(-50%,-55%) scale(0.5); opacity: 0; }
-    60%  { transform: translate(-50%,-55%) scale(1.06); opacity: 1; }
-    100% { transform: translate(-50%,-55%) scale(1); opacity: 1; }
+    0%   { transform: scale(0.5); opacity: 0; }
+    60%  { transform: scale(1.06); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
   }
   @keyframes alleyWinOut {
-    0%   { transform: translateX(-50%) scale(1) translateY(0); opacity: 1; }
-    100% { transform: translateX(-50%) scale(0.8) translateY(-20px); opacity: 0; }
+    0%   { transform: scale(1); opacity: 1; }
+    100% { transform: scale(0.8); opacity: 0; }
   }
   .alley-winner-overlay {
     position: fixed;
-    top: 50%; left: 50%;
-    transform: translate(-50%,-55%);
+    top: 35%;
+    left: 50%;
+    transform: translate(-50%, -50%);
     z-index: 9000;
     pointer-events: none;
   }
