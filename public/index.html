@@ -1472,6 +1472,8 @@
 
   socket.on('round_end', (data) => {
     _blockGameScreen = true;
+    // Ensure hideRoundStartCountdown so it doesn't overlap winner card
+    hideRoundStartCountdown();
     showWinner(data);
   });
 
@@ -2048,7 +2050,7 @@
 
   // ===== WINNER =====
   function showWinner(ev) {
-    const { winner, pot, rakeTaken, isTie, allDancing, carryoverPot, results } = ev;
+    const { winner, winnerName, pot, rakeTaken, isTie, allDancing, carryoverPot, results } = ev;
     const f = n => '金' + (n||0).toLocaleString();
 
     // Header content
@@ -2076,10 +2078,11 @@
       const wpTop = (!wp && !wpFallback && results && results.length > 0)
         ? [...results].sort((a,b) => (b.score||0) - (a.score||0))[0] : null;
       const winPlayer = wp || wpFallback || wpTop;
-      const isMe = winner === myId || (winPlayer && winPlayer.id === myId);
+      const isMe = winner === myId || (winPlayer && winPlayer.id === myId)
+                   || (winnerName && winnerName === myName);
       crown = isMe ? '🏆' : '🎉';
       title = isMe ? '🏆 YOU WIN! 🏆' : 'Round Over';
-      nameText = winPlayer ? winPlayer.name : isMe ? (myName || 'You') : 'Winner';
+      nameText = winPlayer ? winPlayer.name : winnerName || (isMe ? (myName || 'You') : 'Winner');
       // Result label from event results
       if (winPlayer && winPlayer.result) {
         const t = winPlayer.result.type || '';

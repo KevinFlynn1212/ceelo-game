@@ -615,10 +615,12 @@ function endRound(room) {
   // ── Single winner ─────────────────────────────────────────────────────────
   if (topPlayers.length === 1 && distributablePot > 0) {
     WalletService.credit(topPlayers[0].wallet, distributablePot);
-    room.winner = topPlayers[0].name;
+    room.winner   = topPlayers[0].name;
+    room.winnerId = topPlayers[0].id;
     sysMsg(room, `🏆 ${room.winner} wins 金${distributablePot.toLocaleString()}!`);
   } else {
-    room.winner = '—';
+    room.winner   = '—';
+    room.winnerId = null;
   }
   room.isTie = false;
 
@@ -639,7 +641,8 @@ function endRound(room) {
   io.to(room.id).emit('round_end', {
     roomId:    room.id,
     round:     room.round,
-    winner:    room.winner,
+    winner:    room.winnerId,   // socket ID so client can match
+    winnerName: room.winner,    // name for display fallback
     isTie:     false,
     allDancing: false,
     pot:       distributablePot,
@@ -782,8 +785,9 @@ function resolveShootout(room) {
   if (winners.length === 1) {
     // Clear winner
     WalletService.credit(winners[0].wallet, room.pot);
-    room.winner = winners[0].name;
-    room.isTie  = false;
+    room.winner   = winners[0].name;
+    room.winnerId = winners[0].id;
+    room.isTie    = false;
     sysMsg(room, `⚔️ SHOOTOUT WINNER: ${room.winner} takes 金${room.pot.toLocaleString()}!`);
 
     room.roundHistory.push({
@@ -799,12 +803,14 @@ function resolveShootout(room) {
     io.to(room.id).emit('round_end', {
       roomId:       room.id,
       round:        room.round,
-      winner:       room.winner,
+      winner:       room.winnerId,
+      winnerName:   room.winner,
       isTie:        false,
       wasShootout:  true,
       shootoutRound: room.shootoutRound,
       pot:          room.pot,
       rakeTaken:    room.rake,
+      results:      contenders.map(p => ({ id: p.id, name: p.name, result: p.result, score: p.shootoutScore })),
     });
 
     room.state = 'results';
