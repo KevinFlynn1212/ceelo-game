@@ -1475,7 +1475,7 @@
       if (_rollAnimating || _rollQueue.length > 0) {
         setTimeout(waitForAnims, 100);
       } else {
-        setTimeout(() => showWinner(data), 400); // 400ms after last die settles
+        setTimeout(() => showWinner(data), 100); // 100ms after last die settles
       }
     };
     waitForAnims();
