@@ -2203,6 +2203,20 @@
 
       // ── Blue alley exclusive sounds ──
       if (_currentTheme === 'blue') {
+        // Real rain + thunder ambient loop — fades in softly
+        try {
+          const rainSfx = new Audio('/ambient-blue.mp3');
+          rainSfx.loop = true;
+          rainSfx.volume = 0;
+          rainSfx.play().catch(()=>{});
+          // Fade in over 4s to quiet level
+          let rv = 0;
+          const rainFade = setInterval(() => {
+            rv = Math.min(rv + 0.002, 0.18);
+            rainSfx.volume = rv;
+            if (rv >= 0.18) clearInterval(rainFade);
+          }, 50);
+        } catch(e) {}
         // Water drip — random single drips
         function waterDrip() {
           try {
