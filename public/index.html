@@ -392,18 +392,23 @@
 
   /* ── Atmosphere: Vertical neon rectangle (right wall) ── */
   @keyframes neonFlicker {
-    0%,17%,19%,21%,24%,51%,54%,100% {
+    0%,14%,16%,19%,22%,24%,38%,40%,65%,67%,100% {
       opacity: 1;
       box-shadow: 0 0 6px #ff2200, 0 0 16px #ff2200, 0 0 35px #cc1100,
                   0 0 70px #990000, inset 0 0 10px rgba(255,40,0,0.15);
     }
-    18%,23%,52% { opacity: 0.07; box-shadow: none; }
-    20%         { opacity: 0.55; }
+    15%         { opacity: 0.04; box-shadow: none; }
+    17%         { opacity: 0.7; }
+    18%         { opacity: 0.03; box-shadow: none; }
+    20%,21%     { opacity: 0.5; box-shadow: 0 0 3px #ff2200; }
+    23%         { opacity: 0.06; box-shadow: none; }
+    39%         { opacity: 0.65; box-shadow: 0 0 4px #ff2200; }
+    66%         { opacity: 0.08; box-shadow: none; }
   }
   @keyframes neonWash {
-    0%,17%,19%,21%,24%,51%,54%,100% { opacity: 0.18; }
-    18%,23%,52% { opacity: 0.02; }
-    20%         { opacity: 0.10; }
+    0%,14%,16%,19%,22%,24%,38%,40%,65%,67%,100% { opacity: 0.18; }
+    15%,18%,23%,66% { opacity: 0.01; }
+    17%,20%,21%,39% { opacity: 0.08; }
   }
   .neon-rect {
     position: absolute;
@@ -2026,7 +2031,7 @@
       }
       setTimeout(windGust, 8000 + Math.random() * 10000);
 
-      // Real distant siren — single pass, smooth fade in/out, no looping
+      // Real distant siren — single pass, very slow fades, stops well before clip ends
       const _sirenSfx = new Audio('/siren.wav');
       _sirenSfx.loop = false;
       _sirenSfx.volume = 0;
@@ -2034,23 +2039,30 @@
         _sirenSfx.currentTime = 0;
         _sirenSfx.volume = 0;
         _sirenSfx.play().catch(()=>{});
-        const maxVol = 0.025; // very distant
+        const maxVol = 0.012; // barely there — very distant
         let v = 0;
-        // Slow fade in over 3s
-        const fadeIn = setInterval(() => { v = Math.min(v + 0.0005, maxVol); _sirenSfx.volume = v; if (v >= maxVol) clearInterval(fadeIn); }, 50);
-        // Slow fade out over 4s starting at 5s — well before clip ends
+        let fadingOut = false;
+        // Very slow fade in over 4s
+        const fadeIn = setInterval(() => {
+          if (fadingOut) { clearInterval(fadeIn); return; }
+          v = Math.min(v + 0.0002, maxVol);
+          _sirenSfx.volume = v;
+          if (v >= maxVol) clearInterval(fadeIn);
+        }, 50);
+        // Start fade out at 3s — very slow 5s fade to zero, stops at 8s total (well before any clip end)
         setTimeout(() => {
+          fadingOut = true;
           clearInterval(fadeIn);
           const fadeOut = setInterval(() => {
-            v = Math.max(v - 0.0004, 0);
+            v = Math.max(v - 0.00015, 0);
             _sirenSfx.volume = v;
             if (v <= 0) { clearInterval(fadeOut); _sirenSfx.pause(); }
           }, 50);
-        }, 5000);
+        }, 3000);
         // Schedule next siren far apart
-        setTimeout(distantSiren, 45000 + Math.random() * 60000);
+        setTimeout(distantSiren, 50000 + Math.random() * 70000);
       }
-      setTimeout(distantSiren, 18000 + Math.random() * 25000);
+      setTimeout(distantSiren, 20000 + Math.random() * 30000);
 
       // Real cat meow — short, soft, no double-meow
       const _meowSfx = new Audio('/cat-meow.wav');
