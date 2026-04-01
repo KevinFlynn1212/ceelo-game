@@ -1469,9 +1469,16 @@
 
   socket.on('round_end', (data) => {
     _blockGameScreen = true;
-    // Ensure hideRoundStartCountdown so it doesn't overlap winner card
     hideRoundStartCountdown();
-    showWinner(data);
+    // Wait for all dice animations to finish before showing winner
+    const waitForAnims = () => {
+      if (_rollAnimating || _rollQueue.length > 0) {
+        setTimeout(waitForAnims, 100);
+      } else {
+        setTimeout(() => showWinner(data), 900); // 900ms after last die settles
+      }
+    };
+    waitForAnims();
   });
 
   socket.on('chat_message', (msg) => {
@@ -2181,9 +2188,7 @@
         <div class="alley-winner-pot">${escHtml(potText)}</div>
         <div class="alley-winner-sub">${escHtml(subTxt)}</div>
       </div>`;
-    awOverlay.style.opacity = '0'; // start hidden, fade in after delay
     document.body.appendChild(awOverlay);
-    setTimeout(() => { awOverlay.style.transition = 'opacity 0.4s'; awOverlay.style.opacity = '1'; }, 1400);
 
     // Hide result label behind winner card
     const resLabel = document.getElementById('result-label');
@@ -2213,7 +2218,7 @@
       const dist  = 80 + Math.random() * 140;
       const dx = Math.cos(angle) * dist;
       const dy = Math.sin(angle) * dist;
-      const dur   = 800 + Math.random() * 400;
+      const dur   = 1400 + Math.random() * 600;
       const delay = i * 45;
       el.style.cssText = `left:${ox}px;top:${oy}px;font-size:${1.4 + Math.random()*0.8}rem;`;
       el.style.setProperty('--cx', dx + 'px');
