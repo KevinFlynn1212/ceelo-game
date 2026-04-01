@@ -1415,6 +1415,8 @@
        <circle cx="${gx(c).toFixed(1)}" cy="${gy(r).toFixed(1)}" r="${(pr*0.38).toFixed(1)}" fill="rgba(220,220,220,0.5)"/>`;
 
     const v = parseInt(value, 10);
+
+    // Front face pips (large)
     let pips = '';
     if (v===1) pips=dot(1,1);
     else if (v===2) pips=dot(0,0)+dot(2,2);
@@ -1422,6 +1424,41 @@
     else if (v===4) pips=dot(0,0)+dot(2,0)+dot(0,2)+dot(2,2);
     else if (v===5) pips=dot(0,0)+dot(2,0)+dot(1,1)+dot(0,2)+dot(2,2);
     else if (v===6) pips=dot(0,0)+dot(2,0)+dot(0,1)+dot(2,1)+dot(0,2)+dot(2,2);
+
+    // Top face pips — smaller, on the parallelogram above front face
+    // Top face runs from (FL+d, FT-d) → (FR+d, FT-d) → (FR, FT) → (FL, FT)
+    // Center of top face: x midpoint is (FL+d + FR+d)/2 = FL+FR)/2+d, y is (FT-d+FT)/2 = FT-d/2
+    const topV = [0,2,1,4,5,4,5][v] || 1; // adjacent face value
+    const tpr = pr * 0.55; // smaller pips on top
+    const tcx = (FL + FR) / 2 + d * 0.5; // center x of top parallelogram
+    const tcy = FT - d * 0.55;            // center y of top parallelogram
+    const tsx = (fw * 0.25);              // spread x
+    const tsy = (d * 0.28);              // spread y (foreshortened)
+    const tdot = (dx, dy) =>
+      `<circle cx="${(tcx + dx*tsx).toFixed(1)}" cy="${(tcy + dy*tsy).toFixed(1)}" r="${tpr.toFixed(1)}" fill="rgba(255,255,255,0.7)"/>`;
+    let topPips = '';
+    if (topV===1) topPips=tdot(0,0);
+    else if (topV===2) topPips=tdot(-1,-1)+tdot(1,1);
+    else if (topV===3) topPips=tdot(-1,-1)+tdot(0,0)+tdot(1,1);
+    else if (topV===4) topPips=tdot(-1,-1)+tdot(1,-1)+tdot(-1,1)+tdot(1,1);
+    else if (topV===5) topPips=tdot(-1,-1)+tdot(1,-1)+tdot(0,0)+tdot(-1,1)+tdot(1,1);
+
+    // Right face pips — small, on the shadow side
+    const rightV = [0,3,6,2,3,2,1][v] || 1;
+    const rpr = pr * 0.5;
+    // Right face center: x=(FR + FR+d)/2, y=(FT + FB)/2 offset right
+    const rcx = FR + d * 0.55;
+    const rcy = (FT + FB) / 2 - d * 0.3;
+    const rsy = (fh * 0.22);
+    const rdot = (dy) =>
+      `<circle cx="${rcx.toFixed(1)}" cy="${(rcy + dy*rsy).toFixed(1)}" r="${rpr.toFixed(1)}" fill="rgba(255,255,255,0.45)"/>`;
+    let rightPips = '';
+    if (rightV===1) rightPips=rdot(0);
+    else if (rightV===2) rightPips=rdot(-1)+rdot(1);
+    else if (rightV===3) rightPips=rdot(-1)+rdot(0)+rdot(1);
+
+    // Bottom edge — thin dark strip to ground the die
+    const botPts = `${FL},${FB} ${FR},${FB} ${FR+d},${FB-d} ${FL+d},${FB-d}`;
 
     const id = `d${Math.random().toString(36).slice(2,6)}`;
 
@@ -1433,22 +1470,26 @@
       <stop offset="100%" stop-color="#991010" stop-opacity="0.88"/>
     </radialGradient>
     <linearGradient id="tg${id}" x1="0" y1="1" x2="1" y2="0">
-      <stop offset="0%" stop-color="#dd2828"/>
-      <stop offset="100%" stop-color="#ff5858"/>
+      <stop offset="0%" stop-color="#cc2222"/>
+      <stop offset="100%" stop-color="#ff5050"/>
     </linearGradient>
     <linearGradient id="sg${id}" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="#7a1212"/>
       <stop offset="100%" stop-color="#4a0808"/>
     </linearGradient>
   </defs>
-  <!-- Right side face (shadow) -->
+  <!-- Bottom face edge (grounding) -->
+  <polygon points="${botPts}" fill="#3a0808" stroke="#1a0404" stroke-width="0.8"/>
+  <!-- Right side face (shadow) with pips -->
   <polygon points="${sidePts}" fill="url(#sg${id})" stroke="#1a0404" stroke-width="1"/>
-  <!-- Top face (lit) -->
+  ${rightPips}
+  <!-- Top face (lit) with pips -->
   <polygon points="${topPts}" fill="url(#tg${id})" stroke="#1a0404" stroke-width="1"/>
+  ${topPips}
   <!-- Front face (translucent red) -->
   <rect x="${FL}" y="${FT}" width="${fw}" height="${fh}" fill="url(#fg${id})" stroke="#1a0404" stroke-width="1.5"/>
   <!-- Subtle inner translucency shimmer -->
-  <rect x="${FL+3}" y="${FT+3}" width="${fw-6}" height="${fh*0.35}" fill="rgba(255,160,160,0.07)" rx="1"/>
+  <rect x="${FL+3}" y="${FT+3}" width="${fw-6}" height="${fh*0.32}" fill="rgba(255,160,160,0.07)" rx="1"/>
   <!-- CEE-LO engraving — only on value 1, arced around the pip -->
   ${v === 1
     ? `<defs>
@@ -1460,7 +1501,7 @@
       </text>`
     : ''
   }
-  <!-- Pips -->
+  <!-- Front pips -->
   ${pips}
 </svg>`;
   }
