@@ -2028,18 +2028,21 @@
       potText = `${f(pot)} at stake`;
     } else if (winner) {
       const wp = results && results.find(p => p.id === winner);
+      // Also check roomState as fallback
+      const wpFallback = !wp && roomState && roomState.players && roomState.players.find(p => p.id === winner);
+      const winPlayer = wp || wpFallback;
       const isMe = winner === myId;
       crown = isMe ? '🏆' : '🎉';
-      title = isMe ? 'YOU WIN!' : 'Round Over';
-      nameText = wp ? wp.name : 'Winner';
+      title = isMe ? '🏆 YOU WIN! 🏆' : 'Round Over';
+      nameText = winPlayer ? winPlayer.name : isMe ? (myName || 'You') : 'Winner';
       // Result label from event results
-      if (wp && wp.result) {
-        const t = wp.result.type || '';
+      if (winPlayer && winPlayer.result) {
+        const t = winPlayer.result.type || '';
         if      (t==='456')   resultText = '🌟 Strungflowers!';
-        else if (t==='trips') resultText = `⚡ Trips ${wp.result.point||''}`;
-        else if (t==='point') resultText = `Point ${wp.result.point||''}`;
+        else if (t==='trips') resultText = `⚡ Trips ${winPlayer.result.point||''}`;
+        else if (t==='point') resultText = `Point ${winPlayer.result.point||''}`;
         else if (t==='123')   resultText = '🐉 Dancing Dragon';
-        else                  resultText = wp.result.label || '';
+        else                  resultText = winPlayer.result.label || '';
       }
       const won = (pot||0) - (rakeTaken||0);
       potText = `${f(won)} won` + (rakeTaken ? ` · House rake: ${f(rakeTaken)}` : '');
