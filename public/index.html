@@ -372,13 +372,12 @@
     left: 50%;
     transform: translateX(-50%);
     display: flex;
-    gap: 20px;
+    gap: 36px;
     z-index: 2;
-    perspective: 160px;
-    perspective-origin: 50% -30%;
+    perspective: 180px;
+    perspective-origin: 50% -20%;
     opacity: 0;
     transition: opacity 0.3s;
-    overflow: visible;
   }
   .dice-3d-container.visible { opacity: 1; }
 
@@ -397,9 +396,8 @@
     height: 68px;
     position: relative;
     transform-style: preserve-3d;
-    transition: transform 0.5s ease-out;
-    filter: drop-shadow(0 6px 10px rgba(0,0,0,0.6));
-    flex-shrink: 0;
+    transition: transform 0.4s ease-out;
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.5));
   }
   .die-3d.rolling {
     transition: none;
@@ -441,19 +439,6 @@
   }
   .die-face .pip-empty { visibility: hidden; width: 11px; height: 11px; }
   
-  /* Top face: lighter red (lit from above) */
-  .face-5 {
-    background: 
-      linear-gradient(135deg, rgba(255,255,255,0.25) 0%, transparent 60%, rgba(0,0,0,0.1) 100%),
-      linear-gradient(180deg, #f03030 0%, #dd2525 100%) !important;
-  }
-  /* Left/back faces: darker red (in shadow) */
-  .face-3, .face-6 {
-    background:
-      linear-gradient(135deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.3) 100%),
-      linear-gradient(180deg, #b51e1e 0%, #8a1616 100%) !important;
-  }
-
   /* Shadow under each die — grounded on the alley floor */
   .die-3d::after {
     content: '';
@@ -1477,15 +1462,15 @@
   // Classic craps table view: rotateX(30deg) rotateY(-30deg) base shows
   // top face + front face + right face simultaneously
   // Each value just rotates from this base to bring the right face to center-front
-  // Final resting rotations — primary face toward player, 25° tilt to clearly show cube edges
+  // Final resting rotations — face value facing STRAIGHT at player, easy to read
   // face-1=front, face-2=bottom, face-3=left, face-4=right, face-5=top, face-6=back
   const VALUE_ROTATIONS = {
-    1: 'rotateX(-25deg) rotateY(25deg)',           // face-1 front + visible top + right edge
-    2: 'rotateX(-115deg) rotateY(25deg)',           // face-2 to front + tilt
-    3: 'rotateX(-25deg) rotateY(115deg)',           // face-3 to front + tilt
-    4: 'rotateX(-25deg) rotateY(-65deg)',           // face-4 to front + tilt
-    5: 'rotateX(65deg) rotateY(25deg)',             // face-5 to front + tilt
-    6: 'rotateX(-25deg) rotateY(205deg)',           // face-6 to front + tilt
+    1: 'rotateX(0deg) rotateY(0deg)',      // face-1 already faces front
+    2: 'rotateX(-90deg) rotateY(0deg)',    // rotate bottom face to front
+    3: 'rotateX(0deg) rotateY(90deg)',     // rotate left face to front
+    4: 'rotateX(0deg) rotateY(-90deg)',    // rotate right face to front
+    5: 'rotateX(90deg) rotateY(0deg)',     // rotate top face to front
+    6: 'rotateX(0deg) rotateY(180deg)',    // rotate back face to front
   };
   
   function buildDiceFaces() {
