@@ -1291,18 +1291,6 @@
 
   </div><!-- /alley-section -->
 
-  <!-- Winner overlay — direct child of #screen-game (outside clip-path alley) -->
-  <div id="alley-winner" class="alley-winner-overlay" style="display:none;">
-    <div class="alley-winner-card">
-      <div class="alley-winner-label" id="aw-label">🏆 WINNER 🏆</div>
-      <div class="alley-winner-name" id="aw-name"></div>
-      <div class="alley-winner-dice" id="aw-dice"></div>
-      <div class="alley-winner-result" id="aw-result"></div>
-      <div class="alley-winner-pot" id="aw-pot"></div>
-      <div class="alley-winner-sub" id="aw-sub">Congratulations!</div>
-    </div>
-  </div>
-
   <!-- BOTTOM SECTION (30vh): Player HUD -->
   <div class="player-hud">
     <div id="players-list" class="hud-slots"></div>
@@ -2147,34 +2135,38 @@
     setTimeout(() => flashEl.remove(), 1500);
 
     // ── In-alley winner overlay ──────────────────────────────────────────────
-    const awOverlay = document.getElementById('alley-winner');
-    const lastRoll = winnerResultObj && winnerResultObj.lastRoll;
-    // Get dice from roomState if available
+    // Get winner's last dice roll
     let winDice = [];
     if (roomState && roomState.players) {
       const wp2 = roomState.players.find(p => p.id === winner);
       if (wp2 && wp2.rolls && wp2.rolls.length > 0) winDice = wp2.rolls[wp2.rolls.length-1];
     }
-    const awLabel = document.getElementById('aw-label');
-    if (allDancing) { awLabel.textContent = '🐉 ALL DANCING DRAGON 🐉'; }
-    else if (isTie) { awLabel.textContent = '⚔️ TIE — SHOOTOUT ⚔️'; }
-    else if (isMe)  { awLabel.textContent = '🏆 YOU WIN! 🏆'; }
-    else            { awLabel.textContent = '🏆 WINNER 🏆'; }
-    document.getElementById('aw-name').textContent = allDancing ? 'Pot Doubles!' : isTie ? (results ? results.filter(r=>(r.score||0)===Math.max(...results.map(x=>x.score||0))).map(r=>r.name).join(' vs ') : 'Shootout!') : nameText;
-    document.getElementById('aw-result').textContent = resultText;
-    document.getElementById('aw-pot').textContent = potText;
-    document.getElementById('aw-sub').textContent = isTie ? 'Tying players roll again' : allDancing ? 'Pot doubles — carries over' : winner===myId ? '🎊 Congratulations!' : 'Better luck next round';
-    // Dice pips
-    const diceEl = document.getElementById('aw-dice');
-    diceEl.innerHTML = winDice.length > 0
-      ? winDice.map(d => `<div class="aw-die">${d}</div>`).join('')
-      : '';
-    awOverlay.classList.remove('hiding');
-    awOverlay.style.display = '';
-    // Hide result label so it doesn't show behind the winner card
+    const labelTxt = allDancing ? '🐉 ALL DANCING DRAGON 🐉' : isTie ? '⚔️ TIE — SHOOTOUT ⚔️' : isMe ? '🏆 YOU WIN! 🏆' : '🏆 WINNER 🏆';
+    const nameTxt  = allDancing ? 'Pot Doubles!' : isTie ? (results ? results.filter(r=>(r.score||0)===Math.max(...results.map(x=>x.score||0))).map(r=>r.name).join(' vs ') : 'Shootout!') : nameText;
+    const subTxt   = isTie ? 'Tying players roll again' : allDancing ? 'Pot doubles — carries over' : isMe ? '🎊 Congratulations!' : 'Better luck next round';
+    const dicePips = winDice.length > 0 ? winDice.map(d => `<div class="aw-die">${d}</div>`).join('') : '';
+
+    // Remove any existing winner overlay, then inject fresh onto body (guaranteed centering)
+    const oldOv = document.getElementById('alley-winner');
+    if (oldOv) oldOv.remove();
+    const awOverlay = document.createElement('div');
+    awOverlay.id = 'alley-winner';
+    awOverlay.className = 'alley-winner-overlay';
+    awOverlay.innerHTML = `
+      <div class="alley-winner-card">
+        <div class="alley-winner-label">${escHtml(labelTxt)}</div>
+        <div class="alley-winner-name">${escHtml(nameTxt)}</div>
+        <div class="alley-winner-dice">${dicePips}</div>
+        <div class="alley-winner-result">${escHtml(resultText)}</div>
+        <div class="alley-winner-pot">${escHtml(potText)}</div>
+        <div class="alley-winner-sub">${escHtml(subTxt)}</div>
+      </div>`;
+    document.body.appendChild(awOverlay);
+
+    // Hide result label behind winner card
     const resLabel = document.getElementById('result-label');
     if (resLabel) resLabel.style.visibility = 'hidden';
-    // Stay on game screen so alley + dice stay visible behind the overlay
+    // Stay on game screen so alley + dice stay visible
     showScreen('game');
 
     // Fly coins if someone won
@@ -2185,36 +2177,40 @@
   }
 
   function launchCoinsFromSeat(slotEl) {
-    const rect = slotEl.getBoundingClientRect();
-    const cx = rect.left + rect.width / 2;
-    const cy = rect.top + rect.height / 2;
-    const symbols = ['🪙','🪙','🪙','💰','✨','⭐','🌟'];
-    for (let i = 0; i < 22; i++) {
+    // Coins burst INSIDE the seat box, positioned relative to the slot
+    slotEl.style.overflow = 'visible';
+    const w = slotEl.offsetWidth || 80;
+    const h = slotEl.offsetHeight || 100;
+    const symbols = ['🪙','🪙','🪙','💰','✨','⭐'];
+    for (let i = 0; i < 20; i++) {
       setTimeout(() => {
         const el = document.createElement('div');
         el.textContent = symbols[Math.floor(Math.random() * symbols.length)];
-        const angle = (Math.random() * 2 * Math.PI);
-        const dist = 50 + Math.random() * 130;
+        // Start from center of the slot
+        const startX = w / 2;
+        const startY = h / 2;
+        // Burst direction — mostly upward out of the slot
+        const angle = -Math.PI/2 + (Math.random() - 0.5) * Math.PI * 1.4;
+        const dist = 40 + Math.random() * 80;
         const dx = Math.cos(angle) * dist;
-        const dy = Math.sin(angle) * dist - 20;
-        const size = 0.9 + Math.random() * 1.0;
-        const dur = 800 + Math.random() * 600;
-        const rot = Math.round(Math.random() * 720 - 360);
+        const dy = Math.sin(angle) * dist;
+        const size = 1.0 + Math.random() * 0.8;
+        const dur = 700 + Math.random() * 500;
         el.style.cssText = `
-          position:fixed;
-          left:${cx}px; top:${cy}px;
+          position:absolute;
+          left:${startX}px; top:${startY}px;
           font-size:${size}rem;
           z-index:9999;
           pointer-events:none;
-          will-change:transform,opacity;
+          transform: translate(-50%,-50%);
         `;
-        el.animate([
-          { transform: `translate(-50%,-50%) rotate(0deg)`, opacity: 1 },
-          { transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) rotate(${rot}deg)`, opacity: 0 }
-        ], { duration: dur, easing: 'cubic-bezier(0,0.9,1,1)', fill: 'forwards' });
-        document.body.appendChild(el);
+        slotEl.appendChild(el);
+        requestAnimationFrame(() => el.animate([
+          { transform: `translate(-50%,-50%)`, opacity: 1 },
+          { transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) rotate(${Math.round(Math.random()*720)}deg)`, opacity: 0 }
+        ], { duration: dur, easing: 'ease-out', fill: 'forwards' }));
         setTimeout(() => el.remove(), dur + 50);
-      }, i * 35);
+      }, i * 40);
     }
   }
 
@@ -2238,9 +2234,9 @@
     _blockGameScreen = false;
     // Animate alley overlay out
     const awOverlay = document.getElementById('alley-winner');
-    if (awOverlay && awOverlay.style.display !== 'none') {
+    if (awOverlay) {
       awOverlay.classList.add('hiding');
-      setTimeout(() => { awOverlay.style.display = 'none'; awOverlay.classList.remove('hiding'); }, 400);
+      setTimeout(() => awOverlay.remove(), 400);
     }
     showScreen('game');
     // Hide dice and clear result label for new round
