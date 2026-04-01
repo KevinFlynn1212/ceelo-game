@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CEE-LO</title>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@400;700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -365,56 +366,8 @@
     z-index: 1;
   }
 
-  /* SVG Dice — isometric cube drawn directly in SVG, no CSS 3D transforms */
-  .dice-3d-container {
-    position: absolute;
-    bottom: 32%;
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    gap: 18px;
-    z-index: 2;
-    opacity: 0;
-    transition: opacity 0.3s;
-  }
-  .dice-3d-container.visible { opacity: 1; }
-
-  @keyframes throwIntoAlley {
-    0%   { bottom: -5%; opacity: 0; transform: translateX(-50%) scale(1.8); }
-    15%  { opacity: 1; }
-    55%  { bottom: 36%; transform: translateX(-50%) scale(0.9); }
-    72%  { bottom: 28%; transform: translateX(-50%) scale(1.05); }
-    85%  { bottom: 33%; transform: translateX(-50%) scale(0.97); }
-    100% { bottom: 32%; transform: translateX(-50%) scale(1); opacity: 1; }
-  }
-  .dice-3d-container.throwing {
-    animation: throwIntoAlley 1.4s cubic-bezier(0.1, 0.8, 0.2, 1) forwards;
-  }
-
-  .die-3d {
-    width: 90px;
-    height: 90px;
-    filter: drop-shadow(0 8px 16px rgba(0,0,0,0.85));
-    flex-shrink: 0;
-    transition: transform 0.3s ease-out;
-  }
-  .die-3d svg { width: 100%; height: 100%; display: block; }
-
-  /* During throw: die spins on its axis (top-down view rotating) */
-  @keyframes dieSpinZ {
-    from { transform: rotateZ(0deg); }
-    to   { transform: rotateZ(360deg); }
-  }
-  /* Landing bounce: die settles with a small bounce */
-  @keyframes dieLand {
-    0%   { transform: scale(1.12) translateY(-6px); }
-    35%  { transform: scale(0.94) translateY(3px); }
-    65%  { transform: scale(1.04) translateY(-2px); }
-    85%  { transform: scale(0.98) translateY(1px); }
-    100% { transform: scale(1)    translateY(0px); }
-  }
-  .die-3d.rolling  { animation: dieSpinZ 0.25s linear infinite; }
-  .die-3d.landing  { animation: dieLand 0.45s ease-out forwards; }
+  /* Three.js canvas is injected directly into .alley-section */
+  .dice-3d-container { display: none; } /* hidden — Three.js takes over */
 
   /* ── Room info bar (thin dark strip at top) ── */
   .game-info-bar {
@@ -1389,237 +1342,157 @@
     // Will be updated via next room_state; no immediate action needed
   }
 
-  // ===== DICE (SVG Isometric Cubes) =====
-  // Each die is an inline SVG drawn as a proper 3D isometric cube
-  // Top face (bright red, lit), Front face (medium red, pips), Right face (dark red, shadow)
-  // No CSS 3D transforms — the SVG geometry creates the 3D look directly
+  // ===== DICE (Three.js — real 3D tumbling cubes) =====
 
-  // Vegas casino die — proper cube proportions, translucent red acrylic
-  // Isometric view: square front face + top parallelogram + right side strip
-  function makeDieSVG(value, angle) {
-    angle = angle || 0;
+  // ─── Three.js dice engine ────────────────────────────────────────────────────
+  let _three = null, _threeAnimId = null;
 
-    // Classic isometric cube geometry — front face is square
-    // d = depth of top/side faces visible
-    const d = 18;
-    // Front face: square
-    const FL = 5, FT = 30, FR = 67, FB = 90;  // 62x60 — nearly square
-    const fw = FR - FL;   // 62
-    const fh = FB - FT;   // 60
-    // Top face: parallelogram going up-right
-    // (FL,FT) → (FR,FT) → (FR+d, FT-d) → (FL+d, FT-d)
-    const topPts = `${FL},${FT} ${FR},${FT} ${FR+d},${FT-d} ${FL+d},${FT-d}`;
-    // Right face: parallelogram on the right
-    // (FR,FT) → (FR+d,FT-d) → (FR+d,FB-d) → (FR,FB)
-    const sidePts = `${FR},${FT} ${FR+d},${FT-d} ${FR+d},${FB-d} ${FR},${FB}`;
-
-    // Pip grid on front face — BIG pips, well inset from edges
-    const pad = 14;
-    const gx = (c) => FL + pad + c * (fw - pad*2) / 2;
-    const gy = (r) => FT + pad + r * (fh - pad*2) / 2;
-    const pr = Math.min(fw, fh) * 0.11; // pip radius
-    const dot = (c, r) =>
-      `<circle cx="${gx(c).toFixed(1)}" cy="${gy(r).toFixed(1)}" r="${pr.toFixed(1)}" fill="white" opacity="1"/>
-       <circle cx="${gx(c).toFixed(1)}" cy="${gy(r).toFixed(1)}" r="${(pr*0.38).toFixed(1)}" fill="rgba(220,220,220,0.5)"/>`;
-
-    const v = parseInt(value, 10);
-
-    // Front face pips only — clean and legible
-    let pips = '';
-    if (v===1) pips=dot(1,1);
-    else if (v===2) pips=dot(0,0)+dot(2,2);
-    else if (v===3) pips=dot(0,0)+dot(1,1)+dot(2,2);
-    else if (v===4) pips=dot(0,0)+dot(2,0)+dot(0,2)+dot(2,2);
-    else if (v===5) pips=dot(0,0)+dot(2,0)+dot(1,1)+dot(0,2)+dot(2,2);
-    else if (v===6) pips=dot(0,0)+dot(2,0)+dot(0,1)+dot(2,1)+dot(0,2)+dot(2,2);
-
-    // Bottom edge — thin dark strip to ground the die
-    const botPts = `${FL},${FB} ${FR},${FB} ${FR+d},${FB-d} ${FL+d},${FB-d}`;
-
-    const id = `d${Math.random().toString(36).slice(2,6)}`;
-
-    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 90 96">
-  <defs>
-    <radialGradient id="fg${id}" cx="42%" cy="38%" r="58%">
-      <stop offset="0%" stop-color="#ff4040" stop-opacity="0.96"/>
-      <stop offset="45%" stop-color="#dd2020" stop-opacity="0.93"/>
-      <stop offset="100%" stop-color="#991010" stop-opacity="0.88"/>
-    </radialGradient>
-    <linearGradient id="tg${id}" x1="0" y1="1" x2="1" y2="0">
-      <stop offset="0%" stop-color="#cc2222"/>
-      <stop offset="100%" stop-color="#ff5050"/>
-    </linearGradient>
-    <linearGradient id="sg${id}" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#7a1212"/>
-      <stop offset="100%" stop-color="#4a0808"/>
-    </linearGradient>
-  </defs>
-  <!-- Bottom face edge (grounding) -->
-  <polygon points="${botPts}" fill="#3a0808" stroke="none"/>
-  <!-- Right side face (shadow) -->
-  <polygon points="${sidePts}" fill="url(#sg${id})" stroke="none"/>
-  <!-- Top face (lit) -->
-  <polygon points="${topPts}" fill="url(#tg${id})" stroke="none"/>
-  <!-- Front face (translucent red) — very subtle border, same hue -->
-  <rect x="${FL}" y="${FT}" width="${fw}" height="${fh}" fill="url(#fg${id})" stroke="rgba(80,0,0,0.3)" stroke-width="0.8"/>
-  <!-- Subtle inner translucency shimmer -->
-  <rect x="${FL+3}" y="${FT+3}" width="${fw-6}" height="${fh*0.32}" fill="rgba(255,160,160,0.07)" rx="1"/>
-  <!-- CEE-LO engraving — only on value 1, arced around the pip -->
-  ${v === 1
-    ? `<defs>
-        <path id="arc${id}" d="M ${(gx(1)-pr*2.5).toFixed(1)},${gy(1).toFixed(1)} a ${(pr*2.5).toFixed(1)},${(pr*2.5).toFixed(1)} 0 1,1 ${(pr*5).toFixed(1)},0"/>
-      </defs>
-      <text font-family="Arial,sans-serif" font-size="${(pr*0.8).toFixed(1)}" font-weight="bold" letter-spacing="2"
-        fill="rgba(255,255,255,0.65)" stroke="rgba(180,20,20,0.6)" stroke-width="0.6">
-        <textPath href="#arc${id}" startOffset="50%" text-anchor="middle">· CEE-LO ·</textPath>
-      </text>`
-    : ''
-  }
-  <!-- Front pips -->
-  ${pips}
-</svg>`;
-  }
-
-  // Flat top-down die SVG — used DURING the spinning throw animation
-  // Looks like a red square spinning through the air (viewed from above)
-  function makeSpinningSVG(value) {
-    const s = 78, pad = 14, pr = 7.5;
-    const gx = (c) => 11 + pad + c * (s - pad*2) / 2;
-    const gy = (r) => 11 + pad + r * (s - pad*2) / 2;
-    const dot = (c, r) =>
-      `<circle cx="${gx(c)}" cy="${gy(r)}" r="${pr}" fill="white" opacity="0.9"/>`;
-    const v = parseInt(value, 10);
-    let p = '';
-    if (v===1) p=dot(1,1);
-    else if (v===2) p=dot(0,0)+dot(2,2);
-    else if (v===3) p=dot(0,0)+dot(1,1)+dot(2,2);
-    else if (v===4) p=dot(0,0)+dot(2,0)+dot(0,2)+dot(2,2);
-    else if (v===5) p=dot(0,0)+dot(2,0)+dot(1,1)+dot(0,2)+dot(2,2);
-    else if (v===6) p=dot(0,0)+dot(2,0)+dot(0,1)+dot(2,1)+dot(0,2)+dot(2,2);
-    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <defs>
-    <radialGradient id="rg" cx="45%" cy="40%" r="60%">
-      <stop offset="0%" stop-color="#ff4545"/><stop offset="100%" stop-color="#991010"/>
-    </radialGradient>
-  </defs>
-  <rect x="11" y="11" width="${s}" height="${s}" fill="url(#rg)" stroke="rgba(60,0,0,0.25)" stroke-width="0.8"/>
-  ${p}
-</svg>`;
-  }
-
-  function makeTumbleSVG(frame, value) {
-    return makeSpinningSVG(value); // flat top-down during spinning throw
-  }
-
-  function buildDiceFaces() {
-    for (let d = 0; d < 3; d++) {
-      const die = document.getElementById('die-' + d);
-      die.innerHTML = makeDieSVG(1);
+  function buildFaceTexture(v) {
+    const c = document.createElement('canvas');
+    c.width = c.height = 256;
+    const ctx = c.getContext('2d');
+    // Red gradient background — translucent casino acrylic look
+    const g = ctx.createRadialGradient(100, 90, 15, 128, 128, 155);
+    g.addColorStop(0, '#ff4848'); g.addColorStop(0.55, '#cc1e1e'); g.addColorStop(1, '#880e0e');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, 256, 256);
+    // Pips
+    const pip = (x, y) => {
+      ctx.beginPath(); ctx.arc(x, y, 26, 0, Math.PI*2);
+      ctx.fillStyle = 'white'; ctx.fill();
+      ctx.beginPath(); ctx.arc(x-7, y-8, 10, 0, Math.PI*2);
+      ctx.fillStyle = 'rgba(255,255,255,0.35)'; ctx.fill();
+    };
+    const s = 76, cx = 128, cy = 128;
+    if (v===1) pip(cx,cy);
+    if (v===2) { pip(cx-s,cy-s); pip(cx+s,cy+s); }
+    if (v===3) { pip(cx-s,cy-s); pip(cx,cy); pip(cx+s,cy+s); }
+    if (v===4) { pip(cx-s,cy-s); pip(cx+s,cy-s); pip(cx-s,cy+s); pip(cx+s,cy+s); }
+    if (v===5) { pip(cx-s,cy-s); pip(cx+s,cy-s); pip(cx,cy); pip(cx-s,cy+s); pip(cx+s,cy+s); }
+    if (v===6) { pip(cx-s,cy-68); pip(cx+s,cy-68); pip(cx-s,cy); pip(cx+s,cy); pip(cx-s,cy+68); pip(cx+s,cy+68); }
+    // CEE-LO arc text on face 1
+    if (v === 1) {
+      ctx.save(); ctx.font = 'bold 17px Arial';
+      ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      const txt = '· CEE-LO ·', ar = 55;
+      txt.split('').forEach((ch, i) => {
+        const a = -txt.length*0.12 + i*0.24 - Math.PI/2;
+        ctx.save(); ctx.translate(cx + ar*Math.cos(a), cy + ar*Math.sin(a));
+        ctx.rotate(a + Math.PI/2); ctx.fillText(ch,0,0); ctx.restore();
+      }); ctx.restore();
     }
+    return new THREE.CanvasTexture(c);
   }
 
-  let rollInterval = null;
+  function ensureThree() {
+    if (_three) return _three;
+    const alley = document.querySelector('.alley-section');
+    const w = alley.clientWidth || 500, h = alley.clientHeight || 500;
+    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+    renderer.setSize(w, h); renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.domElement.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;z-index:3;pointer-events:none;';
+    alley.appendChild(renderer.domElement);
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(42, w/h, 0.1, 100);
+    camera.position.set(0, 4.5, 9); camera.lookAt(0, 0, 0);
+    scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+    const dl = new THREE.DirectionalLight(0xfffaf0, 1.1); dl.position.set(4, 8, 6); scene.add(dl);
+    const fl = new THREE.DirectionalLight(0xff4444, 0.25); fl.position.set(-3,2,-4); scene.add(fl);
+    // Face textures 1-6
+    const tx = {}; for (let v=1;v<=6;v++) tx[v] = buildFaceTexture(v);
+    // BoxGeometry material order: +X,-X,+Y,-Y,+Z,-Z = right,left,top,bottom,front,back
+    // Assign: right=3,left=4,top=2,bottom=5,front=1,back=6
+    const dice = [];
+    for (let i=0;i<3;i++) {
+      const geo = new THREE.BoxGeometry(1.25,1.25,1.25);
+      const mats = [3,4,2,5,1,6].map(v => new THREE.MeshPhongMaterial({ map:tx[v], specular:0xff5555, shininess:55 }));
+      const die = new THREE.Mesh(geo, mats);
+      die.visible = false; scene.add(die); dice.push(die);
+    }
+    // Rotations to show value V on top (+Y = material[2] = face2)
+    const finalRot = {
+      1: new THREE.Euler(-Math.PI/2, 0, 0),   // face1(+Z)→+Y
+      2: new THREE.Euler(0, 0, 0),              // face2(+Y) already top
+      3: new THREE.Euler(0, 0, -Math.PI/2),    // face3(+X)→+Y
+      4: new THREE.Euler(0, 0, Math.PI/2),     // face4(-X)→+Y
+      5: new THREE.Euler(Math.PI, 0, 0),       // face5(-Y)→+Y
+      6: new THREE.Euler(Math.PI/2, 0, 0),     // face6(-Z)→+Y
+    };
+    window.addEventListener('resize', () => {
+      const w2=alley.clientWidth, h2=alley.clientHeight;
+      renderer.setSize(w2,h2); camera.aspect=w2/h2; camera.updateProjectionMatrix();
+    });
+    _three = { renderer, scene, camera, dice, finalRot };
+    return _three;
+  }
+
+  function buildDiceFaces() { ensureThree(); } // lazy init Three.js
 
   function displayDice(values) {
     if (!physicsDiceReady) return;
-    const container = document.getElementById('dice-3d-container');
-    container.classList.add('visible');
-    for (let i = 0; i < 3; i++) {
-      const die = document.getElementById('die-' + i);
-      die.classList.remove('rolling');
-      die.innerHTML = makeDieSVG(values[i]);
-    }
+    const { renderer, scene, camera, dice, finalRot } = ensureThree();
+    const xp = [-1.8, 0, 1.8];
+    dice.forEach((die, i) => {
+      die.visible = true;
+      die.position.set(xp[i], -0.5, 1.5);
+      die.rotation.copy(finalRot[values[i]] || new THREE.Euler());
+    });
+    renderer.render(scene, camera);
   }
 
   function animateDice(finalValues, evaluation) {
     animating = true;
     const btn = document.getElementById('btn-roll');
     if (btn) { btn.disabled = true; btn.textContent = '🎲 Rolling...'; }
-
-    const container = document.getElementById('dice-3d-container');
-    container.classList.add('visible');
-    container.classList.remove('throwing');
-    void container.offsetWidth;
-    container.classList.add('throwing');
-
-    // Show random faces while rolling
-    for (let i = 0; i < 3; i++) {
-      document.getElementById('die-' + i).classList.add('rolling');
-    }
-
-    // Physics-like deceleration — starts fast (60ms), slows to stop (300ms)
-    // Each die has its own interval that slows down over time
-    if (rollInterval) clearInterval(rollInterval);
-
-    const totalRollMs = 1600; // total roll time for last die
-    const dieRollDurations = [1000, 1200, 1600]; // staggered stop times
-
-    function startDieRoll(dieIndex) {
-      const die = document.getElementById('die-' + dieIndex);
-      let frame = 0;
-      let elapsed = 0;
-      const maxMs = dieRollDurations[dieIndex];
-
-      function tick() {
-        if (!die.classList.contains('rolling')) return;
-        frame = (frame + 1) % 4;
-        die.innerHTML = makeTumbleSVG(frame, Math.ceil(Math.random() * 6));
-        elapsed += currentInterval;
-
-        if (elapsed >= maxMs) return; // stop scheduling
-
-        // Ease-out: start at 60ms, slow to 280ms as die decelerates
-        const progress = elapsed / maxMs; // 0→1
-        const eased = 1 - Math.pow(1 - progress, 2); // ease-out quad
-        currentInterval = Math.round(60 + eased * 220); // 60ms→280ms
-
-        setTimeout(tick, currentInterval);
-      }
-
-      let currentInterval = 60;
-      tick();
-    }
-
-    for (let i = 0; i < 3; i++) startDieRoll(i);
-
-    // Staggered settle — each die lands at slightly different time
-    const delays = [1000, 1200, 1600];
-    let finished = 0;
-
-    for (let i = 0; i < 3; i++) {
-      setTimeout(() => {
-        const die = document.getElementById('die-' + i);
-        die.classList.remove('rolling');
-        die.innerHTML = makeDieSVG(finalValues[i]);
-        die.classList.add('landing');
-        die.addEventListener('animationend', () => die.classList.remove('landing'), { once: true });
-
-        finished++;
-        if (finished === 3) {
-          animating = false;
-          if (evaluation) {
-            document.getElementById('result-label').textContent =
-              (evaluation.emoji || '') + ' ' + (evaluation.label || '');
+    const { renderer, scene, camera, dice, finalRot } = ensureThree();
+    if (_threeAnimId) { cancelAnimationFrame(_threeAnimId); _threeAnimId = null; }
+    const xp = [-1.8, 0, 1.8];
+    const settleAt = [1100, 1350, 1650]; // ms when each die stops
+    const dieStates = dice.map((die, i) => {
+      die.visible = true;
+      die.position.set(xp[i], -0.5, 8); // start near camera
+      die.rotation.set(Math.random()*6, Math.random()*6, Math.random()*6);
+      return {
+        die, settled: false, settleAt: settleAt[i],
+        angVel: { x:(Math.random()-.5)*18, y:(Math.random()-.5)*18, z:(Math.random()-.5)*12 },
+      };
+    });
+    const t0 = performance.now();
+    let doneCount = 0;
+    function frame() {
+      const elapsed = performance.now() - t0;
+      dieStates.forEach((s, i) => {
+        const { die } = s;
+        // Travel: z from 8 → 1.5 with ease-out
+        const tp = Math.min(elapsed / s.settleAt, 1);
+        const te = 1 - Math.pow(1-tp, 2.5);
+        die.position.z = 8 - te * 6.5;
+        if (!s.settled && elapsed < s.settleAt) {
+          const decel = Math.max(0, 1 - elapsed/s.settleAt);
+          die.rotation.x += s.angVel.x * 0.016 * decel;
+          die.rotation.y += s.angVel.y * 0.016 * decel;
+          die.rotation.z += s.angVel.z * 0.016 * decel;
+        } else if (!s.settled) {
+          s.settled = true;
+          die.rotation.copy(finalRot[finalValues[i]] || new THREE.Euler());
+          doneCount++;
+          if (doneCount === 3) {
+            animating = false;
+            if (evaluation) document.getElementById('result-label').textContent = (evaluation.emoji||'') + ' ' + (evaluation.label||'');
+            setTimeout(() => {
+              if (roomState) { const me = roomState.players?.find(p=>p.id===myId); updateRollButton(roomState, me); }
+            }, 200);
           }
-          setTimeout(() => {
-            if (roomState) {
-              const me = roomState.players ? roomState.players.find(p => p.id === myId) : null;
-              updateRollButton(roomState, me);
-            }
-          }, 200);
         }
-      }, delays[i]);
+      });
+      renderer.render(scene, camera);
+      if (doneCount < 3) _threeAnimId = requestAnimationFrame(frame);
     }
+    frame();
   }
 
   function clearDice() {
-    if (rollInterval) { clearInterval(rollInterval); rollInterval = null; }
-    const container = document.getElementById('dice-3d-container');
-    if (container) container.classList.remove('visible');
-    for (let i = 0; i < 3; i++) {
-      const die = document.getElementById('die-' + i);
-      if (die) { die.classList.remove('rolling'); }
-    }
+    if (_threeAnimId) { cancelAnimationFrame(_threeAnimId); _threeAnimId = null; }
+    if (_three) { _three.dice.forEach(d => d.visible = false); _three.renderer.render(_three.scene, _three.camera); }
   }
 
   // ===== TIMER =====
