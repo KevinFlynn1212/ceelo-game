@@ -394,8 +394,8 @@
   @keyframes neonFlicker {
     0%,17%,19%,21%,24%,51%,54%,100% {
       opacity: 1;
-      box-shadow: 0 0 6px #00d4ff, 0 0 16px #00d4ff, 0 0 35px #0099cc,
-                  0 0 70px #0077aa, inset 0 0 10px rgba(0,200,255,0.15);
+      box-shadow: 0 0 6px #ff2200, 0 0 16px #ff2200, 0 0 35px #cc1100,
+                  0 0 70px #990000, inset 0 0 10px rgba(255,40,0,0.15);
     }
     18%,23%,52% { opacity: 0.07; box-shadow: none; }
     20%         { opacity: 0.55; }
@@ -411,19 +411,19 @@
     right: 10%;
     width: 16px;
     height: 52px;
-    border: 2px solid #00d4ff;
+    border: 2px solid #ff2200;
     border-radius: 3px;
-    background: rgba(0,180,255,0.05);
+    background: rgba(255,40,0,0.05);
     pointer-events: none;
     z-index: 4;
     animation: neonFlicker 7s infinite;
   }
-  /* Blue ambient wash from the neon on right wall */
+  /* Red ambient wash from the neon on right wall */
   .neon-blue-wash {
     position: absolute;
     top: 0; right: 0;
     width: 55%; height: 60%;
-    background: radial-gradient(ellipse at top right, rgba(0,140,255,0.14) 0%, transparent 65%);
+    background: radial-gradient(ellipse at top right, rgba(220,40,0,0.12) 0%, transparent 65%);
     pointer-events: none;
     z-index: 4;
     animation: neonWash 7s infinite;
