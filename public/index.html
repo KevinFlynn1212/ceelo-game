@@ -777,6 +777,26 @@
   .hud-status.done    { background: rgba(76,175,80,0.15);  color: var(--green); }
   .hud-status.rolling { background: rgba(245,200,66,0.15); color: var(--gold); }
 
+  /* Per-slot countdown timer badge */
+  .hud-timer-badge {
+    font-family: 'Cinzel', serif;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--gold);
+    background: rgba(245,200,66,0.15);
+    border: 1px solid rgba(245,200,66,0.4);
+    border-radius: 6px;
+    padding: 1px 8px;
+    letter-spacing: 0.05em;
+    flex-shrink: 0;
+  }
+  .hud-timer-badge.urgent {
+    color: #ff4444;
+    background: rgba(255,68,68,0.15);
+    border-color: rgba(255,68,68,0.5);
+    animation: turnPulse 0.4s ease-in-out infinite;
+  }
+
   /* ═══════════════════════════════
      CHAT PANEL (slide-in from right)
   ═══════════════════════════════ */
@@ -1389,8 +1409,12 @@
           ? `<div class="hud-mini-dice">${lastRoll.map(d => `<span class="mini-die">${d}</span>`).join('')}</div>`
           : '';
 
+        const timerBadge = isActiveTurn && roomState && roomState.timerEnd && roomState.timerEnd > Date.now()
+          ? `<div class="hud-timer-badge">${Math.max(0,Math.ceil((roomState.timerEnd-Date.now())/1000))}s</div>` : '';
+
         slot.innerHTML = `
           <div class="hud-action ${actionClass}">${actionText}</div>
+          ${timerBadge}
           <div class="hud-avatar">${escHtml(initial)}</div>
           <div style="display:flex;align-items:center;gap:2px;max-width:100%;justify-content:center;flex-shrink:0;">
             <span class="hud-name">${escHtml(player.name)}</span>${youTag}
@@ -1614,6 +1638,12 @@
       const remaining = Math.max(0, Math.ceil((timerEnd - Date.now()) / 1000));
       el.textContent = remaining + 's';
       el.classList.toggle('urgent', remaining <= 5);
+      // Update per-slot timer badge in the active player's HUD slot
+      const badge = document.querySelector('.hud-timer-badge');
+      if (badge) {
+        badge.textContent = remaining + 's';
+        badge.classList.toggle('urgent', remaining <= 5);
+      }
       if (remaining <= 0) {
         clearInterval(timerInterval);
         timerInterval = null;
