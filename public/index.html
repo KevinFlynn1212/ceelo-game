@@ -393,11 +393,12 @@
   }
 
   .die-3d {
-    width: 64px;
-    height: 64px;
+    width: 68px;
+    height: 68px;
     position: relative;
     transform-style: preserve-3d;
     transition: transform 0.4s ease-out;
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.5));
   }
   .die-3d.rolling {
     transition: none;
@@ -405,10 +406,18 @@
 
   .die-face {
     position: absolute;
-    width: 64px;
-    height: 64px;
-    background: #cc2222;
-    border: 2px solid #8b0000;
+    width: 68px;
+    height: 68px;
+    /* Photorealistic translucent casino red — layered gradients */
+    background: 
+      linear-gradient(135deg, rgba(255,255,255,0.18) 0%, transparent 50%, rgba(0,0,0,0.15) 100%),
+      linear-gradient(180deg, #e02828 0%, #cc2222 30%, #b01e1e 70%, #8a1616 100%);
+    border: 1.5px solid #6a1010;
+    /* Subtle inner glow like translucent acrylic */
+    box-shadow:
+      inset 0 0 8px rgba(255,80,80,0.25),
+      inset 0 1px 0 rgba(255,255,255,0.2),
+      inset 0 -1px 0 rgba(0,0,0,0.2);
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     grid-template-rows: repeat(3, 1fr);
@@ -417,16 +426,20 @@
     backface-visibility: hidden;
   }
 
+  /* Precision-drilled pips — recessed white circles with depth */
   .die-face .pip {
-    width: 10px;
-    height: 10px;
-    background: white;
+    width: 11px;
+    height: 11px;
+    background: radial-gradient(circle at 40% 35%, #ffffff 0%, #f0f0f0 50%, #d8d8d8 100%);
     border-radius: 50%;
     align-self: center;
     justify-self: center;
-    box-shadow: inset 0 1px 2px rgba(0,0,0,0.3);
+    box-shadow: 
+      inset 0 1px 2px rgba(0,0,0,0.4),
+      inset 0 -0.5px 1px rgba(255,255,255,0.3),
+      0 0.5px 1px rgba(0,0,0,0.3);
   }
-  .die-face .pip-empty { visibility: hidden; width: 10px; height: 10px; }
+  .die-face .pip-empty { visibility: hidden; width: 11px; height: 11px; }
   
   /* Shadow under each die — grounded on the alley floor */
   .die-3d::after {
@@ -443,12 +456,12 @@
   }
 
   /* 6 cube faces */
-  .face-1 { transform: rotateY(0deg) translateZ(32px); }
-  .face-6 { transform: rotateY(180deg) translateZ(32px); }
-  .face-3 { transform: rotateY(-90deg) translateZ(32px); }
-  .face-4 { transform: rotateY(90deg) translateZ(32px); }
-  .face-2 { transform: rotateX(90deg) translateZ(32px); }
-  .face-5 { transform: rotateX(-90deg) translateZ(32px); }
+  .face-1 { transform: rotateY(0deg) translateZ(34px); }
+  .face-6 { transform: rotateY(180deg) translateZ(34px); }
+  .face-3 { transform: rotateY(-90deg) translateZ(34px); }
+  .face-4 { transform: rotateY(90deg) translateZ(34px); }
+  .face-2 { transform: rotateX(90deg) translateZ(34px); }
+  .face-5 { transform: rotateX(-90deg) translateZ(34px); }
 
   @keyframes diceRoll {
     0%   { transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg); }
