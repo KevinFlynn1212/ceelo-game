@@ -461,6 +461,47 @@
   .spectator-banner.visible { display: block; }
 
   /* ── Result label (floats over dice landing area) ── */
+  /* Round start countdown overlay */
+  .round-start-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.55);
+    backdrop-filter: blur(4px);
+  }
+  .round-start-card {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+  .round-start-label {
+    font-family: 'Cinzel', serif;
+    font-size: 1.1rem;
+    color: var(--gold);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    opacity: 0.85;
+  }
+  @keyframes countPulse {
+    0%   { transform: scale(1.3); opacity: 0.4; }
+    30%  { transform: scale(1);   opacity: 1; }
+    100% { transform: scale(0.85); opacity: 0.6; }
+  }
+  .round-start-count {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 5rem;
+    font-weight: 900;
+    color: #ffffff;
+    text-shadow: 0 0 40px rgba(245,200,66,0.8), 0 0 80px rgba(245,200,66,0.3);
+    line-height: 1;
+    animation: countPulse 1s ease-out;
+  }
+
   .result-label {
     position: absolute;
     bottom: 72px;
@@ -1072,6 +1113,14 @@
     <!-- Result label (floated above roll button, below dice landing area) -->
     <div class="result-label" id="result-label"></div>
 
+    <!-- Round start countdown overlay -->
+    <div class="round-start-overlay" id="round-start-overlay" style="display:none;">
+      <div class="round-start-card">
+        <div class="round-start-label" id="round-start-label">Round Starting</div>
+        <div class="round-start-count" id="round-start-count">5</div>
+      </div>
+    </div>
+
     <!-- Roll button floating at bottom -->
     <div class="roll-btn-wrapper">
       <button class="btn" id="btn-roll" disabled>🎲 THROW DICE</button>
@@ -1173,18 +1222,33 @@
     renderLobby(data.rooms);
   });
 
+  let _prevRoomState = null;
   socket.on('room_state', (state) => {
+    const prevState = _prevRoomState;
+    _prevRoomState = state;
     roomState = state;
     currentRoom = state.id;
     renderGameState(state);
     showScreen('game');
+
+    // Show round-start countdown when game transitions into 'ante' state
+    if (state.state === 'ante' && (!prevState || prevState.state !== 'ante')) {
+      showRoundStartCountdown(state.round);
+    }
+    // Hide countdown once rolling begins
+    if (state.state === 'rolling' || state.state === 'shootout') {
+      hideRoundStartCountdown();
+    }
   });
 
   socket.on('roll_result', ({ playerId, dice, evaluation, rollCount, done }) => {
+    // ALL players see the dice animation — not just the roller
+    _diceRevealedFor.delete(playerId); // hide HUD dice until anim done
     if (playerId === myId) {
       animateDice(dice, evaluation);
     } else {
-      updatePlayerResult(playerId, dice, evaluation, done);
+      // Animate for OTHER players too — everyone watches the throw
+      animateForOtherPlayer(playerId, dice, evaluation);
     }
   });
 
@@ -1675,6 +1739,53 @@
     frame();
   }
 
+  // Animate dice for another player rolling — same animation, no button/state changes
+  function animateForOtherPlayer(playerId, finalValues, evaluation) {
+    playDiceRattle();
+    const { renderer, scene, camera, dice, finalRot } = ensureThree();
+    if (_threeAnimId) { cancelAnimationFrame(_threeAnimId); _threeAnimId = null; }
+    const xp = [-1.8, 0, 1.8];
+    const settleAt = [750, 980, 1250];
+    const dieStates = dice.map((die, i) => {
+      die.visible = true;
+      die.position.set(xp[i], -0.8, 8);
+      die.quaternion.set(Math.random()-.5, Math.random()-.5, Math.random()-.5, Math.random()-.5).normalize();
+      const axis = new THREE.Vector3(Math.random()-.5, Math.random()-.5, Math.random()-.5).normalize();
+      return { die, settled: false, settleAt: settleAt[i], axis, speed: 4+Math.random()*3,
+               targetQuat: new THREE.Quaternion().setFromEuler(finalRot[finalValues[i]]||new THREE.Euler()), thudPlayed: false };
+    });
+    const t0 = performance.now(); let doneCount = 0;
+    function frame() {
+      const now = performance.now(), elapsed = now - t0;
+      const dt = Math.min(16, now-(frame._last||t0))/1000; frame._last = now;
+      dieStates.forEach((s, i) => {
+        const { die } = s;
+        const te = 1 - Math.pow(1 - Math.min(elapsed/s.settleAt, 1), 2.5);
+        die.position.z = 8 - te * 8;
+        if (!s.settled) {
+          const decel = Math.max(0, 1-elapsed/s.settleAt);
+          if (decel > 0.01) { const dq = new THREE.Quaternion().setFromAxisAngle(s.axis, s.speed*dt*decel); die.quaternion.multiplyQuaternions(dq, die.quaternion); }
+          const blendStart = s.settleAt * 0.6;
+          if (elapsed > blendStart) die.quaternion.slerp(s.targetQuat, ((elapsed-blendStart)/(s.settleAt-blendStart))**2 * 0.12);
+          if (elapsed >= s.settleAt) {
+            s.settled = true; die.quaternion.copy(s.targetQuat);
+            setTimeout(() => playDiceThud(), i * 60);
+            doneCount++;
+            if (doneCount === 3) {
+              stopDiceRattle();
+              _diceRevealedFor.add(playerId);
+              if (roomState) renderPlayers(roomState);
+              if (evaluation) document.getElementById('result-label').textContent = (evaluation.emoji||'')+ ' '+(evaluation.label||'');
+            }
+          }
+        }
+      });
+      renderer.render(scene, camera);
+      if (doneCount < 3) _threeAnimId = requestAnimationFrame(frame);
+    }
+    frame();
+  }
+
   function clearDice() {
     if (_threeAnimId) { cancelAnimationFrame(_threeAnimId); _threeAnimId = null; }
     if (_three) { _three.dice.forEach(d => d.visible = false); _three.renderer.render(_three.scene, _three.camera); }
@@ -1682,6 +1793,33 @@
 
   // ===== TIMER =====
   let _segTimers = [];
+  let _roundCountdownInterval = null;
+  function showRoundStartCountdown(roundNum) {
+    const overlay = document.getElementById('round-start-overlay');
+    const label   = document.getElementById('round-start-label');
+    const count   = document.getElementById('round-start-count');
+    if (!overlay) return;
+    label.textContent = roundNum > 1 ? `Round ${roundNum} — Ante up!` : 'Ante up — game starting!';
+    let secs = 5;
+    count.textContent = secs;
+    count.style.animation = 'none'; void count.offsetWidth;
+    count.style.animation = 'countPulse 1s ease-out';
+    overlay.style.display = 'flex';
+    if (_roundCountdownInterval) clearInterval(_roundCountdownInterval);
+    _roundCountdownInterval = setInterval(() => {
+      secs--;
+      if (secs <= 0) { hideRoundStartCountdown(); return; }
+      count.textContent = secs;
+      count.style.animation = 'none'; void count.offsetWidth;
+      count.style.animation = 'countPulse 1s ease-out';
+    }, 1000);
+  }
+  function hideRoundStartCountdown() {
+    if (_roundCountdownInterval) { clearInterval(_roundCountdownInterval); _roundCountdownInterval = null; }
+    const overlay = document.getElementById('round-start-overlay');
+    if (overlay) overlay.style.display = 'none';
+  }
+
   function startTimer(timerEnd) {
     if (timerInterval) clearInterval(timerInterval);
     _segTimers.forEach(t => clearTimeout(t)); _segTimers = [];
