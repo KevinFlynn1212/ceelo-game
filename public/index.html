@@ -769,15 +769,7 @@
     animation: seatCelebrate 0.7s ease-out forwards, winnerGlow 1.2s ease-in-out 0.7s infinite;
     position: relative;
   }
-  .hud-slot.is-winner::after {
-    content: '👑';
-    position: absolute;
-    top: -14px; left: 50%;
-    transform: translateX(-50%);
-    font-size: 1.4rem;
-    animation: crownBadgePop 0.5s cubic-bezier(0.175,0.885,0.32,1.275) forwards;
-    filter: drop-shadow(0 0 8px rgba(255,215,0,0.9));
-  }
+  /* crown replaced with JS coin burst */
   .hud-action.act-win {
     background: rgba(76,175,80,0.45) !important;
     color: #ffffff !important;
@@ -1648,7 +1640,11 @@
         if (player.id === myId) slot.classList.add('is-me');
         if (isActiveTurn) slot.classList.add('active-turn');
         if (player.done) slot.classList.add('done');
-        if (isWinner) slot.classList.add('is-winner');
+        if (isWinner) {
+          const wasWinner = slot.classList.contains('is-winner');
+          slot.classList.add('is-winner');
+          if (!wasWinner) launchCoinsFromSeat(slot);
+        }
 
         const initial = (player.name || '?')[0].toUpperCase();
 
@@ -2177,6 +2173,41 @@
 
     if (winnerDismissTimer) clearTimeout(winnerDismissTimer);
     winnerDismissTimer = setTimeout(() => dismissWinner(), 10000);
+  }
+
+  function launchCoinsFromSeat(slotEl) {
+    const rect = slotEl.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const symbols = ['🪙','🪙','🪙','💰','✨','⭐'];
+    for (let i = 0; i < 18; i++) {
+      setTimeout(() => {
+        const el = document.createElement('div');
+        el.textContent = symbols[Math.floor(Math.random() * symbols.length)];
+        const angle = (Math.random() * 2 * Math.PI);
+        const dist = 60 + Math.random() * 100;
+        const dx = Math.cos(angle) * dist;
+        const dy = Math.sin(angle) * dist - 40;
+        const size = 1 + Math.random() * 0.8;
+        const dur = 0.7 + Math.random() * 0.6;
+        el.style.cssText = `
+          position:fixed;
+          left:${cx}px; top:${cy}px;
+          font-size:${size}rem;
+          z-index:300;
+          pointer-events:none;
+          transform: translate(-50%,-50%);
+          transition: transform ${dur}s ease-out, opacity ${dur}s ease-out;
+          opacity:1;
+        `;
+        document.body.appendChild(el);
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+          el.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) rotate(${Math.random()*360}deg)`;
+          el.style.opacity = '0';
+        }));
+        setTimeout(() => el.remove(), dur * 1000 + 100);
+      }, i * 40);
+    }
   }
 
   function launchCoins(count) {
