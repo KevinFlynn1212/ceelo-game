@@ -180,7 +180,9 @@ function evaluate(dice) {
   else if (a === c) { pointVal = b; pairVal = a; }
 
   if (pointVal !== undefined) {
-    const score = pointVal * 10 + pairVal;
+    // Score is ONLY the point value — pair is irrelevant in Cee-Lo
+    // Same point value = tie → shootout
+    const score = pointVal;
     return {
       type:  'point', score,
       label: `🎯 Point ${pointVal} (pair of ${pairVal})`,
