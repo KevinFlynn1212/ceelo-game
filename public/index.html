@@ -407,12 +407,12 @@
   }
   .neon-rect {
     position: absolute;
-    top: 22%;
-    right: 6%;
-    font-size: 1.6rem;
+    top: 18%;
+    right: 4%;
+    font-size: 3.2rem;
     font-weight: 900;
     writing-mode: vertical-rl;
-    letter-spacing: 6px;
+    letter-spacing: 8px;
     color: #ff5500;
     pointer-events: none;
     z-index: 4;
@@ -422,8 +422,11 @@
       0 0 18px #ff3300,
       0 0 35px #ff2200,
       0 0 70px #cc1100,
-      0 0 110px #990000;
+      0 0 120px #990000;
     filter: blur(0.3px);
+    /* Perspective angle — looks mounted on right wall facing inward */
+    transform: perspective(300px) rotateY(-28deg);
+    transform-origin: right center;
   }
   /* Red ambient wash originating from mid-alley right wall */
   .neon-blue-wash {
@@ -2022,6 +2025,65 @@
         setTimeout(windGust, 14000 + Math.random() * 20000);
       }
       setTimeout(windGust, 8000 + Math.random() * 10000);
+
+      // Distant siren — sweeps between two frequencies
+      function distantSiren() {
+        const osc = ctx.createOscillator();
+        const g   = ctx.createGain();
+        const lpf = ctx.createBiquadFilter();
+        lpf.type = 'lowpass'; lpf.frequency.value = 900;
+        osc.type = 'sawtooth';
+        const now = ctx.currentTime;
+        const sweepTime = 0.55;
+        const cycles = 4 + Math.floor(Math.random() * 4);
+        g.gain.setValueAtTime(0, now);
+        g.gain.linearRampToValueAtTime(0.022, now + 0.4);
+        g.gain.linearRampToValueAtTime(0.016, now + cycles * sweepTime * 2 - 0.4);
+        g.gain.linearRampToValueAtTime(0, now + cycles * sweepTime * 2);
+        for (let i = 0; i < cycles; i++) {
+          const t = now + i * sweepTime * 2;
+          osc.frequency.setValueAtTime(520, t);
+          osc.frequency.linearRampToValueAtTime(880, t + sweepTime);
+          osc.frequency.linearRampToValueAtTime(520, t + sweepTime * 2);
+        }
+        osc.connect(lpf); lpf.connect(g); g.connect(ctx.destination);
+        osc.start(now); osc.stop(now + cycles * sweepTime * 2 + 0.1);
+        setTimeout(distantSiren, 25000 + Math.random() * 40000);
+      }
+      setTimeout(distantSiren, 12000 + Math.random() * 20000);
+
+      // Cat meow — filtered oscillator with meow envelope
+      function catMeow() {
+        const osc  = ctx.createOscillator();
+        const osc2 = ctx.createOscillator(); // harmonic
+        const g    = ctx.createGain();
+        const bpf  = ctx.createBiquadFilter();
+        bpf.type = 'bandpass'; bpf.frequency.value = 900; bpf.Q.value = 2.5;
+        osc.type  = 'sawtooth';
+        osc2.type = 'sawtooth';
+        const now = ctx.currentTime;
+        const dur = 0.45 + Math.random() * 0.2;
+        // Pitch envelope: rise then fall (meow shape)
+        const baseFreq = 500 + Math.random() * 200;
+        osc.frequency.setValueAtTime(baseFreq, now);
+        osc.frequency.linearRampToValueAtTime(baseFreq * 1.6, now + dur * 0.45);
+        osc.frequency.linearRampToValueAtTime(baseFreq * 0.85, now + dur);
+        osc2.frequency.setValueAtTime(baseFreq * 2, now);
+        osc2.frequency.linearRampToValueAtTime(baseFreq * 3.2, now + dur * 0.45);
+        osc2.frequency.linearRampToValueAtTime(baseFreq * 1.7, now + dur);
+        // Volume envelope
+        g.gain.setValueAtTime(0, now);
+        g.gain.linearRampToValueAtTime(0.018, now + 0.05);
+        g.gain.linearRampToValueAtTime(0.014, now + dur * 0.6);
+        g.gain.linearRampToValueAtTime(0, now + dur);
+        osc.connect(bpf); osc2.connect(bpf); bpf.connect(g); g.connect(ctx.destination);
+        osc.start(now); osc.stop(now + dur + 0.05);
+        osc2.start(now); osc2.stop(now + dur + 0.05);
+        // Occasionally a second meow right after
+        if (Math.random() < 0.4) setTimeout(catMeow, 600 + Math.random() * 800);
+        setTimeout(catMeow, 30000 + Math.random() * 60000);
+      }
+      setTimeout(catMeow, 15000 + Math.random() * 25000);
 
     } catch(e) { console.warn('Ambient audio failed:', e); }
   }
