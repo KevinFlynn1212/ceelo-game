@@ -1052,17 +1052,18 @@
     0%,100% { text-shadow: 0 0 20px rgba(245,200,66,0.5); }
     50%     { text-shadow: 0 0 50px rgba(245,200,66,1), 0 0 100px rgba(245,200,66,0.4); }
   }
-  @keyframes seatCoinUp {
-    0%   { opacity: 1; transform: translateY(0) scale(1.2); }
-    100% { opacity: 0; transform: translateY(-160px) scale(0.4); }
+  @keyframes seatCoinFountain {
+    0%   { opacity: 1; transform: translate(0, 0) scale(1.3); }
+    60%  { opacity: 1; }
+    100% { opacity: 0; transform: translate(var(--cx, 0px), var(--cy, -180px)) scale(0.3) rotate(var(--cr, 0deg)); }
   }
   .seat-coin {
     position: fixed;
     z-index: 9999;
     pointer-events: none;
-    font-size: 2rem;
     line-height: 1;
-    animation: seatCoinUp 1.1s ease-out forwards;
+    animation: seatCoinFountain var(--dur, 1s) cubic-bezier(0.2, 0.8, 0.4, 1) forwards;
+    animation-delay: var(--delay, 0ms);
   }
   @keyframes coinFloat {
     0%   { transform: translateY(0) rotate(0deg) scale(1); opacity: 1; }
@@ -2196,26 +2197,29 @@
 
   function launchCoinsFromSeat(slotEl) {
     const rect = slotEl.getBoundingClientRect();
-    // Spread coins across the width of the seat
-    const x0 = rect.width  ? rect.left               : window.innerWidth * 0.1;
-    const x1 = rect.width  ? rect.left + rect.width  : window.innerWidth * 0.3;
-    const cy = rect.height ? rect.top                : window.innerHeight * 0.8;
+    // Origin: center-top of the seat box
+    const ox = rect.width  ? rect.left + rect.width / 2 : window.innerWidth / 2;
+    const oy = rect.height ? rect.top  + rect.height / 4 : window.innerHeight * 0.78;
     const symbols = ['🪙','🪙','🪙','💰','✨','⭐','🌟'];
-    for (let i = 0; i < 20; i++) {
-      setTimeout(() => {
-        const el = document.createElement('div');
-        el.className = 'seat-coin';
-        el.textContent = symbols[Math.floor(Math.random() * symbols.length)];
-        const x = x0 + Math.random() * (x1 - x0);
-        const delay = Math.random() * 200;
-        el.style.left = x + 'px';
-        el.style.top  = cy + 'px';
-        el.style.fontSize = (1.5 + Math.random()) + 'rem';
-        el.style.animationDelay = delay + 'ms';
-        el.style.animationDuration = (900 + Math.random() * 500) + 'ms';
-        document.body.appendChild(el);
-        setTimeout(() => el.remove(), 1700);
-      }, i * 50);
+    for (let i = 0; i < 22; i++) {
+      const el = document.createElement('div');
+      el.className = 'seat-coin';
+      el.textContent = symbols[Math.floor(Math.random() * symbols.length)];
+      // Fountain spread: mostly upward, slight horizontal fan
+      const angle = -Math.PI/2 + (Math.random() - 0.5) * 1.0; // -90° ± 30°
+      const dist  = 80 + Math.random() * 140;
+      const dx = Math.cos(angle) * dist;
+      const dy = Math.sin(angle) * dist;
+      const dur   = 800 + Math.random() * 400;
+      const delay = i * 45;
+      el.style.cssText = `left:${ox}px;top:${oy}px;font-size:${1.4 + Math.random()*0.8}rem;`;
+      el.style.setProperty('--cx', dx + 'px');
+      el.style.setProperty('--cy', dy + 'px');
+      el.style.setProperty('--cr', Math.round(Math.random()*480 - 240) + 'deg');
+      el.style.setProperty('--dur', dur + 'ms');
+      el.style.setProperty('--delay', delay + 'ms');
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), dur + delay + 100);
     }
   }
 
