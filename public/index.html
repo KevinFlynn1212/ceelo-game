@@ -472,10 +472,10 @@
     100% { transform: translateX(-50%) scale(0.8) translateY(-20px); opacity: 0; }
   }
   .alley-winner-overlay {
-    position: absolute;
+    position: fixed;
     top: 50%; left: 50%;
     transform: translate(-50%, -50%);
-    z-index: 10;
+    z-index: 50;
     pointer-events: none;
   }
   .alley-winner-card {
@@ -491,14 +491,21 @@
     box-shadow: 0 0 60px rgba(245,200,66,0.4), 0 0 120px rgba(245,200,66,0.15), 0 20px 50px rgba(0,0,0,0.9);
     animation: alleyWinIn 0.55s cubic-bezier(0.175,0.885,0.32,1.275) forwards;
   }
-  .alley-winner-crown { font-size: 2.4rem; filter: drop-shadow(0 0 16px rgba(245,200,66,0.9)); }
+  .alley-winner-label {
+    font-family: 'Cinzel', serif;
+    font-size: 0.75rem; font-weight: 700;
+    color: var(--muted);
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    text-align: center;
+  }
   .alley-winner-name {
     font-family: 'Cinzel Decorative', serif;
-    font-size: 1.5rem; font-weight: 900;
-    color: var(--gold);
-    text-shadow: 0 0 24px rgba(245,200,66,0.6);
+    font-size: 2rem; font-weight: 900;
+    color: #ffffff;
+    text-shadow: 0 0 30px rgba(255,255,255,0.4);
     text-align: center;
-    animation: winnerTitlePulse 1.5s ease-in-out infinite;
+    line-height: 1.1;
   }
   .alley-winner-dice {
     display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin: 4px 0;
@@ -1292,7 +1299,7 @@
     <!-- In-alley winner celebration overlay -->
     <div id="alley-winner" class="alley-winner-overlay" style="display:none;">
       <div class="alley-winner-card">
-        <div class="alley-winner-crown" id="aw-crown">🏆</div>
+        <div class="alley-winner-label" id="aw-label">🏆 WINNER 🏆</div>
         <div class="alley-winner-name" id="aw-name"></div>
         <div class="alley-winner-dice" id="aw-dice"></div>
         <div class="alley-winner-result" id="aw-result"></div>
@@ -2064,10 +2071,12 @@
       potText = `${f(pot)} at stake`;
     } else if (winner) {
       const wp = results && results.find(p => p.id === winner);
-      // Also check roomState as fallback
       const wpFallback = !wp && roomState && roomState.players && roomState.players.find(p => p.id === winner);
-      const winPlayer = wp || wpFallback;
-      const isMe = winner === myId;
+      // Last resort: top scorer from sorted results
+      const wpTop = (!wp && !wpFallback && results && results.length > 0)
+        ? [...results].sort((a,b) => (b.score||0) - (a.score||0))[0] : null;
+      const winPlayer = wp || wpFallback || wpTop;
+      const isMe = winner === myId || (winPlayer && winPlayer.id === myId);
       crown = isMe ? '🏆' : '🎉';
       title = isMe ? '🏆 YOU WIN! 🏆' : 'Round Over';
       nameText = winPlayer ? winPlayer.name : isMe ? (myName || 'You') : 'Winner';
@@ -2140,8 +2149,12 @@
       const wp2 = roomState.players.find(p => p.id === winner);
       if (wp2 && wp2.rolls && wp2.rolls.length > 0) winDice = wp2.rolls[wp2.rolls.length-1];
     }
-    document.getElementById('aw-crown').textContent = allDancing ? '🐉' : isTie ? '⚔️' : winner===myId ? '🏆' : '🎉';
-    document.getElementById('aw-name').textContent = allDancing ? 'All Dancing Dragon!' : isTie ? 'SHOOTOUT!' : nameText;
+    const awLabel = document.getElementById('aw-label');
+    if (allDancing) { awLabel.textContent = '🐉 ALL DANCING DRAGON 🐉'; }
+    else if (isTie) { awLabel.textContent = '⚔️ TIE — SHOOTOUT ⚔️'; }
+    else if (isMe)  { awLabel.textContent = '🏆 YOU WIN! 🏆'; }
+    else            { awLabel.textContent = '🏆 WINNER 🏆'; }
+    document.getElementById('aw-name').textContent = allDancing ? 'Pot Doubles!' : isTie ? (results ? results.filter(r=>(r.score||0)===Math.max(...results.map(x=>x.score||0))).map(r=>r.name).join(' vs ') : 'Shootout!') : nameText;
     document.getElementById('aw-result').textContent = resultText;
     document.getElementById('aw-pot').textContent = potText;
     document.getElementById('aw-sub').textContent = isTie ? 'Tying players roll again' : allDancing ? 'Pot doubles — carries over' : winner===myId ? '🎊 Congratulations!' : 'Better luck next round';

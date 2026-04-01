@@ -263,6 +263,7 @@ function serializeRoom(room) {
       antePaid:       p.antePaid,
       raise:          p.raise,
       missedRounds:   p.missedRounds,
+      isWinner:       room.winner === p.name,
       reAnteOffered:  p.reAnteOffered,
       reAntePaid:     p.reAntePaid,
       reAnteActive:   p.reAnteActive,
