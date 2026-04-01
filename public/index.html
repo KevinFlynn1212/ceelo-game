@@ -400,18 +400,21 @@
   }
   .die-3d svg { width: 100%; height: 100%; display: block; }
 
-  /* Rolling: skid/tumble left-right like a die bouncing across pavement */
-  @keyframes dieRollAnim {
-    0%   { transform: rotate(-18deg) translateY(-3px); }
-    12%  { transform: rotate(12deg)  translateY(2px); }
-    24%  { transform: rotate(-8deg)  translateY(-2px); }
-    38%  { transform: rotate(6deg)   translateY(1px); }
-    52%  { transform: rotate(-4deg)  translateY(-1px); }
-    68%  { transform: rotate(3deg)   translateY(1px); }
-    84%  { transform: rotate(-1deg)  translateY(0px); }
-    100% { transform: rotate(0deg)   translateY(0px); }
+  /* During throw: die spins on its axis (top-down view rotating) */
+  @keyframes dieSpinZ {
+    from { transform: rotateZ(0deg); }
+    to   { transform: rotateZ(360deg); }
   }
-  .die-3d.rolling { animation: dieRollAnim 0.28s ease-out infinite; }
+  /* Landing bounce: die settles with a small bounce */
+  @keyframes dieLand {
+    0%   { transform: scale(1.12) translateY(-6px); }
+    35%  { transform: scale(0.94) translateY(3px); }
+    65%  { transform: scale(1.04) translateY(-2px); }
+    85%  { transform: scale(0.98) translateY(1px); }
+    100% { transform: scale(1)    translateY(0px); }
+  }
+  .die-3d.rolling  { animation: dieSpinZ 0.25s linear infinite; }
+  .die-3d.landing  { animation: dieLand 0.45s ease-out forwards; }
 
   /* ── Room info bar (thin dark strip at top) ── */
   .game-info-bar {
@@ -1452,13 +1455,13 @@
     </linearGradient>
   </defs>
   <!-- Bottom face edge (grounding) -->
-  <polygon points="${botPts}" fill="#3a0808" stroke="#1a0404" stroke-width="0.8"/>
+  <polygon points="${botPts}" fill="#3a0808" stroke="none"/>
   <!-- Right side face (shadow) -->
-  <polygon points="${sidePts}" fill="url(#sg${id})" stroke="#1a0404" stroke-width="1"/>
+  <polygon points="${sidePts}" fill="url(#sg${id})" stroke="none"/>
   <!-- Top face (lit) -->
-  <polygon points="${topPts}" fill="url(#tg${id})" stroke="#1a0404" stroke-width="1"/>
-  <!-- Front face (translucent red) -->
-  <rect x="${FL}" y="${FT}" width="${fw}" height="${fh}" fill="url(#fg${id})" stroke="#1a0404" stroke-width="1.5"/>
+  <polygon points="${topPts}" fill="url(#tg${id})" stroke="none"/>
+  <!-- Front face (translucent red) — very subtle border, same hue -->
+  <rect x="${FL}" y="${FT}" width="${fw}" height="${fh}" fill="url(#fg${id})" stroke="rgba(80,0,0,0.3)" stroke-width="0.8"/>
   <!-- Subtle inner translucency shimmer -->
   <rect x="${FL+3}" y="${FT+3}" width="${fw-6}" height="${fh*0.32}" fill="rgba(255,160,160,0.07)" rx="1"/>
   <!-- CEE-LO engraving — only on value 1, arced around the pip -->
@@ -1477,10 +1480,35 @@
 </svg>`;
   }
 
-  // During roll animation — same cube geometry, just different pip count
-  // This prevents the "cut in half" look from changing face sizes
+  // Flat top-down die SVG — used DURING the spinning throw animation
+  // Looks like a red square spinning through the air (viewed from above)
+  function makeSpinningSVG(value) {
+    const s = 78, pad = 14, pr = 7.5;
+    const gx = (c) => 11 + pad + c * (s - pad*2) / 2;
+    const gy = (r) => 11 + pad + r * (s - pad*2) / 2;
+    const dot = (c, r) =>
+      `<circle cx="${gx(c)}" cy="${gy(r)}" r="${pr}" fill="white" opacity="0.9"/>`;
+    const v = parseInt(value, 10);
+    let p = '';
+    if (v===1) p=dot(1,1);
+    else if (v===2) p=dot(0,0)+dot(2,2);
+    else if (v===3) p=dot(0,0)+dot(1,1)+dot(2,2);
+    else if (v===4) p=dot(0,0)+dot(2,0)+dot(0,2)+dot(2,2);
+    else if (v===5) p=dot(0,0)+dot(2,0)+dot(1,1)+dot(0,2)+dot(2,2);
+    else if (v===6) p=dot(0,0)+dot(2,0)+dot(0,1)+dot(2,1)+dot(0,2)+dot(2,2);
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <radialGradient id="rg" cx="45%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#ff4545"/><stop offset="100%" stop-color="#991010"/>
+    </radialGradient>
+  </defs>
+  <rect x="11" y="11" width="${s}" height="${s}" fill="url(#rg)" stroke="rgba(60,0,0,0.25)" stroke-width="0.8"/>
+  ${p}
+</svg>`;
+  }
+
   function makeTumbleSVG(frame, value) {
-    return makeDieSVG(value, 0); // always angle 0 — consistent cube shape
+    return makeSpinningSVG(value); // flat top-down during spinning throw
   }
 
   function buildDiceFaces() {
@@ -1563,6 +1591,8 @@
         const die = document.getElementById('die-' + i);
         die.classList.remove('rolling');
         die.innerHTML = makeDieSVG(finalValues[i]);
+        die.classList.add('landing');
+        die.addEventListener('animationend', () => die.classList.remove('landing'), { once: true });
 
         finished++;
         if (finished === 3) {
