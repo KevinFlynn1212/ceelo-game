@@ -1408,14 +1408,15 @@
       const die = new THREE.Mesh(geo, mats);
       die.visible = false; scene.add(die); dice.push(die);
     }
-    // Rotations to show value V on top (+Y = material[2] = face2)
+    // Rotations to show value V on FRONT face (+Z = material[4] = face1)
+    // Camera looks mostly from +Z direction so front face is what player reads
     const finalRot = {
-      1: new THREE.Euler(-Math.PI/2, 0, 0),   // face1(+Z)→+Y
-      2: new THREE.Euler(0, 0, 0),              // face2(+Y) already top
-      3: new THREE.Euler(0, 0, -Math.PI/2),    // face3(+X)→+Y
-      4: new THREE.Euler(0, 0, Math.PI/2),     // face4(-X)→+Y
-      5: new THREE.Euler(Math.PI, 0, 0),       // face5(-Y)→+Y
-      6: new THREE.Euler(Math.PI/2, 0, 0),     // face6(-Z)→+Y
+      1: new THREE.Euler(0, 0, 0),               // face1(+Z) already front
+      2: new THREE.Euler(Math.PI/2, 0, 0),       // face2(+Y top)   → +Z front
+      3: new THREE.Euler(0, -Math.PI/2, 0),      // face3(+X right) → +Z front
+      4: new THREE.Euler(0, Math.PI/2, 0),       // face4(-X left)  → +Z front
+      5: new THREE.Euler(-Math.PI/2, 0, 0),      // face5(-Y bottom)→ +Z front
+      6: new THREE.Euler(0, Math.PI, 0),         // face6(-Z back)  → +Z front
     };
     window.addEventListener('resize', () => {
       const w2=alley.clientWidth, h2=alley.clientHeight;
