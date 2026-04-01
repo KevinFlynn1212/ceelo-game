@@ -367,27 +367,27 @@
   /* Subtle warm glow at the manhole source */
   .manhole-glow {
     position: absolute;
-    bottom: 14%;
+    bottom: 18%;
     left: 50%;
     transform: translateX(-50%);
-    width: 60px; height: 14px;
-    background: radial-gradient(ellipse, rgba(255,180,60,0.25) 0%, transparent 70%);
+    width: 80px; height: 18px;
+    background: radial-gradient(ellipse, rgba(255,190,70,0.35) 0%, transparent 70%);
     border-radius: 50%;
     pointer-events: none;
-    z-index: 2;
-    filter: blur(4px);
+    z-index: 4;
+    filter: blur(5px);
   }
   .steam-puff {
     position: absolute;
-    width: var(--sw, 22px);
-    height: 50px;
-    background: radial-gradient(ellipse at center, rgba(200,210,220,0.5) 0%, transparent 68%);
+    width: var(--sw, 30px);
+    height: 70px;
+    background: radial-gradient(ellipse at center, rgba(210,220,235,0.65) 0%, transparent 65%);
     border-radius: 50%;
     animation: steamRise var(--sd, 4s) ease-out infinite;
     animation-delay: var(--sdelay, 0s);
     pointer-events: none;
-    z-index: 2;
-    filter: blur(7px);
+    z-index: 4;
+    filter: blur(8px);
   }
 
   /* ── Atmosphere: Distant neon sign ── */
@@ -402,21 +402,19 @@
   }
   .neon-sign {
     position: absolute;
-    /* Upper-center: perspective vanishing point of most alley shots */
-    top: 18%;
+    top: 20%;
     left: 50%;
     transform: translateX(-50%);
     font-family: 'Courier New', monospace;
-    font-size: 0.7rem;
+    font-size: 0.85rem;
     font-weight: bold;
-    letter-spacing: 5px;
+    letter-spacing: 6px;
     color: #ffaaff;
     pointer-events: none;
-    z-index: 3;
+    z-index: 4;
     animation: neonFlicker 7s infinite;
-    /* Extra blur = far away in the alley depth */
-    filter: blur(1.5px) brightness(1.1);
-    opacity: 0.75;
+    filter: blur(1px);
+    opacity: 0.85;
     white-space: nowrap;
   }
 
@@ -1314,10 +1312,10 @@
     <div class="neon-sign">★ CEE-LO ★</div>
     <!-- Manhole steam cluster — grouped in center-bottom where alley floor is -->
     <div class="manhole-glow"></div>
-    <div class="steam-puff" style="--sd:3.9s;--sdelay:0s;   --srot:-8deg; --sw:18px; left:47%; bottom:14%;"></div>
-    <div class="steam-puff" style="--sd:4.8s;--sdelay:0.7s; --srot: 5deg; --sw:24px; left:50%; bottom:14%;"></div>
-    <div class="steam-puff" style="--sd:5.2s;--sdelay:1.4s; --srot:-3deg; --sw:16px; left:53%; bottom:15%;"></div>
-    <div class="steam-puff" style="--sd:4.1s;--sdelay:2.1s; --srot: 9deg; --sw:20px; left:49%; bottom:13%;"></div>
+    <div class="steam-puff" style="--sd:3.9s;--sdelay:0s;   --sw:26px; left:47%; bottom:18%;"></div>
+    <div class="steam-puff" style="--sd:4.8s;--sdelay:0.8s; --sw:32px; left:50%; bottom:18%;"></div>
+    <div class="steam-puff" style="--sd:5.3s;--sdelay:1.6s; --sw:22px; left:53%; bottom:19%;"></div>
+    <div class="steam-puff" style="--sd:4.2s;--sdelay:2.4s; --sw:28px; left:49%; bottom:17%;"></div>
 
     <!-- 3D Dice Container -->
     <div class="dice-3d-container" id="dice-3d-container">
