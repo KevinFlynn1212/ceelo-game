@@ -1648,8 +1648,7 @@
           slot.classList.add('is-winner');
           if (!_coinLaunchedFor.has(player.id)) {
             _coinLaunchedFor.add(player.id);
-            // Delay so slot is in DOM and has a real bounding rect
-            setTimeout(() => launchCoinsFromSeat(slot), 50);
+            slot._needsCoinBurst = true; // flag to fire after appendChild
           }
         }
 
@@ -1723,6 +1722,11 @@
         `;
       }
       list.appendChild(slot);
+      // Fire coin burst AFTER slot is in DOM so getBoundingClientRect works
+      if (slot._needsCoinBurst) {
+        slot._needsCoinBurst = false;
+        requestAnimationFrame(() => requestAnimationFrame(() => launchCoinsFromSeat(slot)));
+      }
     }
   }
 
