@@ -474,9 +474,8 @@
   .alley-winner-overlay {
     position: absolute;
     top: 50%; left: 50%;
-    transform: translateX(-50%);
+    transform: translate(-50%, -50%);
     z-index: 10;
-    margin-top: -140px;
     pointer-events: none;
   }
   .alley-winner-card {
@@ -744,10 +743,33 @@
     0%,100% { box-shadow: 0 0 18px rgba(76,175,80,0.6), inset 0 0 18px rgba(76,175,80,0.1); }
     50%      { box-shadow: 0 0 40px rgba(76,175,80,0.95), 0 0 70px rgba(76,175,80,0.35), inset 0 0 30px rgba(76,175,80,0.15); }
   }
+  @keyframes seatCelebrate {
+    0%   { border-color: #ffd700; box-shadow: 0 0 0 rgba(255,215,0,0); transform: scale(1); }
+    20%  { border-color: #fff; box-shadow: 0 0 30px rgba(255,215,0,0.9), 0 0 60px rgba(255,215,0,0.4); transform: scale(1.06); }
+    40%  { border-color: #ffd700; box-shadow: 0 0 15px rgba(255,215,0,0.5); transform: scale(0.97); }
+    60%  { border-color: #fff; box-shadow: 0 0 25px rgba(255,215,0,0.8); transform: scale(1.04); }
+    80%  { border-color: #ffd700; transform: scale(1.01); }
+    100% { border-color: #ffd700; box-shadow: 0 0 20px rgba(255,215,0,0.6); transform: scale(1); }
+  }
+  @keyframes crownBadgePop {
+    0%   { transform: scale(0) rotate(-30deg); opacity: 0; }
+    60%  { transform: scale(1.3) rotate(5deg); opacity: 1; }
+    100% { transform: scale(1) rotate(0deg); opacity: 1; }
+  }
   .hud-slot.is-winner {
-    border: 3px solid #4caf50 !important;
-    background: rgba(76,175,80,0.22) !important;
-    animation: winnerGlow 0.8s ease-in-out infinite;
+    border: 3px solid #ffd700 !important;
+    background: rgba(255,215,0,0.15) !important;
+    animation: seatCelebrate 0.7s ease-out forwards, winnerGlow 1.2s ease-in-out 0.7s infinite;
+    position: relative;
+  }
+  .hud-slot.is-winner::after {
+    content: '👑';
+    position: absolute;
+    top: -14px; left: 50%;
+    transform: translateX(-50%);
+    font-size: 1.4rem;
+    animation: crownBadgePop 0.5s cubic-bezier(0.175,0.885,0.32,1.275) forwards;
+    filter: drop-shadow(0 0 8px rgba(255,215,0,0.9));
   }
   .hud-action.act-win {
     background: rgba(76,175,80,0.45) !important;
@@ -1381,15 +1403,27 @@
     }
   });
 
-  socket.on('roll_result', ({ playerId, dice, evaluation, rollCount, done }) => {
-    // ALL players see the dice animation — not just the roller
-    _diceRevealedFor.delete(playerId); // hide HUD dice until anim done
+  // Queue so rapid back-to-back rolls don't overlap
+  let _rollQueue = [], _rollAnimating = false;
+  function enqueueRoll(playerId, dice, evaluation) {
+    _rollQueue.push({ playerId, dice, evaluation });
+    if (!_rollAnimating) drainRollQueue();
+  }
+  function drainRollQueue() {
+    if (_rollQueue.length === 0) { _rollAnimating = false; return; }
+    _rollAnimating = true;
+    const { playerId, dice, evaluation } = _rollQueue.shift();
+    _diceRevealedFor.delete(playerId);
+    const onDone = () => setTimeout(drainRollQueue, 400); // pause between rolls
     if (playerId === myId) {
-      animateDice(dice, evaluation);
+      animateDice(dice, evaluation, onDone);
     } else {
-      // Animate for OTHER players too — everyone watches the throw
-      animateForOtherPlayer(playerId, dice, evaluation);
+      animateForOtherPlayer(playerId, dice, evaluation, onDone);
     }
+  }
+
+  socket.on('roll_result', ({ playerId, dice, evaluation }) => {
+    enqueueRoll(playerId, dice, evaluation);
   });
 
   socket.on('re_ante_offer', ({ playerId, timerEnd, ante }) => {
@@ -1802,7 +1836,7 @@
     } catch(e) {}
   }
 
-  function animateDice(finalValues, evaluation) {
+  function animateDice(finalValues, evaluation, onDone) {
     animating = true;
     _animatingForPlayer = myId; // track who is currently animating
     const btn = document.getElementById('btn-roll');
@@ -1869,6 +1903,7 @@
               if (evaluation) document.getElementById('result-label').textContent = (evaluation.emoji||'') + ' ' + (evaluation.label||'');
               setTimeout(() => {
                 if (roomState) { const me = roomState.players?.find(p=>p.id===myId); updateRollButton(roomState, me); }
+                if (onDone) onDone();
               }, 200);
             }
           }
@@ -1881,7 +1916,7 @@
   }
 
   // Animate dice for another player rolling — same animation, no button/state changes
-  function animateForOtherPlayer(playerId, finalValues, evaluation) {
+  function animateForOtherPlayer(playerId, finalValues, evaluation, onDone) {
     playDiceRattle();
     const { renderer, scene, camera, dice, finalRot } = ensureThree();
     if (_threeAnimId) { cancelAnimationFrame(_threeAnimId); _threeAnimId = null; }
@@ -1917,6 +1952,7 @@
               _diceRevealedFor.add(playerId);
               if (roomState) renderPlayers(roomState);
               if (evaluation) document.getElementById('result-label').textContent = (evaluation.emoji||'')+ ' '+(evaluation.label||'');
+              if (onDone) setTimeout(onDone, 200);
             }
           }
         }
