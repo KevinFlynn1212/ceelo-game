@@ -1052,6 +1052,18 @@
     0%,100% { text-shadow: 0 0 20px rgba(245,200,66,0.5); }
     50%     { text-shadow: 0 0 50px rgba(245,200,66,1), 0 0 100px rgba(245,200,66,0.4); }
   }
+  @keyframes seatCoinUp {
+    0%   { opacity: 1; transform: translateY(0) scale(1.2); }
+    100% { opacity: 0; transform: translateY(-160px) scale(0.4); }
+  }
+  .seat-coin {
+    position: fixed;
+    z-index: 9999;
+    pointer-events: none;
+    font-size: 2rem;
+    line-height: 1;
+    animation: seatCoinUp 1.1s ease-out forwards;
+  }
   @keyframes coinFloat {
     0%   { transform: translateY(0) rotate(0deg) scale(1); opacity: 1; }
     100% { transform: translateY(-200px) rotate(720deg) scale(0.3); opacity: 0; }
@@ -2180,27 +2192,26 @@
 
   function launchCoinsFromSeat(slotEl) {
     const rect = slotEl.getBoundingClientRect();
-    const cx = rect.width  ? rect.left + rect.width/2  : window.innerWidth/2;
-    const cy = rect.height ? rect.top  + rect.height/2 : window.innerHeight * 0.85;
-    const symbols = ['🪙','🪙','🪙','💰','💰','✨','⭐','🌟'];
-    for (let i = 0; i < 28; i++) {
+    // Spread coins across the width of the seat
+    const x0 = rect.width  ? rect.left               : window.innerWidth * 0.1;
+    const x1 = rect.width  ? rect.left + rect.width  : window.innerWidth * 0.3;
+    const cy = rect.height ? rect.top                : window.innerHeight * 0.8;
+    const symbols = ['🪙','🪙','🪙','💰','✨','⭐','🌟'];
+    for (let i = 0; i < 20; i++) {
       setTimeout(() => {
         const el = document.createElement('div');
+        el.className = 'seat-coin';
         el.textContent = symbols[Math.floor(Math.random() * symbols.length)];
-        const angle = -Math.PI/2 + (Math.random() - 0.5) * Math.PI * 1.4;
-        const dist  = 60 + Math.random() * 120;
-        const dx = Math.cos(angle) * dist;
-        const dy = Math.sin(angle) * dist;
-        const size = 1.6 + Math.random() * 1.2;  // BIG — 1.6–2.8rem
-        const dur  = 900 + Math.random() * 600;
-        el.style.cssText = `position:fixed;left:${cx}px;top:${cy}px;font-size:${size}rem;z-index:9999;pointer-events:none;line-height:1;`;
+        const x = x0 + Math.random() * (x1 - x0);
+        const delay = Math.random() * 200;
+        el.style.left = x + 'px';
+        el.style.top  = cy + 'px';
+        el.style.fontSize = (1.5 + Math.random()) + 'rem';
+        el.style.animationDelay = delay + 'ms';
+        el.style.animationDuration = (900 + Math.random() * 500) + 'ms';
         document.body.appendChild(el);
-        el.animate([
-          { transform:'translate(-50%,-50%) scale(1.2)', opacity:1, offset:0 },
-          { transform:`translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px)) rotate(${Math.round(Math.random()*720)}deg) scale(0.3)`, opacity:0, offset:1 }
-        ], { duration: dur, easing:'cubic-bezier(0,0.8,0.6,1)', fill:'forwards' });
-        setTimeout(() => el.remove(), dur + 50);
-      }, i * 30);
+        setTimeout(() => el.remove(), 1700);
+      }, i * 50);
     }
   }
 
