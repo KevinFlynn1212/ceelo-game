@@ -947,47 +947,99 @@
   /* ═══════════════════════════════
      WINNER OVERLAY
   ═══════════════════════════════ */
+  @keyframes winnerScreenIn {
+    0%   { opacity: 0; }
+    100% { opacity: 1; }
+  }
+  @keyframes winnerCardIn {
+    0%   { transform: scale(0.6) translateY(40px); opacity: 0; }
+    60%  { transform: scale(1.04) translateY(-6px); opacity: 1; }
+    100% { transform: scale(1) translateY(0); }
+  }
+  @keyframes winnerTitlePulse {
+    0%,100% { text-shadow: 0 0 20px rgba(245,200,66,0.5); }
+    50%     { text-shadow: 0 0 50px rgba(245,200,66,1), 0 0 100px rgba(245,200,66,0.4); }
+  }
+  @keyframes coinFloat {
+    0%   { transform: translateY(0) rotate(0deg) scale(1); opacity: 1; }
+    100% { transform: translateY(-200px) rotate(720deg) scale(0.3); opacity: 0; }
+  }
+  @keyframes strungFlash {
+    0%,100% { background: transparent; }
+    15%     { background: rgba(255,220,50,0.35); }
+    30%     { background: transparent; }
+    45%     { background: rgba(255,220,50,0.25); }
+  }
+  @keyframes dragonFlash {
+    0%,100% { background: transparent; }
+    20%     { background: rgba(220,30,30,0.4); }
+    40%     { background: transparent; }
+    60%     { background: rgba(180,20,20,0.3); }
+  }
+  .winner-flash-overlay {
+    position: fixed; inset: 0; z-index: 99; pointer-events: none;
+  }
+  .winner-flash-overlay.strung  { animation: strungFlash 1.2s ease forwards; }
+  .winner-flash-overlay.dragon  { animation: dragonFlash 1.0s ease forwards; }
+
   #screen-winner {
-    background: rgba(5,3,2,0.94);
+    background: rgba(4,2,1,0.92);
     flex-direction: column;
-    gap: 24px;
+    gap: 20px;
     z-index: 100;
+    animation: winnerScreenIn 0.4s ease forwards;
   }
 
   .winner-card {
-    background: var(--card);
-    border: 1px solid rgba(245,200,66,0.5);
-    border-radius: 16px;
-    padding: 32px 40px;
-    max-width: 480px;
+    background: linear-gradient(160deg, rgba(30,20,5,0.98) 0%, rgba(15,10,2,0.98) 100%);
+    border: 2px solid rgba(245,200,66,0.7);
+    border-radius: 18px;
+    padding: 28px 36px;
+    max-width: 500px;
     width: 100%;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 20px;
-    backdrop-filter: blur(8px);
-    box-shadow: 0 0 80px rgba(245,200,66,0.2), 0 20px 60px rgba(0,0,0,0.7);
+    gap: 14px;
+    backdrop-filter: blur(12px);
+    box-shadow: 0 0 60px rgba(245,200,66,0.25), 0 0 120px rgba(245,200,66,0.1), 0 20px 60px rgba(0,0,0,0.8);
+    animation: winnerCardIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
   }
 
-  .winner-crown { font-size: 3rem; }
+  .winner-crown { font-size: 3.5rem; filter: drop-shadow(0 0 20px rgba(245,200,66,0.8)); }
   .winner-title {
     font-family: 'Cinzel', serif;
-    color: var(--muted);
-    font-size: 0.75rem;
+    color: var(--gold);
+    font-size: 2rem;
+    font-weight: 900;
     text-transform: uppercase;
-    letter-spacing: 0.25em;
+    letter-spacing: 0.15em;
+    text-align: center;
+    animation: winnerTitlePulse 1.5s ease-in-out infinite;
   }
   .winner-name {
     font-family: 'Cinzel Decorative', serif;
-    font-size: 1.9rem;
+    font-size: 1.7rem;
     font-weight: 900;
+    color: #ffffff;
+    text-align: center;
+  }
+  .winner-result {
+    font-family: 'Cinzel', serif;
+    font-size: 1.15rem;
+    font-weight: 700;
     color: var(--gold);
     text-align: center;
-    text-shadow: 0 0 30px rgba(245,200,66,0.5);
   }
-  .winner-result { font-family: 'Lato', sans-serif; font-size: 1.1rem; color: var(--paper); }
-  .winner-pot { font-family: 'Cinzel', serif; font-size: 1.5rem; font-weight: 700; color: var(--gold); }
-  .winner-rake { font-family: 'Lato', sans-serif; font-size: 0.8rem; color: var(--muted); }
+  .winner-pot {
+    font-family: 'Cinzel', serif;
+    font-size: 1.8rem;
+    font-weight: 900;
+    color: #ffd700;
+    text-shadow: 0 0 30px rgba(255,215,0,0.6);
+    text-align: center;
+  }
+  .winner-rake { font-family: 'Lato', sans-serif; font-size: 0.78rem; color: var(--muted); }
 
   .winner-rankings { width: 100%; display: flex; flex-direction: column; gap: 6px; }
   .rank-row {
@@ -1887,10 +1939,13 @@
       potText = `New pot: ${f(carryoverPot)}`;
     } else if (isTie) {
       crown = '⚔️';
-      title = 'TIE — SHOOTOUT!';
-      nameText = 'Dead heat!';
-      resultText = 'Tying players shoot it out';
-      potText = `Pot: ${f(pot)} up for grabs`;
+      title = 'TIE!';
+      nameText = 'SHOOTOUT!';
+      // Find tying players
+      const maxScore = results ? Math.max(...results.map(r => r.score||0)) : 0;
+      const tiers = results ? results.filter(r => (r.score||0) === maxScore).map(r => r.name) : [];
+      resultText = tiers.length > 0 ? tiers.join(' vs ') + ' — re-roll for the pot' : 'Tying players re-roll';
+      potText = `${f(pot)} at stake`;
     } else if (winner) {
       const wp = results && results.find(p => p.id === winner);
       const isMe = winner === myId;
@@ -1947,9 +2002,37 @@
       });
     }
 
+    _blockGameScreen = true;
     showScreen('winner');
+
+    // Flash overlay based on outcome
+    const flashEl = document.createElement('div');
+    const winnerResult = results && winner ? results.find(p=>p.id===winner) : null;
+    const winnerType = winnerResult && winnerResult.result ? winnerResult.result.type : '';
+    flashEl.className = 'winner-flash-overlay ' + (allDancing ? 'dragon' : winnerType==='456' ? 'strung' : winnerType==='123' ? 'dragon' : '');
+    document.body.appendChild(flashEl);
+    setTimeout(() => flashEl.remove(), 1500);
+
+    // Fly coins if someone won (not tie)
+    if (winner && !isTie && !allDancing) launchCoins(winner === myId ? 30 : 12);
+
     if (winnerDismissTimer) clearTimeout(winnerDismissTimer);
-    winnerDismissTimer = setTimeout(() => dismissWinner(), 8000);
+    winnerDismissTimer = setTimeout(() => dismissWinner(), 10000);
+  }
+
+  function launchCoins(count) {
+    const symbols = ['🪙','💰','✨','⭐','🌟'];
+    for (let i = 0; i < count; i++) {
+      setTimeout(() => {
+        const el = document.createElement('div');
+        el.textContent = symbols[Math.floor(Math.random()*symbols.length)];
+        const x = 20 + Math.random() * 60; // % across screen
+        el.style.cssText = `position:fixed;left:${x}%;bottom:30%;font-size:${1.2+Math.random()*1.5}rem;z-index:200;pointer-events:none;
+          animation:coinFloat ${1.2+Math.random()*1.2}s ease-out forwards;`;
+        document.body.appendChild(el);
+        setTimeout(() => el.remove(), 2600);
+      }, i * 60);
+    }
   }
 
   function dismissWinner() {
