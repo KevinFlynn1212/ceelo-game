@@ -1647,9 +1647,15 @@
         if (player.done) slot.classList.add('done');
         if (isWinner) {
           slot.classList.add('is-winner');
+          slot.dataset.playerId = player.id;
           if (!_coinLaunchedFor.has(player.id)) {
             _coinLaunchedFor.add(player.id);
-            slot._needsCoinBurst = true; // flag to fire after appendChild
+            // Query fresh seat element after render settles
+            const pid = player.id;
+            setTimeout(() => {
+              const liveSeat = document.querySelector(`.hud-slot.is-winner[data-player-id="${pid}"]`);
+              if (liveSeat) launchCoinsFromSeat(liveSeat);
+            }, 300);
           }
         }
 
@@ -1723,11 +1729,6 @@
         `;
       }
       list.appendChild(slot);
-      // Fire coin burst AFTER slot is in DOM so getBoundingClientRect works
-      if (slot._needsCoinBurst) {
-        slot._needsCoinBurst = false;
-        requestAnimationFrame(() => requestAnimationFrame(() => launchCoinsFromSeat(slot)));
-      }
     }
   }
 
@@ -2180,7 +2181,9 @@
         <div class="alley-winner-pot">${escHtml(potText)}</div>
         <div class="alley-winner-sub">${escHtml(subTxt)}</div>
       </div>`;
+    awOverlay.style.opacity = '0'; // start hidden, fade in after delay
     document.body.appendChild(awOverlay);
+    setTimeout(() => { awOverlay.style.transition = 'opacity 0.4s'; awOverlay.style.opacity = '1'; }, 1400);
 
     // Hide result label behind winner card
     const resLabel = document.getElementById('result-label');
