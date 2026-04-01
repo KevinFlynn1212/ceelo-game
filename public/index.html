@@ -2031,32 +2031,44 @@
       }
       setTimeout(windGust, 8000 + Math.random() * 10000);
 
-      // Distant siren via Web Audio API — proper gain ramp, guaranteed no abrupt cutoff
-      let _sirenBuffer = null;
-      fetch('/siren.wav').then(r => r.arrayBuffer()).then(buf => {
-        const tempCtx = new (window.AudioContext || window.webkitAudioContext)();
-        return tempCtx.decodeAudioData(buf);
-      }).then(decoded => { _sirenBuffer = decoded; }).catch(()=>{});
-
+      // Synthesized distant siren — two-tone oscillator with doppler, no WAV file needed
       function distantSiren() {
-        if (!_sirenBuffer) { setTimeout(distantSiren, 5000); return; }
         try {
           const ctx = new (window.AudioContext || window.webkitAudioContext)();
-          const source = ctx.createBufferSource();
-          source.buffer = _sirenBuffer;
+          const t = ctx.currentTime;
+          const duration = 10; // total siren pass duration
+
+          // Two-tone European siren: alternates between two frequencies
+          const osc = ctx.createOscillator();
+          osc.type = 'sine';
+          // Wail between ~620Hz and ~780Hz (sounds distant/muffled at low volume)
+          const freqLow = 620, freqHigh = 780;
+          const cycleTime = 1.8; // seconds per wail cycle
+          for (let i = 0; i < duration; i += cycleTime) {
+            osc.frequency.setValueAtTime(freqLow, t + i);
+            osc.frequency.linearRampToValueAtTime(freqHigh, t + i + cycleTime * 0.5);
+            osc.frequency.linearRampToValueAtTime(freqLow, t + i + cycleTime);
+          }
+
+          // Low-pass filter to muffle it (sounds far away through walls/buildings)
+          const lpf = ctx.createBiquadFilter();
+          lpf.type = 'lowpass';
+          lpf.frequency.value = 900;
+          lpf.Q.value = 0.5;
+
+          // Master gain — doppler envelope: approaches, passes, recedes
           const gain = ctx.createGain();
-          gain.gain.setValueAtTime(0, ctx.currentTime);
-          // Fade in over 3s to very quiet
-          gain.gain.linearRampToValueAtTime(0.012, ctx.currentTime + 3);
-          // Hold briefly then fade out over 4s — completely silent by 7s
-          gain.gain.setValueAtTime(0.012, ctx.currentTime + 3.5);
-          gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 7.5);
-          gain.gain.setValueAtTime(0, ctx.currentTime + 7.6);
-          source.connect(gain);
+          gain.gain.setValueAtTime(0.0, t);
+          gain.gain.linearRampToValueAtTime(0.015, t + 4);      // slowly approaching
+          gain.gain.linearRampToValueAtTime(0.018, t + 5);      // closest point
+          gain.gain.exponentialRampToValueAtTime(0.001, t + 9);  // receding
+          gain.gain.linearRampToValueAtTime(0.0, t + 10);       // gone
+
+          osc.connect(lpf);
+          lpf.connect(gain);
           gain.connect(ctx.destination);
-          source.start(0);
-          // Hard stop at 7.6s — no chance of clip ending on its own
-          source.stop(ctx.currentTime + 7.6);
+          osc.start(t);
+          osc.stop(t + duration);
         } catch(e) {}
         setTimeout(distantSiren, 50000 + Math.random() * 70000);
       }
