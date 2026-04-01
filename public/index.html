@@ -777,31 +777,24 @@
   .hud-status.done    { background: rgba(76,175,80,0.15);  color: var(--green); }
   .hud-status.rolling { background: rgba(245,200,66,0.15); color: var(--gold); }
 
-  /* Animated border drain around active slot */
+  /* Segmented border ring — 5 segments appear one-by-one as time elapses */
   .hud-slot { position: relative; }
   .hud-drain-ring {
     position: absolute;
     inset: -2px;
-    border-radius: 11px;
     pointer-events: none;
     z-index: 1;
-    overflow: hidden;
   }
-  .hud-drain-ring svg {
-    width: 100%; height: 100%;
-    position: absolute; top: 0; left: 0;
-  }
-  .hud-drain-ring rect {
+  .hud-drain-ring svg { width: 100%; height: 100%; display: block; }
+  .hud-seg {
     fill: none;
-    stroke: var(--gold);
-    stroke-width: 3;
+    stroke: #ff4444;
+    stroke-width: 3.5;
     stroke-linecap: round;
+    opacity: 0;
+    transition: opacity 0.25s ease;
   }
-  .hud-drain-ring rect.urgent { stroke: #ff4444; }
-  @keyframes drainBorder {
-    from { stroke-dashoffset: 0; }
-    to   { stroke-dashoffset: var(--perimeter); }
-  }
+  .hud-seg.lit { opacity: 1; }
 
   /* ═══════════════════════════════
      CHAT PANEL (slide-in from right)
@@ -1398,16 +1391,16 @@
           actionClass = 'act-waiting';
         }
 
-        // Result — clean format matching reference ("point 5", "NO POINT", "STRUNGFLOWERS")
+        // Result — server types: '456', '123', 'trips', 'point', 'none', 'bust'
         let resultText = '—', resultClass = '';
         if (player.result) {
           const t = player.result.type || '';
-          if (t === 'strungflowers')   { resultText = '🌟 STRUNGFLOWERS'; resultClass = 'res-strung'; }
-          else if (t === 'triple')     { resultText = `⚡ TRIPLE ${player.result.triple||''}`; resultClass = 'res-triple'; }
-          else if (t === 'point')      { resultText = `point ${player.result.point||''}`; resultClass = 'res-point'; }
-          else if (t === 'dancing_dragon'||t==='dragon') { resultText = '💀 DRAGON'; resultClass = 'res-dragon'; }
-          else if (t === 'bust')       { resultText = 'bust'; resultClass = 'res-dragon'; }
-          else                         { resultText = 'NO POINT'; resultClass = 'res-nocombo'; }
+          if (t === '456')    { resultText = '🌟 STRUNGFLOWERS'; resultClass = 'res-strung'; }
+          else if (t === 'trips') { resultText = `⚡ TRIPS ${player.result.point||''}`; resultClass = 'res-triple'; }
+          else if (t === 'point') { resultText = `point ${player.result.point||''}`; resultClass = 'res-point'; }
+          else if (t === '123')   { resultText = '🐉 DANCING DRAGON'; resultClass = 'res-dragon'; }
+          else if (t === 'bust')  { resultText = 'bust'; resultClass = 'res-dragon'; }
+          else if (t === 'none')  { resultText = 'no combo'; resultClass = 'res-nocombo'; }
         } else if (player.rollCount > 0) { resultText = '...'; }
 
         const youTag = player.id === myId ? '<span class="you-tag">YOU</span>' : '';
@@ -1416,20 +1409,18 @@
           ? `<div class="hud-mini-dice">${lastRoll.map(d => `<span class="mini-die">${d}</span>`).join('')}</div>`
           : '';
 
-        // Animated border drain ring — SVG rect with stroke-dashoffset animation
+        // 5-segment border ring — segments light up as time elapses
+        // Perimeter of 96x96 rx=9 rect ≈ 368 units; each segment = 73.6
         let drainRing = '';
         if (isActiveTurn && roomState && roomState.timerEnd && roomState.timerEnd > Date.now()) {
-          const secLeft = Math.max(0.1, (roomState.timerEnd - Date.now()) / 1000);
-          // Perimeter ~approx for typical slot size; refined by JS on mount
-          const perim = 999;
-          drainRing = `<div class="hud-drain-ring">
-            <svg viewBox="0 0 100 100" preserveAspectRatio="none">
-              <rect x="2" y="2" width="96" height="96" rx="9"
-                style="stroke-dasharray:${perim};stroke-dashoffset:0;
-                       animation:drainBorder ${secLeft}s linear forwards;"
-                class="${secLeft <= 5 ? 'urgent' : ''}"/>
-            </svg>
-          </div>`;
+          const perim = 368, seg = perim / 5; // ~73.6 each
+          // 5 rects each covering 20% of the border using stroke-dasharray offset
+          const segs = [0,1,2,3,4].map(i =>
+            `<rect x="2" y="2" width="96" height="96" rx="9"
+              class="hud-seg" data-seg="${i}"
+              style="stroke-dasharray:${seg.toFixed(1)} ${perim};stroke-dashoffset:${(-seg*i).toFixed(1)};"/>`
+          ).join('');
+          drainRing = `<div class="hud-drain-ring"><svg viewBox="0 0 100 100" preserveAspectRatio="none">${segs}</svg></div>`;
         }
 
         slot.innerHTML = `
@@ -1650,24 +1641,30 @@
   }
 
   // ===== TIMER =====
+  let _segTimers = [];
   function startTimer(timerEnd) {
     if (timerInterval) clearInterval(timerInterval);
+    _segTimers.forEach(t => clearTimeout(t)); _segTimers = [];
     const el = document.getElementById('game-timer');
 
     function tick() {
       const remaining = Math.max(0, Math.ceil((timerEnd - Date.now()) / 1000));
       el.textContent = remaining + 's';
       el.classList.toggle('urgent', remaining <= 5);
-      // Turn drain ring red when urgent
-      const ring = document.querySelector('.hud-drain-ring rect');
-      if (ring) ring.classList.toggle('urgent', remaining <= 5);
-      if (remaining <= 0) {
-        clearInterval(timerInterval);
-        timerInterval = null;
-      }
+      if (remaining <= 0) { clearInterval(timerInterval); timerInterval = null; }
     }
     tick();
     timerInterval = setInterval(tick, 500);
+
+    // Light up segments 0→4 spread across the timer duration
+    const totalMs = Math.max(1000, timerEnd - Date.now());
+    for (let i = 0; i < 5; i++) {
+      const delay = totalMs * (i + 1) / 5;
+      _segTimers.push(setTimeout(() => {
+        const seg = document.querySelector(`.hud-seg[data-seg="${i}"]`);
+        if (seg) seg.classList.add('lit');
+      }, delay));
+    }
   }
 
   // ===== RE-ANTE =====
