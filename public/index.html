@@ -390,9 +390,9 @@
   }
 
   .die-3d {
-    width: 80px;
-    height: 80px;
-    filter: drop-shadow(0 8px 14px rgba(0,0,0,0.8));
+    width: 90px;
+    height: 90px;
+    filter: drop-shadow(0 8px 16px rgba(0,0,0,0.85));
     flex-shrink: 0;
     transition: transform 0.3s ease-out;
   }
@@ -1387,72 +1387,103 @@
   // Top face (bright red, lit), Front face (medium red, pips), Right face (dark red, shadow)
   // No CSS 3D transforms — the SVG geometry creates the 3D look directly
 
-  function makeDieSVG(value) {
-    // SVG viewBox 0 0 90 90
-    // Cube geometry — isometric view showing top + front + right
-    const W = 90, H = 90;
-    // Front face corners
-    const FL = 8,  FT = 36, FR = 62, FB = 80; // left, top, right, bottom
-    const fw = FR - FL; // 54px wide
-    const fh = FB - FT; // 44px tall
-    // Top face — parallelogram above front face
-    // Top-left of top = FL, FT; going up-right to FR+depth, FT-depth
-    const depth = 18; // how deep the top/side appear
-    // Top face points: FL,FT → FR,FT → FR+depth,FT-depth → FL+depth,FT-depth
-    const TL = `${FL},${FT}`;
-    const TR = `${FR},${FT}`;
-    const TR2 = `${FR+depth},${FT-depth}`;
-    const TL2 = `${FL+depth},${FT-depth}`;
-    // Right face points: FR,FT → FR+depth,FT-depth → FR+depth,FB-depth → FR,FB
-    const RL1 = `${FR},${FT}`;
-    const RL2 = `${FR+depth},${FT-depth}`;
-    const RL3 = `${FR+depth},${FB-depth}`;
-    const RL4 = `${FR},${FB}`;
+  // Vegas casino die — translucent red acrylic, big white pips, sharp edges
+  // viewBox 0 0 100 100
+  function makeDieSVG(value, angle) {
+    // angle 0=standard, 1=leaning back, 2=nose-dive, 3=mirrored
+    angle = angle || 0;
 
-    // Pip positions on front face (3x3 grid, padded)
-    const px = (col) => FL + 10 + col * (fw - 20) / 2; // cols 0,1,2
-    const py = (row) => FT + 8 + row * (fh - 16) / 2;  // rows 0,1,2
-    const r = 4.5; // pip radius
+    // Geometry depends on viewing angle
+    // Standard: front face + top sliver visible
+    const configs = [
+      // angle 0: standard — front square + narrow top parallelogram
+      { FL:4, FT:22, FR:82, FB:90, topD:14, flip:false },
+      // angle 1: leaning back — smaller front, bigger top
+      { FL:4, FT:36, FR:82, FB:90, topD:14, flip:false },
+      // angle 2: nose-dive — mostly top, tiny front
+      { FL:4, FT:60, FR:82, FB:90, topD:14, flip:false },
+      // angle 3: mirrored (left side visible instead of right)
+      { FL:14, FT:22, FR:92, FB:90, topD:-14, flip:true },
+    ];
+    const cfg = configs[angle] || configs[0];
+    const { FL, FT, FR, FB, topD, flip } = cfg;
+    const fw = FR - FL, fh = FB - FT;
 
-    const pip = (col, row) =>
-      `<circle cx="${px(col)}" cy="${py(row)}" r="${r}" fill="white" filter="url(#ps)"/>`;
+    // Top face points
+    const topPts = flip
+      ? `${FL},${FT} ${FR},${FT} ${FR+topD},${FT+topD} ${FL+topD},${FT+topD}`
+      : `${FL},${FT} ${FR},${FT} ${FR+topD},${FT+topD} ${FL+topD},${FT+topD}`;
 
-    const pipLayouts = {
-      1: () => pip(1,1),
-      2: () => pip(0,0)+pip(2,2),
-      3: () => pip(0,0)+pip(1,1)+pip(2,2),
-      4: () => pip(0,0)+pip(2,0)+pip(0,2)+pip(2,2),
-      5: () => pip(0,0)+pip(2,0)+pip(1,1)+pip(0,2)+pip(2,2),
-      6: () => pip(0,0)+pip(2,0)+pip(0,1)+pip(2,1)+pip(0,2)+pip(2,2),
-    };
+    // Side face (right or left)
+    const sidePts = flip
+      ? `${FL},${FT} ${FL+topD},${FT+topD} ${FL+topD},${FB+topD} ${FL},${FB}`
+      : `${FR},${FT} ${FR+topD},${FT+topD} ${FR+topD},${FB+topD} ${FR},${FB}`;
 
-    const pips = (pipLayouts[value] || pipLayouts[1])();
+    // Pip grid on front face — BIG pips like real Vegas dice
+    const pad = 10;
+    const gx = (c) => FL + pad + c * (fw - pad*2) / 2;
+    const gy = (r) => FT + pad + r * (fh - pad*2) / 2;
+    const pr = Math.min(fw, fh) * 0.115; // pip radius ~11.5% of face
+    const dot = (c, r) =>
+      `<circle cx="${gx(c).toFixed(1)}" cy="${gy(r).toFixed(1)}" r="${pr.toFixed(1)}" fill="white">
+        <animate attributeName="opacity" values="1;0.85;1" dur="0.3s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="${gx(c).toFixed(1)}" cy="${gy(r).toFixed(1)}" r="${(pr*0.5).toFixed(1)}" fill="rgba(255,255,255,0.4)"/>`;
 
-    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}">
+    const v = parseInt(value, 10);
+    let pips = '';
+    if (v===1) pips=dot(1,1);
+    else if (v===2) pips=dot(0,0)+dot(2,2);
+    else if (v===3) pips=dot(0,0)+dot(1,1)+dot(2,2);
+    else if (v===4) pips=dot(0,0)+dot(2,0)+dot(0,2)+dot(2,2);
+    else if (v===5) pips=dot(0,0)+dot(2,0)+dot(1,1)+dot(0,2)+dot(2,2);
+    else if (v===6) pips=dot(0,0)+dot(2,0)+dot(0,1)+dot(2,1)+dot(0,2)+dot(2,2);
+
+    const id = `d${Math.random().toString(36).slice(2,6)}`;
+
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
   <defs>
-    <filter id="ps" x="-30%" y="-30%" width="160%" height="160%">
-      <feDropShadow dx="0" dy="1" stdDeviation="0.8" flood-color="rgba(0,0,0,0.5)"/>
-    </filter>
-    <linearGradient id="fg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#d92020"/>
-      <stop offset="100%" stop-color="#a81818"/>
+    <!-- Translucent red acrylic — light passes through, brighter in center -->
+    <radialGradient id="fg${id}" cx="45%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#ff3a3a" stop-opacity="0.95"/>
+      <stop offset="50%" stop-color="#dd1f1f" stop-opacity="0.92"/>
+      <stop offset="100%" stop-color="#9a1010" stop-opacity="0.88"/>
+    </radialGradient>
+    <!-- Top face — brighter, lit from above -->
+    <linearGradient id="tg${id}" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ff6060"/>
+      <stop offset="100%" stop-color="#cc2020"/>
     </linearGradient>
-    <linearGradient id="tg" x1="0" y1="1" x2="1" y2="0">
-      <stop offset="0%" stop-color="#e83030"/>
-      <stop offset="100%" stop-color="#f04040"/>
+    <!-- Side face — darker shadow -->
+    <linearGradient id="sg${id}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#8a1515"/>
+      <stop offset="100%" stop-color="#5a0c0c"/>
     </linearGradient>
   </defs>
-  <!-- Right face (dark shadow) -->
-  <polygon points="${RL1} ${RL2} ${RL3} ${RL4}" fill="#7a1212" stroke="#4a0a0a" stroke-width="1"/>
-  <!-- Top face (bright lit) -->
-  <polygon points="${TL} ${TR} ${TR2} ${TL2}" fill="url(#tg)" stroke="#4a0a0a" stroke-width="1"/>
-  <!-- Front face (medium red with pips) -->
-  <rect x="${FL}" y="${FT}" width="${fw}" height="${fh}" fill="url(#fg)" stroke="#4a0a0a" stroke-width="1"/>
-  <!-- Highlight on front face top edge -->
-  <line x1="${FL}" y1="${FT}" x2="${FR}" y2="${FT}" stroke="rgba(255,120,120,0.4)" stroke-width="1.5"/>
+  <!-- Ground shadow -->
+  <ellipse cx="${(FL+FR)/2+topD/2}" cy="${FB+topD+2}" rx="${fw*0.45}" ry="${Math.abs(topD)*0.4}" fill="rgba(0,0,0,0.35)"/>
+  <!-- Side face -->
+  <polygon points="${sidePts}" fill="url(#sg${id})" stroke="#2a0606" stroke-width="1"/>
+  <!-- Top face -->
+  <polygon points="${topPts}" fill="url(#tg${id})" stroke="#2a0606" stroke-width="1"/>
+  <!-- Front face — translucent red -->
+  <rect x="${FL}" y="${FT}" width="${fw}" height="${fh}" fill="url(#fg${id})" stroke="#2a0606" stroke-width="1.5"/>
+  <!-- Inner light reflection — translucency effect -->
+  <rect x="${FL+3}" y="${FT+3}" width="${fw-6}" height="${fh*0.4}" fill="rgba(255,180,180,0.08)" rx="2"/>
+  <!-- Sharp edge highlights -->
+  <line x1="${FL}" y1="${FT}" x2="${FR}" y2="${FT}" stroke="rgba(255,200,200,0.6)" stroke-width="1.5"/>
+  <line x1="${FL}" y1="${FT}" x2="${FL}" y2="${FB}" stroke="rgba(255,180,180,0.35)" stroke-width="1"/>
+  <!-- CEE-LO engraving — stamped text near bottom of face -->
+  <text x="${(FL+FR)/2}" y="${FB-4}" text-anchor="middle" 
+    font-family="Arial, sans-serif" font-size="${Math.max(6, fw*0.12)}" font-weight="bold" letter-spacing="1.5"
+    fill="rgba(255,255,255,0.22)" stroke="rgba(80,0,0,0.3)" stroke-width="0.4">CEE-LO</text>
   <!-- Pips -->
   ${pips}
 </svg>`;
+  }
+
+  function makeTumbleSVG(frame, value) {
+    return makeDieSVG(value, frame % 4);
   }
 
   function buildDiceFaces() {
@@ -1491,15 +1522,18 @@
       document.getElementById('die-' + i).classList.add('rolling');
     }
 
+    // Tumble animation — cycle through 4 rotation frames + random face values
+    let tumbleFrame = 0;
     if (rollInterval) clearInterval(rollInterval);
     rollInterval = setInterval(() => {
+      tumbleFrame = (tumbleFrame + 1) % 4;
       for (let i = 0; i < 3; i++) {
         const die = document.getElementById('die-' + i);
         if (die.classList.contains('rolling')) {
-          die.innerHTML = makeDieSVG(Math.ceil(Math.random() * 6));
+          die.innerHTML = makeTumbleSVG(tumbleFrame, Math.ceil(Math.random() * 6));
         }
       }
-    }, 80);
+    }, 70);
 
     // Staggered settle — each die lands at slightly different time
     const delays = [1100, 1300, 1500];
