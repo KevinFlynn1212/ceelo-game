@@ -1524,21 +1524,43 @@
       document.getElementById('die-' + i).classList.add('rolling');
     }
 
-    // Tumble animation — cycle through 4 rotation frames + random face values
-    let tumbleFrame = 0;
+    // Physics-like deceleration — starts fast (60ms), slows to stop (300ms)
+    // Each die has its own interval that slows down over time
     if (rollInterval) clearInterval(rollInterval);
-    rollInterval = setInterval(() => {
-      tumbleFrame = (tumbleFrame + 1) % 4;
-      for (let i = 0; i < 3; i++) {
-        const die = document.getElementById('die-' + i);
-        if (die.classList.contains('rolling')) {
-          die.innerHTML = makeTumbleSVG(tumbleFrame, Math.ceil(Math.random() * 6));
-        }
+
+    const totalRollMs = 1600; // total roll time for last die
+    const dieRollDurations = [1000, 1200, 1600]; // staggered stop times
+
+    function startDieRoll(dieIndex) {
+      const die = document.getElementById('die-' + dieIndex);
+      let frame = 0;
+      let elapsed = 0;
+      const maxMs = dieRollDurations[dieIndex];
+
+      function tick() {
+        if (!die.classList.contains('rolling')) return;
+        frame = (frame + 1) % 4;
+        die.innerHTML = makeTumbleSVG(frame, Math.ceil(Math.random() * 6));
+        elapsed += currentInterval;
+
+        if (elapsed >= maxMs) return; // stop scheduling
+
+        // Ease-out: start at 60ms, slow to 280ms as die decelerates
+        const progress = elapsed / maxMs; // 0→1
+        const eased = 1 - Math.pow(1 - progress, 2); // ease-out quad
+        currentInterval = Math.round(60 + eased * 220); // 60ms→280ms
+
+        setTimeout(tick, currentInterval);
       }
-    }, 120);
+
+      let currentInterval = 60;
+      tick();
+    }
+
+    for (let i = 0; i < 3; i++) startDieRoll(i);
 
     // Staggered settle — each die lands at slightly different time
-    const delays = [1100, 1300, 1500];
+    const delays = [1000, 1200, 1600];
     let finished = 0;
 
     for (let i = 0; i < 3; i++) {
@@ -1549,8 +1571,6 @@
 
         finished++;
         if (finished === 3) {
-          clearInterval(rollInterval);
-          rollInterval = null;
           animating = false;
           if (evaluation) {
             document.getElementById('result-label').textContent =
