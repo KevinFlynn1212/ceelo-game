@@ -2248,6 +2248,64 @@
     if (_three) { _three.dice.forEach(d => d.visible = false); _three.renderer.render(_three.scene, _three.camera); }
   }
 
+  // ===== COUNTDOWN SOUND EFFECTS =====
+  function playCountdownTick(secsLeft) {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const t = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      if (secsLeft <= 1) {
+        // Final tick — higher pitch, slightly louder
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(880, t);
+        gain.gain.setValueAtTime(0.15, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+        osc.start(t); osc.stop(t + 0.15);
+      } else if (secsLeft <= 3) {
+        // Urgent ticks — medium pitch
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(660, t);
+        gain.gain.setValueAtTime(0.10, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+        osc.start(t); osc.stop(t + 0.1);
+      } else {
+        // Normal ticks — soft low tone
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(440, t);
+        gain.gain.setValueAtTime(0.06, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
+        osc.start(t); osc.stop(t + 0.08);
+      }
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+    } catch(e) {}
+  }
+
+  function playRoundStartGong() {
+    // Short metallic gong for round start
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const t = ctx.currentTime;
+      // Layered tones for a gong-like feel
+      [220, 554, 880].forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = i === 0 ? 'triangle' : 'sine';
+        osc.frequency.setValueAtTime(freq, t);
+        osc.frequency.exponentialRampToValueAtTime(freq * 0.97, t + 0.8);
+        const vol = i === 0 ? 0.12 : 0.05;
+        gain.gain.setValueAtTime(vol, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.8);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(t);
+        osc.stop(t + 0.8);
+      });
+    } catch(e) {}
+  }
+
   // ===== TIMER =====
   let _segTimers = [];
   let _roundCountdownInterval = null;
@@ -2263,13 +2321,15 @@
     count.style.animation = 'none'; void count.offsetWidth;
     count.style.animation = 'countPulse 1s ease-out';
     overlay.style.display = 'flex';
+    playCountdownTick(secs);
     if (_roundCountdownInterval) clearInterval(_roundCountdownInterval);
     _roundCountdownInterval = setInterval(() => {
       secs--;
-      if (secs <= 0) { hideRoundStartCountdown(); return; }
+      if (secs <= 0) { hideRoundStartCountdown(); playRoundStartGong(); return; }
       count.textContent = secs;
       count.style.animation = 'none'; void count.offsetWidth;
       count.style.animation = 'countPulse 1s ease-out';
+      playCountdownTick(secs);
     }, 1000);
   }
   function hideRoundStartCountdown() {
@@ -2278,15 +2338,22 @@
     if (overlay) overlay.style.display = 'none';
   }
 
+  let _lastTimerSec = -1;
   function startTimer(timerEnd) {
     if (timerInterval) clearInterval(timerInterval);
     _segTimers.forEach(t => clearTimeout(t)); _segTimers = [];
+    _lastTimerSec = -1;
     const el = document.getElementById('game-timer');
 
     function tick() {
       const remaining = Math.max(0, Math.ceil((timerEnd - Date.now()) / 1000));
       el.textContent = remaining + 's';
       el.classList.toggle('urgent', remaining <= 5);
+      // Play tick sound on each new second (last 5 seconds only)
+      if (remaining !== _lastTimerSec && remaining <= 5 && remaining > 0) {
+        playCountdownTick(remaining);
+      }
+      _lastTimerSec = remaining;
       if (remaining <= 0) { clearInterval(timerInterval); timerInterval = null; }
     }
     tick();
