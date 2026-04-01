@@ -367,10 +367,10 @@
   /* Subtle warm glow at the manhole source */
   .manhole-glow {
     position: absolute;
-    bottom: 18%;
+    bottom: 32%;
     left: 50%;
     transform: translateX(-50%);
-    width: 80px; height: 18px;
+    width: 70px; height: 16px;
     background: radial-gradient(ellipse, rgba(255,190,70,0.35) 0%, transparent 70%);
     border-radius: 50%;
     pointer-events: none;
@@ -390,32 +390,56 @@
     filter: blur(8px);
   }
 
-  /* ── Atmosphere: Distant neon sign ── */
+  /* ── Atmosphere: Vertical neon rectangle (right wall) ── */
   @keyframes neonFlicker {
-    0%,18%,20%,22%,26%,52%,55%,100% {
-      opacity: 0.75;
-      filter: blur(1.5px) brightness(1.2);
-      text-shadow: 0 0 8px #ff2dff, 0 0 20px #ff2dff, 0 0 40px #c900c9;
+    0%,17%,19%,21%,24%,51%,54%,100% {
+      opacity: 1;
+      box-shadow: 0 0 6px #00d4ff, 0 0 16px #00d4ff, 0 0 35px #0099cc,
+                  0 0 70px #0077aa, inset 0 0 10px rgba(0,200,255,0.15);
     }
-    19%,25%,53% { opacity: 0.08; filter: blur(2px) brightness(0.5); text-shadow: none; }
-    21%         { opacity: 0.45; }
+    18%,23%,52% { opacity: 0.07; box-shadow: none; }
+    20%         { opacity: 0.55; }
   }
-  .neon-sign {
+  @keyframes neonWash {
+    0%,17%,19%,21%,24%,51%,54%,100% { opacity: 0.18; }
+    18%,23%,52% { opacity: 0.02; }
+    20%         { opacity: 0.10; }
+  }
+  .neon-rect {
     position: absolute;
-    top: 20%;
-    left: 50%;
-    transform: translateX(-50%);
-    font-family: 'Courier New', monospace;
-    font-size: 0.85rem;
-    font-weight: bold;
-    letter-spacing: 6px;
-    color: #ffaaff;
+    top: 14%;
+    right: 10%;
+    width: 16px;
+    height: 52px;
+    border: 2px solid #00d4ff;
+    border-radius: 3px;
+    background: rgba(0,180,255,0.05);
     pointer-events: none;
     z-index: 4;
     animation: neonFlicker 7s infinite;
-    filter: blur(1px);
-    opacity: 0.85;
-    white-space: nowrap;
+  }
+  /* Blue ambient wash from the neon on right wall */
+  .neon-blue-wash {
+    position: absolute;
+    top: 0; right: 0;
+    width: 55%; height: 60%;
+    background: radial-gradient(ellipse at top right, rgba(0,140,255,0.14) 0%, transparent 65%);
+    pointer-events: none;
+    z-index: 4;
+    animation: neonWash 7s infinite;
+  }
+  /* Warm amber glow deep in the alley */
+  .distant-amber {
+    position: absolute;
+    top: 38%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 40px; height: 40px;
+    background: radial-gradient(circle, rgba(255,175,50,0.5) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 4;
+    filter: blur(10px);
   }
 
   .alley-section::before {
@@ -1308,14 +1332,18 @@
   <div class="alley-section">
 
     <!-- Atmospheric overlays -->
-    <!-- Distant neon sign — small + blurry = far back in alley -->
-    <div class="neon-sign">★ CEE-LO ★</div>
-    <!-- Manhole steam cluster — grouped in center-bottom where alley floor is -->
+    <!-- Vertical cyan neon rectangle on right wall -->
+    <div class="neon-rect"></div>
+    <!-- Blue ambient wash from neon -->
+    <div class="neon-blue-wash"></div>
+    <!-- Warm amber distant glow (street lamp far end of alley) -->
+    <div class="distant-amber"></div>
+    <!-- Steam rising from alley floor center -->
     <div class="manhole-glow"></div>
-    <div class="steam-puff" style="--sd:3.9s;--sdelay:0s;   --sw:26px; left:47%; bottom:18%;"></div>
-    <div class="steam-puff" style="--sd:4.8s;--sdelay:0.8s; --sw:32px; left:50%; bottom:18%;"></div>
-    <div class="steam-puff" style="--sd:5.3s;--sdelay:1.6s; --sw:22px; left:53%; bottom:19%;"></div>
-    <div class="steam-puff" style="--sd:4.2s;--sdelay:2.4s; --sw:28px; left:49%; bottom:17%;"></div>
+    <div class="steam-puff" style="--sd:4.0s;--sdelay:0s;   --sw:28px; left:46%; bottom:32%;"></div>
+    <div class="steam-puff" style="--sd:5.0s;--sdelay:0.9s; --sw:34px; left:50%; bottom:32%;"></div>
+    <div class="steam-puff" style="--sd:5.5s;--sdelay:1.8s; --sw:24px; left:54%; bottom:33%;"></div>
+    <div class="steam-puff" style="--sd:4.3s;--sdelay:2.7s; --sw:30px; left:49%; bottom:31%;"></div>
 
     <!-- 3D Dice Container -->
     <div class="dice-3d-container" id="dice-3d-container">
