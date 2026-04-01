@@ -1288,18 +1288,19 @@
     <!-- Shootout banner -->
     <div class="shootout-banner" id="shootout-banner" style="display:none;">⚔ SHOOTOUT ⚔</div>
 
-    <!-- In-alley winner celebration overlay -->
-    <div id="alley-winner" class="alley-winner-overlay" style="display:none;">
-      <div class="alley-winner-card">
-        <div class="alley-winner-label" id="aw-label">🏆 WINNER 🏆</div>
-        <div class="alley-winner-name" id="aw-name"></div>
-        <div class="alley-winner-dice" id="aw-dice"></div>
-        <div class="alley-winner-result" id="aw-result"></div>
-        <div class="alley-winner-pot" id="aw-pot"></div>
-        <div class="alley-winner-sub" id="aw-sub">Congratulations!</div>
-      </div>
-    </div>
   </div><!-- /alley-section -->
+
+  <!-- Winner overlay — direct child of #screen-game (outside clip-path alley) -->
+  <div id="alley-winner" class="alley-winner-overlay" style="display:none;">
+    <div class="alley-winner-card">
+      <div class="alley-winner-label" id="aw-label">🏆 WINNER 🏆</div>
+      <div class="alley-winner-name" id="aw-name"></div>
+      <div class="alley-winner-dice" id="aw-dice"></div>
+      <div class="alley-winner-result" id="aw-result"></div>
+      <div class="alley-winner-pot" id="aw-pot"></div>
+      <div class="alley-winner-sub" id="aw-sub">Congratulations!</div>
+    </div>
+  </div>
 
   <!-- BOTTOM SECTION (30vh): Player HUD -->
   <div class="player-hud">
@@ -2179,34 +2180,33 @@
     const rect = slotEl.getBoundingClientRect();
     const cx = rect.left + rect.width / 2;
     const cy = rect.top + rect.height / 2;
-    const symbols = ['🪙','🪙','🪙','💰','✨','⭐'];
-    for (let i = 0; i < 18; i++) {
+    const symbols = ['🪙','🪙','🪙','💰','✨','⭐','🌟'];
+    for (let i = 0; i < 22; i++) {
       setTimeout(() => {
         const el = document.createElement('div');
         el.textContent = symbols[Math.floor(Math.random() * symbols.length)];
         const angle = (Math.random() * 2 * Math.PI);
-        const dist = 60 + Math.random() * 100;
+        const dist = 50 + Math.random() * 130;
         const dx = Math.cos(angle) * dist;
-        const dy = Math.sin(angle) * dist - 40;
-        const size = 1 + Math.random() * 0.8;
-        const dur = 0.7 + Math.random() * 0.6;
+        const dy = Math.sin(angle) * dist - 20;
+        const size = 0.9 + Math.random() * 1.0;
+        const dur = 800 + Math.random() * 600;
+        const rot = Math.round(Math.random() * 720 - 360);
         el.style.cssText = `
           position:fixed;
           left:${cx}px; top:${cy}px;
           font-size:${size}rem;
           z-index:300;
           pointer-events:none;
-          transform: translate(-50%,-50%);
-          transition: transform ${dur}s ease-out, opacity ${dur}s ease-out;
-          opacity:1;
+          will-change:transform,opacity;
         `;
+        el.animate([
+          { transform: `translate(-50%,-50%) rotate(0deg)`, opacity: 1 },
+          { transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) rotate(${rot}deg)`, opacity: 0 }
+        ], { duration: dur, easing: 'cubic-bezier(0,0.9,1,1)', fill: 'forwards' });
         document.body.appendChild(el);
-        requestAnimationFrame(() => requestAnimationFrame(() => {
-          el.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) rotate(${Math.random()*360}deg)`;
-          el.style.opacity = '0';
-        }));
-        setTimeout(() => el.remove(), dur * 1000 + 100);
-      }, i * 40);
+        setTimeout(() => el.remove(), dur + 50);
+      }, i * 35);
     }
   }
 
