@@ -2026,39 +2026,47 @@
       }
       setTimeout(windGust, 8000 + Math.random() * 10000);
 
-      // Real distant siren — loops, fades in then slowly fades out
+      // Real distant siren — single pass, smooth fade in/out, no looping
       const _sirenSfx = new Audio('/siren.wav');
-      _sirenSfx.loop = true;
+      _sirenSfx.loop = false;
       _sirenSfx.volume = 0;
       function distantSiren() {
         _sirenSfx.currentTime = 0;
         _sirenSfx.volume = 0;
         _sirenSfx.play().catch(()=>{});
-        const maxVol = 0.045;
+        const maxVol = 0.025; // very distant
         let v = 0;
-        // Fade in over 2s
-        const fadeIn = setInterval(() => { v = Math.min(v + 0.001, maxVol); _sirenSfx.volume = v; if (v >= maxVol) clearInterval(fadeIn); }, 80);
-        // Fade out over 3s starting at 8s
+        // Slow fade in over 3s
+        const fadeIn = setInterval(() => { v = Math.min(v + 0.0005, maxVol); _sirenSfx.volume = v; if (v >= maxVol) clearInterval(fadeIn); }, 50);
+        // Slow fade out over 4s starting at 5s — well before clip ends
         setTimeout(() => {
-          const fadeOut = setInterval(() => { v = Math.max(v - 0.001, 0); _sirenSfx.volume = v; if (v <= 0) { clearInterval(fadeOut); _sirenSfx.pause(); _sirenSfx.loop = false; } }, 80);
-        }, 8000);
-        setTimeout(() => {
-          _sirenSfx.loop = true;
-          distantSiren();
-        }, 30000 + Math.random() * 45000);
+          clearInterval(fadeIn);
+          const fadeOut = setInterval(() => {
+            v = Math.max(v - 0.0004, 0);
+            _sirenSfx.volume = v;
+            if (v <= 0) { clearInterval(fadeOut); _sirenSfx.pause(); }
+          }, 50);
+        }, 5000);
+        // Schedule next siren far apart
+        setTimeout(distantSiren, 45000 + Math.random() * 60000);
       }
-      setTimeout(distantSiren, 14000 + Math.random() * 20000);
+      setTimeout(distantSiren, 18000 + Math.random() * 25000);
 
-      // Real cat meow — very quiet
+      // Real cat meow — short, soft, no double-meow
       const _meowSfx = new Audio('/cat-meow.wav');
       function catMeow() {
         _meowSfx.currentTime = 0;
-        _meowSfx.volume = 0.07;
+        _meowSfx.volume = 0.035; // barely audible
         _meowSfx.play().catch(()=>{});
-        if (Math.random() < 0.35) setTimeout(catMeow, 900 + Math.random() * 1200);
-        setTimeout(catMeow, 35000 + Math.random() * 55000);
+        // Cut playback short after 0.6s with fade
+        let mv = 0.035;
+        setTimeout(() => {
+          const mFade = setInterval(() => { mv = Math.max(mv - 0.005, 0); _meowSfx.volume = mv; if (mv <= 0) { clearInterval(mFade); _meowSfx.pause(); } }, 30);
+        }, 600);
+        // Next meow well spaced out
+        setTimeout(catMeow, 40000 + Math.random() * 70000);
       }
-      setTimeout(catMeow, 15000 + Math.random() * 25000);
+      setTimeout(catMeow, 20000 + Math.random() * 30000);
 
     } catch(e) { console.warn('Ambient audio failed:', e); }
   }
