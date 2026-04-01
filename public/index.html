@@ -399,13 +399,14 @@
   .die-3d svg { width: 100%; height: 100%; display: block; }
 
   @keyframes dieRollAnim {
-    0%   { transform: rotate(-5deg) scale(1.03); }
-    25%  { transform: rotate(4deg) scale(0.98); }
-    50%  { transform: rotate(-3deg) scale(1.02); }
-    75%  { transform: rotate(3deg) scale(0.99); }
-    100% { transform: rotate(0deg) scale(1); }
+    0%   { transform: translateY(0px) scale(1.02); }
+    20%  { transform: translateY(-4px) scale(1.0); }
+    40%  { transform: translateY(2px) scale(0.99); }
+    60%  { transform: translateY(-2px) scale(1.01); }
+    80%  { transform: translateY(1px) scale(0.995); }
+    100% { transform: translateY(0px) scale(1); }
   }
-  .die-3d.rolling { animation: dieRollAnim 0.4s ease-in-out infinite; }
+  .die-3d.rolling { animation: dieRollAnim 0.35s ease-in-out infinite; }
 
   /* ── Room info bar (thin dark strip at top) ── */
   .game-info-bar {
@@ -1466,26 +1467,26 @@
   <rect x="${FL}" y="${FT}" width="${fw}" height="${fh}" fill="url(#fg${id})" stroke="#2a0606" stroke-width="1.5"/>
   <!-- Inner light reflection — translucency effect -->
   <rect x="${FL+3}" y="${FT+3}" width="${fw-6}" height="${fh*0.4}" fill="rgba(255,180,180,0.08)" rx="2"/>
-  <!-- CEE-LO engraving -->
+  <!-- CEE-LO engraving — only on value 1, arced around the pip -->
   ${v === 1
     ? `<defs>
-        <path id="arc${id}" d="M ${(gx(1)-pr*2.2).toFixed(1)},${gy(1).toFixed(1)} a ${(pr*2.2).toFixed(1)},${(pr*2.2).toFixed(1)} 0 1,1 ${(pr*4.4).toFixed(1)},0"/>
+        <path id="arc${id}" d="M ${(gx(1)-pr*2.5).toFixed(1)},${gy(1).toFixed(1)} a ${(pr*2.5).toFixed(1)},${(pr*2.5).toFixed(1)} 0 1,1 ${(pr*5).toFixed(1)},0"/>
       </defs>
-      <text font-family="Arial,sans-serif" font-size="${(pr*0.72).toFixed(1)}" font-weight="bold" letter-spacing="1.2"
-        fill="rgba(255,255,255,0.32)" stroke="rgba(60,0,0,0.25)" stroke-width="0.3">
+      <text font-family="Arial,sans-serif" font-size="${(pr*0.8).toFixed(1)}" font-weight="bold" letter-spacing="2"
+        fill="rgba(255,255,255,0.65)" stroke="rgba(180,20,20,0.6)" stroke-width="0.6">
         <textPath href="#arc${id}" startOffset="50%" text-anchor="middle">· CEE-LO ·</textPath>
       </text>`
-    : `<text x="${((FL+FR)/2).toFixed(1)}" y="${(FB-5).toFixed(1)}" text-anchor="middle"
-        font-family="Arial,sans-serif" font-size="${Math.max(5.5, fw*0.11).toFixed(1)}" font-weight="bold" letter-spacing="1.5"
-        fill="rgba(255,255,255,0.28)" stroke="rgba(60,0,0,0.25)" stroke-width="0.3">CEE-LO</text>`
+    : ''
   }
   <!-- Pips -->
   ${pips}
 </svg>`;
   }
 
+  // During roll animation — same cube geometry, just different pip count
+  // This prevents the "cut in half" look from changing face sizes
   function makeTumbleSVG(frame, value) {
-    return makeDieSVG(value, frame % 4);
+    return makeDieSVG(value, 0); // always angle 0 — consistent cube shape
   }
 
   function buildDiceFaces() {
