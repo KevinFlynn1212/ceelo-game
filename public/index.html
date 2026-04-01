@@ -357,6 +357,75 @@
   }
 
   /* Dark gradient overlay for contrast */
+  /* ── Atmosphere: Steam ── */
+  @keyframes steamRise {
+    0%   { transform: translateY(0) scaleX(1);   opacity: 0; }
+    15%  { opacity: 0.45; }
+    85%  { opacity: 0.12; }
+    100% { transform: translateY(-110px) scaleX(2.2); opacity: 0; }
+  }
+  .steam-puff {
+    position: absolute;
+    bottom: 8%;
+    width: 28px;
+    height: 55px;
+    background: radial-gradient(ellipse at center, rgba(210,215,230,0.55) 0%, transparent 70%);
+    border-radius: 50%;
+    animation: steamRise var(--sd, 4s) ease-out infinite;
+    animation-delay: var(--sdelay, 0s);
+    pointer-events: none;
+    z-index: 2;
+    filter: blur(6px);
+  }
+
+  /* ── Atmosphere: Neon sign ── */
+  @keyframes neonFlicker {
+    0%,18%,20%,22%,25%,53%,55%,100% {
+      opacity: 1;
+      text-shadow:
+        0 0 6px #ff2dff, 0 0 14px #ff2dff, 0 0 30px #ff2dff,
+        0 0 60px #c900c9, 0 0 4px #fff;
+    }
+    19%,24%,54% { opacity: 0.3; text-shadow: none; }
+    21%         { opacity: 0.8; }
+  }
+  @keyframes neonFlicker2 {
+    0%,40%,42%,70%,100% {
+      opacity: 1;
+      text-shadow:
+        0 0 6px #00f7ff, 0 0 14px #00f7ff, 0 0 28px #00f7ff,
+        0 0 55px #0099aa, 0 0 4px #fff;
+    }
+    41%,71%,72% { opacity: 0.2; text-shadow: none; }
+  }
+  .neon-sign {
+    position: absolute;
+    top: 12%;
+    right: 8%;
+    font-family: 'Courier New', monospace;
+    font-size: 1.05rem;
+    font-weight: bold;
+    letter-spacing: 4px;
+    color: #ff88ff;
+    pointer-events: none;
+    z-index: 3;
+    animation: neonFlicker 6s infinite;
+  }
+  .neon-sign-2 {
+    position: absolute;
+    top: 22%;
+    left: 6%;
+    font-family: 'Courier New', monospace;
+    font-size: 0.75rem;
+    font-weight: bold;
+    letter-spacing: 3px;
+    color: #88ffff;
+    pointer-events: none;
+    z-index: 3;
+    animation: neonFlicker2 8s infinite;
+    animation-delay: 1.5s;
+  }
+
   .alley-section::before {
     content: '';
     position: absolute;
@@ -1245,6 +1314,15 @@
 
   <!-- TOP SECTION (70vh): Alley Scene — photo background + physics canvas overlay -->
   <div class="alley-section">
+
+    <!-- Atmospheric overlays -->
+    <div class="neon-sign">CEE-LO</div>
+    <div class="neon-sign-2">OPEN 24H</div>
+    <div class="steam-puff" style="--sd:3.8s; --sdelay:0s;   left:12%;"></div>
+    <div class="steam-puff" style="--sd:4.5s; --sdelay:1.2s; left:18%;"></div>
+    <div class="steam-puff" style="--sd:5.1s; --sdelay:0.6s; left:15%; width:20px;"></div>
+    <div class="steam-puff" style="--sd:4.2s; --sdelay:2.0s; right:20%;"></div>
+    <div class="steam-puff" style="--sd:3.6s; --sdelay:0.9s; right:14%; width:22px;"></div>
 
     <!-- 3D Dice Container -->
     <div class="dice-3d-container" id="dice-3d-container">
