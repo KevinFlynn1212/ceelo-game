@@ -379,15 +379,15 @@
   }
   .steam-puff {
     position: absolute;
-    width: var(--sw, 30px);
-    height: 70px;
-    background: radial-gradient(ellipse at center, rgba(210,220,235,0.65) 0%, transparent 65%);
+    width: var(--sw, 40px);
+    height: 90px;
+    background: radial-gradient(ellipse at center, rgba(220,225,235,0.82) 0%, rgba(200,210,220,0.4) 50%, transparent 70%);
     border-radius: 50%;
     animation: steamRise var(--sd, 4s) ease-out infinite;
     animation-delay: var(--sdelay, 0s);
     pointer-events: none;
     z-index: 4;
-    filter: blur(8px);
+    filter: blur(9px);
   }
 
   /* ── Atmosphere: Vertical neon rectangle (right wall) ── */
@@ -407,23 +407,36 @@
   }
   .neon-rect {
     position: absolute;
-    top: 14%;
-    right: 10%;
-    width: 16px;
-    height: 52px;
-    border: 2px solid #ff2200;
-    border-radius: 3px;
-    background: rgba(255,40,0,0.05);
+    top: 8%;
+    right: 6%;
+    width: 28px;
+    height: 90px;
+    border: 3px solid #ff3300;
+    border-radius: 4px;
+    background: rgba(255,50,0,0.08);
     pointer-events: none;
     z-index: 4;
     animation: neonFlicker 7s infinite;
+    /* Strong glow simulating light cast on building wall */
+    filter: drop-shadow(0 0 8px #ff3300) drop-shadow(0 0 20px #ff2200) drop-shadow(0 0 40px #cc1100);
   }
-  /* Red ambient wash from the neon on right wall */
+  /* Red ambient wash — large area lit by the neon */
   .neon-blue-wash {
     position: absolute;
     top: 0; right: 0;
-    width: 55%; height: 60%;
-    background: radial-gradient(ellipse at top right, rgba(220,40,0,0.12) 0%, transparent 65%);
+    width: 70%; height: 80%;
+    background: radial-gradient(ellipse at 90% 15%, rgba(220,40,0,0.22) 0%, rgba(180,20,0,0.08) 40%, transparent 70%);
+    pointer-events: none;
+    z-index: 4;
+    animation: neonWash 7s infinite;
+  }
+  /* Red floor reflection pool below the sign */
+  .neon-floor-glow {
+    position: absolute;
+    top: 20%;
+    right: 0%;
+    width: 45%; height: 30%;
+    background: radial-gradient(ellipse at 85% 0%, rgba(200,30,0,0.15) 0%, transparent 60%);
     pointer-events: none;
     z-index: 4;
     animation: neonWash 7s infinite;
@@ -1339,11 +1352,13 @@
     <!-- Warm amber distant glow (street lamp far end of alley) -->
     <div class="distant-amber"></div>
     <!-- Steam rising from alley floor center -->
+    <div class="neon-floor-glow"></div>
     <div class="manhole-glow"></div>
-    <div class="steam-puff" style="--sd:4.0s;--sdelay:0s;   --sw:28px; left:46%; bottom:56%;"></div>
-    <div class="steam-puff" style="--sd:5.0s;--sdelay:0.9s; --sw:36px; left:50%; bottom:56%;"></div>
-    <div class="steam-puff" style="--sd:5.5s;--sdelay:1.8s; --sw:22px; left:54%; bottom:57%;"></div>
-    <div class="steam-puff" style="--sd:4.3s;--sdelay:2.7s; --sw:30px; left:49%; bottom:55%;"></div>
+    <div class="steam-puff" style="--sd:4.0s;--sdelay:0s;   --sw:44px; left:45%; bottom:56%;"></div>
+    <div class="steam-puff" style="--sd:5.0s;--sdelay:0.9s; --sw:54px; left:50%; bottom:56%;"></div>
+    <div class="steam-puff" style="--sd:5.5s;--sdelay:1.8s; --sw:38px; left:54%; bottom:57%;"></div>
+    <div class="steam-puff" style="--sd:4.3s;--sdelay:2.7s; --sw:48px; left:48%; bottom:55%;"></div>
+    <div class="steam-puff" style="--sd:6.0s;--sdelay:3.5s; --sw:36px; left:52%; bottom:56%;"></div>
 
     <!-- 3D Dice Container -->
     <div class="dice-3d-container" id="dice-3d-container">
