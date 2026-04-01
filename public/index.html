@@ -777,24 +777,30 @@
   .hud-status.done    { background: rgba(76,175,80,0.15);  color: var(--green); }
   .hud-status.rolling { background: rgba(245,200,66,0.15); color: var(--gold); }
 
-  /* Per-slot countdown timer badge */
-  .hud-timer-badge {
-    font-family: 'Cinzel', serif;
-    font-size: 0.75rem;
-    font-weight: 700;
-    color: var(--gold);
-    background: rgba(245,200,66,0.15);
-    border: 1px solid rgba(245,200,66,0.4);
-    border-radius: 6px;
-    padding: 1px 8px;
-    letter-spacing: 0.05em;
-    flex-shrink: 0;
+  /* Animated border drain around active slot */
+  .hud-slot { position: relative; }
+  .hud-drain-ring {
+    position: absolute;
+    inset: -2px;
+    border-radius: 11px;
+    pointer-events: none;
+    z-index: 1;
+    overflow: hidden;
   }
-  .hud-timer-badge.urgent {
-    color: #ff4444;
-    background: rgba(255,68,68,0.15);
-    border-color: rgba(255,68,68,0.5);
-    animation: turnPulse 0.4s ease-in-out infinite;
+  .hud-drain-ring svg {
+    width: 100%; height: 100%;
+    position: absolute; top: 0; left: 0;
+  }
+  .hud-drain-ring rect {
+    fill: none;
+    stroke: var(--gold);
+    stroke-width: 3;
+    stroke-linecap: round;
+  }
+  .hud-drain-ring rect.urgent { stroke: #ff4444; }
+  @keyframes drainBorder {
+    from { stroke-dashoffset: 0; }
+    to   { stroke-dashoffset: var(--perimeter); }
   }
 
   /* ═══════════════════════════════
@@ -1177,8 +1183,9 @@
 
   socket.on('re_ante_offer', ({ playerId, timerEnd }) => {
     if (playerId === myId) {
-      showReAnteOffer();
       startTimer(timerEnd);
+      // Delay popup 2s so player sees their roll first before being asked to re-ante
+      setTimeout(() => showReAnteOffer(), 2000);
     }
   });
 
@@ -1409,12 +1416,25 @@
           ? `<div class="hud-mini-dice">${lastRoll.map(d => `<span class="mini-die">${d}</span>`).join('')}</div>`
           : '';
 
-        const timerBadge = isActiveTurn && roomState && roomState.timerEnd && roomState.timerEnd > Date.now()
-          ? `<div class="hud-timer-badge">${Math.max(0,Math.ceil((roomState.timerEnd-Date.now())/1000))}s</div>` : '';
+        // Animated border drain ring — SVG rect with stroke-dashoffset animation
+        let drainRing = '';
+        if (isActiveTurn && roomState && roomState.timerEnd && roomState.timerEnd > Date.now()) {
+          const secLeft = Math.max(0.1, (roomState.timerEnd - Date.now()) / 1000);
+          // Perimeter ~approx for typical slot size; refined by JS on mount
+          const perim = 999;
+          drainRing = `<div class="hud-drain-ring">
+            <svg viewBox="0 0 100 100" preserveAspectRatio="none">
+              <rect x="2" y="2" width="96" height="96" rx="9"
+                style="stroke-dasharray:${perim};stroke-dashoffset:0;
+                       animation:drainBorder ${secLeft}s linear forwards;"
+                class="${secLeft <= 5 ? 'urgent' : ''}"/>
+            </svg>
+          </div>`;
+        }
 
         slot.innerHTML = `
+          ${drainRing}
           <div class="hud-action ${actionClass}">${actionText}</div>
-          ${timerBadge}
           <div class="hud-avatar">${escHtml(initial)}</div>
           <div style="display:flex;align-items:center;gap:2px;max-width:100%;justify-content:center;flex-shrink:0;">
             <span class="hud-name">${escHtml(player.name)}</span>${youTag}
@@ -1638,12 +1658,9 @@
       const remaining = Math.max(0, Math.ceil((timerEnd - Date.now()) / 1000));
       el.textContent = remaining + 's';
       el.classList.toggle('urgent', remaining <= 5);
-      // Update per-slot timer badge in the active player's HUD slot
-      const badge = document.querySelector('.hud-timer-badge');
-      if (badge) {
-        badge.textContent = remaining + 's';
-        badge.classList.toggle('urgent', remaining <= 5);
-      }
+      // Turn drain ring red when urgent
+      const ring = document.querySelector('.hud-drain-ring rect');
+      if (ring) ring.classList.toggle('urgent', remaining <= 5);
       if (remaining <= 0) {
         clearInterval(timerInterval);
         timerInterval = null;
