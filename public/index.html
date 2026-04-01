@@ -1386,40 +1386,27 @@
   // Top face (bright red, lit), Front face (medium red, pips), Right face (dark red, shadow)
   // No CSS 3D transforms — the SVG geometry creates the 3D look directly
 
-  // Vegas casino die — translucent red acrylic, big white pips, sharp edges
-  // viewBox 0 0 100 100
+  // Vegas casino die — proper cube proportions, translucent red acrylic
+  // Isometric view: square front face + top parallelogram + right side strip
   function makeDieSVG(value, angle) {
-    // angle 0=standard, 1=leaning back, 2=nose-dive, 3=mirrored
     angle = angle || 0;
 
-    // Geometry depends on viewing angle
-    // Standard: front face + top sliver visible
-    const configs = [
-      // angle 0: standard — front square + narrow top parallelogram
-      { FL:4, FT:22, FR:82, FB:90, topD:14, flip:false },
-      // angle 1: leaning back — smaller front, bigger top
-      { FL:4, FT:36, FR:82, FB:90, topD:14, flip:false },
-      // angle 2: nose-dive — mostly top, tiny front
-      { FL:4, FT:60, FR:82, FB:90, topD:14, flip:false },
-      // angle 3: mirrored (left side visible instead of right)
-      { FL:14, FT:22, FR:92, FB:90, topD:-14, flip:true },
-    ];
-    const cfg = configs[angle] || configs[0];
-    const { FL, FT, FR, FB, topD, flip } = cfg;
-    const fw = FR - FL, fh = FB - FT;
-
-    // Top face points
-    const topPts = flip
-      ? `${FL},${FT} ${FR},${FT} ${FR+topD},${FT+topD} ${FL+topD},${FT+topD}`
-      : `${FL},${FT} ${FR},${FT} ${FR+topD},${FT+topD} ${FL+topD},${FT+topD}`;
-
-    // Side face (right or left)
-    const sidePts = flip
-      ? `${FL},${FT} ${FL+topD},${FT+topD} ${FL+topD},${FB+topD} ${FL},${FB}`
-      : `${FR},${FT} ${FR+topD},${FT+topD} ${FR+topD},${FB+topD} ${FR},${FB}`;
+    // Classic isometric cube geometry — front face is square
+    // d = depth of top/side faces visible
+    const d = 18;
+    // Front face: square
+    const FL = 5, FT = 30, FR = 67, FB = 90;  // 62x60 — nearly square
+    const fw = FR - FL;   // 62
+    const fh = FB - FT;   // 60
+    // Top face: parallelogram going up-right
+    // (FL,FT) → (FR,FT) → (FR+d, FT-d) → (FL+d, FT-d)
+    const topPts = `${FL},${FT} ${FR},${FT} ${FR+d},${FT-d} ${FL+d},${FT-d}`;
+    // Right face: parallelogram on the right
+    // (FR,FT) → (FR+d,FT-d) → (FR+d,FB-d) → (FR,FB)
+    const sidePts = `${FR},${FT} ${FR+d},${FT-d} ${FR+d},${FB-d} ${FR},${FB}`;
 
     // Pip grid on front face — BIG pips, well inset from edges
-    const pad = 16; // more padding = pips further from edges
+    const pad = 14;
     const gx = (c) => FL + pad + c * (fw - pad*2) / 2;
     const gy = (r) => FT + pad + r * (fh - pad*2) / 2;
     const pr = Math.min(fw, fh) * 0.11; // pip radius
@@ -1438,35 +1425,30 @@
 
     const id = `d${Math.random().toString(36).slice(2,6)}`;
 
-    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 90 96">
   <defs>
-    <!-- Translucent red acrylic — light passes through, brighter in center -->
-    <radialGradient id="fg${id}" cx="45%" cy="40%" r="60%">
-      <stop offset="0%" stop-color="#ff3a3a" stop-opacity="0.95"/>
-      <stop offset="50%" stop-color="#dd1f1f" stop-opacity="0.92"/>
-      <stop offset="100%" stop-color="#9a1010" stop-opacity="0.88"/>
+    <radialGradient id="fg${id}" cx="42%" cy="38%" r="58%">
+      <stop offset="0%" stop-color="#ff4040" stop-opacity="0.96"/>
+      <stop offset="45%" stop-color="#dd2020" stop-opacity="0.93"/>
+      <stop offset="100%" stop-color="#991010" stop-opacity="0.88"/>
     </radialGradient>
-    <!-- Top face — brighter, lit from above -->
-    <linearGradient id="tg${id}" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#ff6060"/>
-      <stop offset="100%" stop-color="#cc2020"/>
+    <linearGradient id="tg${id}" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0%" stop-color="#dd2828"/>
+      <stop offset="100%" stop-color="#ff5858"/>
     </linearGradient>
-    <!-- Side face — darker shadow -->
     <linearGradient id="sg${id}" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#8a1515"/>
-      <stop offset="100%" stop-color="#5a0c0c"/>
+      <stop offset="0%" stop-color="#7a1212"/>
+      <stop offset="100%" stop-color="#4a0808"/>
     </linearGradient>
   </defs>
-  <!-- Ground shadow -->
-  <ellipse cx="${(FL+FR)/2+topD/2}" cy="${FB+topD+2}" rx="${fw*0.45}" ry="${Math.abs(topD)*0.4}" fill="rgba(0,0,0,0.35)"/>
-  <!-- Side face -->
-  <polygon points="${sidePts}" fill="url(#sg${id})" stroke="#2a0606" stroke-width="1"/>
-  <!-- Top face -->
-  <polygon points="${topPts}" fill="url(#tg${id})" stroke="#2a0606" stroke-width="1"/>
-  <!-- Front face — translucent red -->
-  <rect x="${FL}" y="${FT}" width="${fw}" height="${fh}" fill="url(#fg${id})" stroke="#2a0606" stroke-width="1.5"/>
-  <!-- Inner light reflection — translucency effect -->
-  <rect x="${FL+3}" y="${FT+3}" width="${fw-6}" height="${fh*0.4}" fill="rgba(255,180,180,0.08)" rx="2"/>
+  <!-- Right side face (shadow) -->
+  <polygon points="${sidePts}" fill="url(#sg${id})" stroke="#1a0404" stroke-width="1"/>
+  <!-- Top face (lit) -->
+  <polygon points="${topPts}" fill="url(#tg${id})" stroke="#1a0404" stroke-width="1"/>
+  <!-- Front face (translucent red) -->
+  <rect x="${FL}" y="${FT}" width="${fw}" height="${fh}" fill="url(#fg${id})" stroke="#1a0404" stroke-width="1.5"/>
+  <!-- Subtle inner translucency shimmer -->
+  <rect x="${FL+3}" y="${FT+3}" width="${fw-6}" height="${fh*0.35}" fill="rgba(255,160,160,0.07)" rx="1"/>
   <!-- CEE-LO engraving — only on value 1, arced around the pip -->
   ${v === 1
     ? `<defs>
