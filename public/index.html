@@ -461,6 +461,75 @@
   .spectator-banner.visible { display: block; }
 
   /* ── Result label (floats over dice landing area) ── */
+  /* ─── In-alley winner celebration ─── */
+  @keyframes alleyWinIn {
+    0%   { transform: translateX(-50%) scale(0.5) translateY(-30px); opacity: 0; }
+    60%  { transform: translateX(-50%) scale(1.06) translateY(4px); opacity: 1; }
+    100% { transform: translateX(-50%) scale(1) translateY(0); opacity: 1; }
+  }
+  @keyframes alleyWinOut {
+    0%   { transform: translateX(-50%) scale(1) translateY(0); opacity: 1; }
+    100% { transform: translateX(-50%) scale(0.8) translateY(-20px); opacity: 0; }
+  }
+  .alley-winner-overlay {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    margin-top: -140px;
+    pointer-events: none;
+  }
+  .alley-winner-card {
+    background: linear-gradient(160deg, rgba(20,14,2,0.97), rgba(10,6,1,0.97));
+    border: 2px solid rgba(245,200,66,0.8);
+    border-radius: 16px;
+    padding: 20px 36px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    min-width: 280px;
+    box-shadow: 0 0 60px rgba(245,200,66,0.4), 0 0 120px rgba(245,200,66,0.15), 0 20px 50px rgba(0,0,0,0.9);
+    animation: alleyWinIn 0.55s cubic-bezier(0.175,0.885,0.32,1.275) forwards;
+  }
+  .alley-winner-crown { font-size: 2.4rem; filter: drop-shadow(0 0 16px rgba(245,200,66,0.9)); }
+  .alley-winner-name {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 1.5rem; font-weight: 900;
+    color: var(--gold);
+    text-shadow: 0 0 24px rgba(245,200,66,0.6);
+    text-align: center;
+    animation: winnerTitlePulse 1.5s ease-in-out infinite;
+  }
+  .alley-winner-dice {
+    display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin: 4px 0;
+  }
+  .aw-die {
+    width: 36px; height: 36px;
+    background: radial-gradient(circle at 38% 35%, #ff4545, #991010);
+    border-radius: 5px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem; color: white; font-weight: 900;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.6), inset 0 1px 2px rgba(255,120,120,0.2);
+  }
+  .alley-winner-result {
+    font-family: 'Cinzel', serif; font-size: 1rem; font-weight: 700;
+    color: #ffffff; text-align: center; letter-spacing: 0.06em;
+  }
+  .alley-winner-pot {
+    font-family: 'Cinzel', serif; font-size: 1.6rem; font-weight: 900;
+    color: #ffd700;
+    text-shadow: 0 0 24px rgba(255,215,0,0.7);
+    text-align: center;
+  }
+  .alley-winner-sub {
+    font-family: 'Lato', sans-serif; font-size: 0.8rem;
+    color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase;
+  }
+  .alley-winner-overlay.hiding .alley-winner-card {
+    animation: alleyWinOut 0.4s ease-in forwards;
+  }
+
   /* Round start countdown overlay */
   .round-start-overlay {
     position: absolute;
@@ -1198,6 +1267,17 @@
     <!-- Shootout banner -->
     <div class="shootout-banner" id="shootout-banner" style="display:none;">⚔ SHOOTOUT ⚔</div>
 
+    <!-- In-alley winner celebration overlay -->
+    <div id="alley-winner" class="alley-winner-overlay" style="display:none;">
+      <div class="alley-winner-card">
+        <div class="alley-winner-crown" id="aw-crown">🏆</div>
+        <div class="alley-winner-name" id="aw-name"></div>
+        <div class="alley-winner-dice" id="aw-dice"></div>
+        <div class="alley-winner-result" id="aw-result"></div>
+        <div class="alley-winner-pot" id="aw-pot"></div>
+        <div class="alley-winner-sub" id="aw-sub">Congratulations!</div>
+      </div>
+    </div>
   </div><!-- /alley-section -->
 
   <!-- BOTTOM SECTION (30vh): Player HUD -->
@@ -2003,17 +2083,41 @@
     }
 
     _blockGameScreen = true;
-    showScreen('winner');
 
-    // Flash overlay based on outcome
+    // Flash overlay
     const flashEl = document.createElement('div');
-    const winnerResult = results && winner ? results.find(p=>p.id===winner) : null;
-    const winnerType = winnerResult && winnerResult.result ? winnerResult.result.type : '';
+    const winnerResultObj = results && winner ? results.find(p=>p.id===winner) : null;
+    const winnerType = winnerResultObj && winnerResultObj.result ? winnerResultObj.result.type : '';
     flashEl.className = 'winner-flash-overlay ' + (allDancing ? 'dragon' : winnerType==='456' ? 'strung' : winnerType==='123' ? 'dragon' : '');
     document.body.appendChild(flashEl);
     setTimeout(() => flashEl.remove(), 1500);
 
-    // Fly coins if someone won (not tie)
+    // ── In-alley winner overlay ──────────────────────────────────────────────
+    const awOverlay = document.getElementById('alley-winner');
+    const lastRoll = winnerResultObj && winnerResultObj.lastRoll;
+    // Get dice from roomState if available
+    let winDice = [];
+    if (roomState && roomState.players) {
+      const wp2 = roomState.players.find(p => p.id === winner);
+      if (wp2 && wp2.rolls && wp2.rolls.length > 0) winDice = wp2.rolls[wp2.rolls.length-1];
+    }
+    document.getElementById('aw-crown').textContent = allDancing ? '🐉' : isTie ? '⚔️' : winner===myId ? '🏆' : '🎉';
+    document.getElementById('aw-name').textContent = allDancing ? 'All Dancing Dragon!' : isTie ? 'SHOOTOUT!' : nameText;
+    document.getElementById('aw-result').textContent = resultText;
+    document.getElementById('aw-pot').textContent = potText;
+    document.getElementById('aw-sub').textContent = isTie ? 'Tying players roll again' : allDancing ? 'Pot doubles — carries over' : winner===myId ? '🎊 Congratulations!' : 'Better luck next round';
+    // Dice pips
+    const diceEl = document.getElementById('aw-dice');
+    diceEl.innerHTML = winDice.length > 0
+      ? winDice.map(d => `<div class="aw-die">${d}</div>`).join('')
+      : '';
+    awOverlay.classList.remove('hiding');
+    awOverlay.style.display = '';
+
+    // Also show detailed rankings in the existing winner screen
+    showScreen('winner');
+
+    // Fly coins if someone won
     if (winner && !isTie && !allDancing) launchCoins(winner === myId ? 30 : 12);
 
     if (winnerDismissTimer) clearTimeout(winnerDismissTimer);
@@ -2038,6 +2142,12 @@
   function dismissWinner() {
     if (winnerDismissTimer) { clearTimeout(winnerDismissTimer); winnerDismissTimer = null; }
     _blockGameScreen = false;
+    // Animate alley overlay out
+    const awOverlay = document.getElementById('alley-winner');
+    if (awOverlay && awOverlay.style.display !== 'none') {
+      awOverlay.classList.add('hiding');
+      setTimeout(() => { awOverlay.style.display = 'none'; awOverlay.classList.remove('hiding'); }, 400);
+    }
     showScreen('game');
     // Hide dice and clear result label for new round
     clearDice();
