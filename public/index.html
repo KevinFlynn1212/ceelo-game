@@ -571,11 +571,11 @@
      BOTTOM: PLAYER HUD (30vh)
   ═══════════════════════════════ */
   .player-hud {
-    height: 20vh;
-    min-height: 100px;
-    max-height: 20vh;
+    height: 22vh;
+    min-height: 130px;
+    max-height: 22vh;
     background: rgba(5, 2, 0, 0.97);
-    border-top: 2px solid rgba(180, 120, 20, 0.5);
+    border-top: 3px solid rgba(180, 120, 20, 0.75);
     display: flex;
     align-items: stretch;
     padding: 8px;
@@ -599,35 +599,43 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    gap: 4px;
-    background: rgba(255,255,255,0.025);
-    border: 1px solid rgba(180, 120, 20, 0.14);
+    justify-content: flex-start;
+    gap: 3px;
+    background: rgba(255,255,255,0.035);
+    border: 2px solid rgba(180, 120, 20, 0.4);
     border-radius: 10px;
-    padding: 8px 4px;
-    transition: all 0.25s;
+    padding: 6px 3px;
+    transition: border-color 0.25s, background 0.25s;
     min-width: 0;
     overflow: hidden;
   }
 
+  @keyframes turnPulse {
+    0%,100% { box-shadow: 0 0 14px rgba(245,200,66,0.35), inset 0 0 10px rgba(245,200,66,0.06); }
+    50%      { box-shadow: 0 0 30px rgba(245,200,66,0.65), inset 0 0 20px rgba(245,200,66,0.12); }
+  }
   .hud-slot.active-turn {
-    border-color: var(--gold);
-    background: rgba(245,200,66,0.07);
-    box-shadow: 0 0 18px rgba(245,200,66,0.18), inset 0 0 18px rgba(245,200,66,0.04);
+    border: 3px solid var(--gold) !important;
+    background: rgba(245,200,66,0.1);
+    animation: turnPulse 1.1s ease-in-out infinite;
   }
 
   .hud-slot.is-me {
-    border-color: rgba(245,200,66,0.28);
+    border-color: rgba(245,200,66,0.45);
     background: rgba(245,200,66,0.04);
   }
 
+  @keyframes winnerGlow {
+    0%,100% { box-shadow: 0 0 14px rgba(76,175,80,0.45); }
+    50%      { box-shadow: 0 0 36px rgba(76,175,80,0.8), 0 0 60px rgba(76,175,80,0.25); }
+  }
   .hud-slot.is-winner {
-    border-color: var(--green);
-    background: rgba(76,175,80,0.07);
-    box-shadow: 0 0 18px rgba(76,175,80,0.2);
+    border: 3px solid #4caf50 !important;
+    background: rgba(76,175,80,0.1);
+    animation: winnerGlow 0.9s ease-in-out infinite;
   }
 
-  .hud-slot.done { opacity: 0.65; }
+  .hud-slot.done:not(.is-winner) { opacity: 0.6; }
 
   .hud-mini-dice {
     display: flex;
@@ -711,30 +719,63 @@
 
   .hud-result {
     font-family: 'Lato', sans-serif;
-    font-size: 0.7rem;
+    font-size: 0.68rem;
     font-weight: 700;
     color: var(--paper);
     text-align: center;
-    min-height: 1em;
     padding: 0 2px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
     max-width: 100%;
   }
+  .hud-result.res-strung  { color: #ffd700; }
+  .hud-result.res-triple  { color: #c084fc; }
+  .hud-result.res-point   { color: #e0d8c0; }
+  .hud-result.res-dragon  { color: #ff4444; }
+  .hud-result.res-nocombo { color: #888; font-style: italic; }
+
+  .hud-turn-indicator {
+    font-family: 'Cinzel', serif;
+    font-size: 0.55rem;
+    color: var(--gold);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-weight: 700;
+  }
+
+  /* Action label banner at top of each slot */
+  .hud-action {
+    width: 100%;
+    text-align: center;
+    font-family: 'Cinzel', serif;
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 2px 4px;
+    border-radius: 5px;
+    margin-bottom: 1px;
+    flex-shrink: 0;
+  }
+  .hud-action.act-throw    { background: rgba(245,200,66,0.2); color: var(--gold); }
+  .hud-action.act-win      { background: rgba(76,175,80,0.35); color: #7eff8a; letter-spacing: 0.1em; font-size: 0.68rem; }
+  .hud-action.act-reante   { background: rgba(200,100,0,0.25); color: #ffaa44; }
+  .hud-action.act-waiting  { background: transparent; color: rgba(255,255,255,0.2); }
+  .hud-action.act-done     { background: rgba(76,175,80,0.1); color: var(--green); }
 
   .hud-status {
     font-family: 'Lato', sans-serif;
-    font-size: 0.6rem;
-    padding: 2px 7px;
-    border-radius: 7px;
+    font-size: 0.58rem;
+    padding: 1px 6px;
+    border-radius: 6px;
     background: rgba(255,255,255,0.05);
     color: var(--muted);
     letter-spacing: 0.05em;
     text-transform: uppercase;
   }
-  .hud-status.done    { background: rgba(76,175,80,0.14);   color: var(--green); }
-  .hud-status.rolling { background: rgba(245,200,66,0.14);  color: var(--gold); }
+  .hud-status.done    { background: rgba(76,175,80,0.15);  color: var(--green); }
+  .hud-status.rolling { background: rgba(245,200,66,0.15); color: var(--gold); }
 
   /* ═══════════════════════════════
      CHAT PANEL (slide-in from right)
@@ -1265,9 +1306,9 @@
 
   function updateRollButton(state, me) {
     const btn = document.getElementById('btn-roll');
+    const wrapper = document.querySelector('.roll-btn-wrapper');
     if (!me || isSpectator) {
-      btn.disabled = true;
-      btn.textContent = isSpectator ? '👁 Spectating' : '⏳ Waiting...';
+      if (wrapper) wrapper.style.display = 'none';
       return;
     }
 
@@ -1275,21 +1316,16 @@
       && state.players[state.currentTurnIndex]
       && state.players[state.currentTurnIndex].id === myId;
 
-    if (me.done) {
-      btn.disabled = true;
-      btn.textContent = '✓ Done';
-    } else if (me.reAnteActive) {
-      btn.disabled = true;
-      btn.textContent = '⏳ Re-Ante Pending';
-    } else if (!isMyTurn) {
-      btn.disabled = true;
-      btn.textContent = '⏳ Wait...';
-    } else if (animating) {
-      btn.disabled = true;
-      btn.textContent = '🎲 Rolling...';
+    if (me.done || me.reAnteActive || !isMyTurn || animating) {
+      // Not your turn — hide the button completely
+      if (wrapper) wrapper.style.display = 'none';
     } else {
+      // Your turn — show with gold glow
+      if (wrapper) wrapper.style.display = '';
       btn.disabled = false;
-      btn.textContent = me.rollCount > 0 ? '🎲 Roll Again' : '🎲 THROW DICE';
+      btn.textContent = me.rollCount > 0 ? '🎲 ROLL AGAIN' : '🎲 THROW DICE';
+      btn.style.boxShadow = '0 0 24px rgba(245,200,66,0.5), 0 4px 20px rgba(0,0,0,0.6)';
+      btn.style.animation = 'none';
     }
   }
 
@@ -1305,33 +1341,63 @@
       slot.className = 'hud-slot';
 
       if (!player) {
-        slot.innerHTML = '<div class="hud-slot-empty">EMPTY</div>';
+        slot.innerHTML = `<div class="hud-slot-empty" style="margin:auto;text-align:center;">STAND<br>HERE</div>`;
       } else {
+        const isActiveTurn = state.currentTurnIndex === idx && !player.done;
+        const isWinner = player.isWinner;
         if (player.id === myId) slot.classList.add('is-me');
-        if (state.currentTurnIndex === idx && !player.done) slot.classList.add('active-turn');
+        if (isActiveTurn) slot.classList.add('active-turn');
         if (player.done) slot.classList.add('done');
+        if (isWinner) slot.classList.add('is-winner');
 
         const initial = (player.name || '?')[0].toUpperCase();
-        const resultText = player.result
-          ? (player.result.emoji || '') + ' ' + (player.result.label || '')
-          : (player.rollCount > 0 ? '...' : '—');
-        const statusText = player.done ? 'done' : (state.currentTurnIndex === idx ? 'rolling' : 'waiting');
-        const statusClass = player.done ? 'done' : (state.currentTurnIndex === idx ? 'rolling' : '');
-        const youTag = player.id === myId ? '<span class="you-tag">YOU</span>' : '';
 
-        // Show mini dice if player has rolled
+        // Action banner — top of slot, matches reference design
+        let actionText = '', actionClass = 'act-waiting';
+        if (isWinner) {
+          actionText = player.id === myId ? '🏆 YOU WIN!' : '🏆 WINNER';
+          actionClass = 'act-win';
+        } else if (player.done) {
+          actionText = '✓ Done';
+          actionClass = 'act-done';
+        } else if (isActiveTurn) {
+          actionText = player.rollCount > 0 ? '↩ Throw Again' : '🎲 Throw';
+          actionClass = 'act-throw';
+        } else if (player.reAnteActive) {
+          actionText = '💰 Re-Ante?';
+          actionClass = 'act-reante';
+        } else {
+          actionText = '· · ·';
+          actionClass = 'act-waiting';
+        }
+
+        // Result — clean format matching reference ("point 5", "NO POINT", "STRUNGFLOWERS")
+        let resultText = '—', resultClass = '';
+        if (player.result) {
+          const t = player.result.type || '';
+          if (t === 'strungflowers')   { resultText = '🌟 STRUNGFLOWERS'; resultClass = 'res-strung'; }
+          else if (t === 'triple')     { resultText = `⚡ TRIPLE ${player.result.triple||''}`; resultClass = 'res-triple'; }
+          else if (t === 'point')      { resultText = `point ${player.result.point||''}`; resultClass = 'res-point'; }
+          else if (t === 'dancing_dragon'||t==='dragon') { resultText = '💀 DRAGON'; resultClass = 'res-dragon'; }
+          else if (t === 'bust')       { resultText = 'bust'; resultClass = 'res-dragon'; }
+          else                         { resultText = 'NO POINT'; resultClass = 'res-nocombo'; }
+        } else if (player.rollCount > 0) { resultText = '...'; }
+
+        const youTag = player.id === myId ? '<span class="you-tag">YOU</span>' : '';
         const lastRoll = player.rolls && player.rolls.length > 0 ? player.rolls[player.rolls.length - 1] : null;
-        const miniDiceHtml = lastRoll 
+        const miniDiceHtml = lastRoll
           ? `<div class="hud-mini-dice">${lastRoll.map(d => `<span class="mini-die">${d}</span>`).join('')}</div>`
           : '';
-        
+
         slot.innerHTML = `
+          <div class="hud-action ${actionClass}">${actionText}</div>
           <div class="hud-avatar">${escHtml(initial)}</div>
-          <div class="hud-name">${escHtml(player.name)}${youTag}</div>
-          <div class="hud-balance">金${(player.balance || 0).toLocaleString()}</div>
+          <div style="display:flex;align-items:center;gap:2px;max-width:100%;justify-content:center;flex-shrink:0;">
+            <span class="hud-name">${escHtml(player.name)}</span>${youTag}
+          </div>
+          <div class="hud-balance">金${(player.balance||0).toLocaleString()}</div>
           ${miniDiceHtml}
-          <div class="hud-result">${escHtml(resultText)}</div>
-          <div class="hud-status ${statusClass}">${statusText}</div>
+          <div class="hud-result ${resultClass}">${escHtml(resultText)}</div>
         `;
       }
       list.appendChild(slot);
