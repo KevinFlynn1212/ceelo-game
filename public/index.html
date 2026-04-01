@@ -2055,6 +2055,7 @@
 
     // Header content
     let crown = '🏆', title = 'Round Winner', nameText = '', resultText = '', potText = '', rakeText = '';
+    let isMe = false;
 
     if (allDancing) {
       crown = '🐉';
@@ -2078,8 +2079,8 @@
       const wpTop = (!wp && !wpFallback && results && results.length > 0)
         ? [...results].sort((a,b) => (b.score||0) - (a.score||0))[0] : null;
       const winPlayer = wp || wpFallback || wpTop;
-      const isMe = winner === myId || (winPlayer && winPlayer.id === myId)
-                   || (winnerName && winnerName === myName);
+      isMe = winner === myId || (winPlayer && winPlayer.id === myId)
+             || (winnerName && winnerName === myName);
       crown = isMe ? '🏆' : '🎉';
       title = isMe ? '🏆 YOU WIN! 🏆' : 'Round Over';
       nameText = winPlayer ? winPlayer.name : winnerName || (isMe ? (myName || 'You') : 'Winner');
