@@ -1393,7 +1393,7 @@
     alley.appendChild(renderer.domElement);
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(42, w/h, 0.1, 100);
-    camera.position.set(0, 4.5, 9); camera.lookAt(0, 0, 0);
+    camera.position.set(0, 2.2, 10); camera.lookAt(0, -0.8, 0);
     scene.add(new THREE.AmbientLight(0xffffff, 0.55));
     const dl = new THREE.DirectionalLight(0xfffaf0, 1.1); dl.position.set(4, 8, 6); scene.add(dl);
     const fl = new THREE.DirectionalLight(0xff4444, 0.25); fl.position.set(-3,2,-4); scene.add(fl);
@@ -1439,40 +1439,23 @@
     renderer.render(scene, camera);
   }
 
-  // ─── Web Audio dice sounds ────────────────────────────────────────────────
-  let _audioCtx = null;
-  function getAudioCtx() {
-    if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    return _audioCtx;
+  // ─── Real dice sounds ─────────────────────────────────────────────────────
+  const _rollSfx = new Audio('/dice-roll.wav');
+  _rollSfx.preload = 'auto'; _rollSfx.volume = 0.6;
+  const _landSfx = new Audio('/dice-land.wav');
+  _landSfx.preload = 'auto'; _landSfx.volume = 0.75;
+
+  function playDiceRattle() {
+    try { _rollSfx.currentTime = 0; _rollSfx.play().catch(()=>{}); } catch(e) {}
   }
-  function playDiceRattle(durationSec) {
-    try {
-      const ctx = getAudioCtx();
-      const len = Math.round(ctx.sampleRate * durationSec);
-      const buf = ctx.createBuffer(1, len, ctx.sampleRate);
-      const d = buf.getChannelData(0);
-      for (let i = 0; i < len; i++) d[i] = (Math.random()*2-1) * Math.max(0, 1 - i/len);
-      const src = ctx.createBufferSource(); src.buffer = buf;
-      const flt = ctx.createBiquadFilter(); flt.type='bandpass'; flt.frequency.value=1800; flt.Q.value=1.2;
-      const gain = ctx.createGain(); gain.gain.setValueAtTime(0.18, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + durationSec);
-      src.connect(flt); flt.connect(gain); gain.connect(ctx.destination); src.start();
-    } catch(e) {}
+  function stopDiceRattle() {
+    try { _rollSfx.pause(); _rollSfx.currentTime = 0; } catch(e) {}
   }
   function playDiceThud() {
     try {
-      const ctx = getAudioCtx();
-      const now = ctx.currentTime;
-      // Low thud — die hitting stone ground
-      const osc = ctx.createOscillator(); const og = ctx.createGain();
-      osc.type='sine'; osc.frequency.setValueAtTime(120, now); osc.frequency.exponentialRampToValueAtTime(35, now+0.18);
-      og.gain.setValueAtTime(0.55, now); og.gain.exponentialRampToValueAtTime(0.001, now+0.22);
-      osc.connect(og); og.connect(ctx.destination); osc.start(); osc.stop(now+0.22);
-      // High click — die edge
-      const click = ctx.createOscillator(); const cg = ctx.createGain();
-      click.type='square'; click.frequency.setValueAtTime(900, now); click.frequency.exponentialRampToValueAtTime(200, now+0.06);
-      cg.gain.setValueAtTime(0.12, now); cg.gain.exponentialRampToValueAtTime(0.001, now+0.07);
-      click.connect(cg); cg.connect(ctx.destination); click.start(); click.stop(now+0.07);
+      // Clone so staggered thuds overlap naturally
+      const s = _landSfx.cloneNode(true);
+      s.volume = 0.75; s.play().catch(()=>{});
     } catch(e) {}
   }
 
@@ -1485,7 +1468,7 @@
     const xp = [-1.8, 0, 1.8];
     const settleAt = [750, 980, 1250]; // faster — ms when each die stops
     // Start rattle sound as dice are thrown
-    playDiceRattle(1.0);
+    playDiceRattle();
     const dieStates = dice.map((die, i) => {
       die.visible = true;
       die.position.set(xp[i], -0.8, 8);
@@ -1534,6 +1517,7 @@
             setTimeout(() => playDiceThud(), i * 60);
             doneCount++;
             if (doneCount === 3) {
+              stopDiceRattle();
               animating = false;
               if (evaluation) document.getElementById('result-label').textContent = (evaluation.emoji||'') + ' ' + (evaluation.label||'');
               setTimeout(() => {
