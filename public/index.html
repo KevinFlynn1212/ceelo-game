@@ -1002,6 +1002,107 @@
     animation: alleyWinOut 0.4s ease-in forwards;
   }
 
+  /* Between-rounds countdown (Play Again / Sit Out) */
+  .countdown-overlay {
+    position: fixed;
+    top: 35%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 9100;
+    pointer-events: auto;
+    animation: alleyWinIn 0.45s cubic-bezier(0.175,0.885,0.32,1.275) forwards;
+  }
+  .countdown-overlay.hiding {
+    animation: alleyWinOut 0.35s ease-in forwards;
+    pointer-events: none;
+  }
+  .countdown-card {
+    background: linear-gradient(160deg, rgba(20,14,2,0.97), rgba(10,6,1,0.97));
+    border: 2px solid rgba(245,200,66,0.7);
+    border-radius: 18px;
+    padding: 24px 36px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    min-width: 280px;
+    box-shadow: 0 0 50px rgba(245,200,66,0.3), 0 20px 50px rgba(0,0,0,0.9);
+  }
+  .countdown-title {
+    font-family: 'Cinzel', serif;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--gold);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    text-align: center;
+  }
+  .countdown-timer {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 3rem;
+    font-weight: 900;
+    color: #ffffff;
+    text-shadow: 0 0 30px rgba(255,255,255,0.4);
+    line-height: 1;
+  }
+  .countdown-buttons {
+    display: flex;
+    gap: 14px;
+  }
+  .countdown-btn {
+    font-family: 'Cinzel', serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    padding: 10px 22px;
+    border: 2px solid;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+  }
+  .countdown-btn.play {
+    background: rgba(34,120,34,0.6);
+    border-color: #44cc44;
+    color: #44ff44;
+  }
+  .countdown-btn.play:hover { background: rgba(34,160,34,0.8); }
+  .countdown-btn.play.selected {
+    background: rgba(34,180,34,0.9);
+    box-shadow: 0 0 20px rgba(68,204,68,0.5);
+  }
+  .countdown-btn.sit-out {
+    background: rgba(120,34,34,0.6);
+    border-color: #cc4444;
+    color: #ff6666;
+  }
+  .countdown-btn.sit-out:hover { background: rgba(160,34,34,0.8); }
+  .countdown-btn.sit-out.selected {
+    background: rgba(180,34,34,0.9);
+    box-shadow: 0 0 20px rgba(204,68,68,0.5);
+  }
+  .countdown-btn:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+  .countdown-btn.rejoin {
+    background: rgba(34,80,160,0.6);
+    border-color: #4488ff;
+    color: #66aaff;
+  }
+  .countdown-btn.rejoin:hover { background: rgba(34,100,200,0.8); }
+  .countdown-btn.rejoin.selected {
+    background: rgba(34,120,220,0.9);
+    box-shadow: 0 0 20px rgba(68,136,255,0.5);
+  }
+  .countdown-status {
+    font-family: 'Lato', sans-serif;
+    font-size: 0.75rem;
+    color: var(--muted);
+    text-align: center;
+    letter-spacing: 0.08em;
+  }
+
   /* Round start countdown overlay */
   .round-start-overlay {
     position: absolute;
@@ -1983,6 +2084,95 @@
       }
     };
     waitForAnims();
+  });
+
+  // ── Between-rounds countdown (Play Again / Sit Out) ───────────────────────
+  let _countdownInterval = null;
+  let _countdownChoice = null;
+
+  socket.on('countdown_start', (data) => {
+    _countdownChoice = null;
+    dismissWinner();  // clear winner overlay if still showing
+
+    // Remove any existing countdown overlay
+    const old = document.getElementById('countdown-overlay');
+    if (old) old.remove();
+
+    const endTime = Date.now() + data.durationMs;
+    const amSpectator = isSpectator;
+
+    const overlay = document.createElement('div');
+    overlay.id = 'countdown-overlay';
+    overlay.className = 'countdown-overlay';
+    overlay.innerHTML = `
+      <div class="countdown-card">
+        <div class="countdown-title">Next Round</div>
+        <div class="countdown-timer" id="cd-timer">5</div>
+        <div class="countdown-buttons" id="cd-buttons">
+          ${amSpectator
+            ? `<button class="countdown-btn rejoin" id="cd-rejoin">🎲 Join In</button>`
+            : `<button class="countdown-btn play" id="cd-play">✅ Play Again</button>
+               <button class="countdown-btn sit-out" id="cd-sitout">💤 Sit Out</button>`
+          }
+        </div>
+        <div class="countdown-status" id="cd-status">${amSpectator ? 'Jump back in?' : 'Defaults to Play Again'}</div>
+      </div>`;
+    document.body.appendChild(overlay);
+
+    // Wire buttons
+    const btnPlay = document.getElementById('cd-play');
+    const btnSit  = document.getElementById('cd-sitout');
+    const btnRejoin = document.getElementById('cd-rejoin');
+
+    if (btnPlay) btnPlay.addEventListener('click', () => {
+      _countdownChoice = 'play';
+      socket.emit('countdown_choice', { choice: 'play' });
+      btnPlay.classList.add('selected');
+      if (btnSit) btnSit.classList.remove('selected');
+      document.getElementById('cd-status').textContent = '✅ Playing next round';
+    });
+    if (btnSit) btnSit.addEventListener('click', () => {
+      _countdownChoice = 'sit_out';
+      socket.emit('countdown_choice', { choice: 'sit_out' });
+      btnSit.classList.add('selected');
+      if (btnPlay) btnPlay.classList.remove('selected');
+      document.getElementById('cd-status').textContent = '💤 Sitting out';
+    });
+    if (btnRejoin) btnRejoin.addEventListener('click', () => {
+      _countdownChoice = 'rejoin';
+      socket.emit('countdown_choice', { choice: 'rejoin' });
+      btnRejoin.classList.add('selected');
+      document.getElementById('cd-status').textContent = '🎲 Joining next round!';
+    });
+
+    // Tick timer
+    if (_countdownInterval) clearInterval(_countdownInterval);
+    _countdownInterval = setInterval(() => {
+      const remaining = Math.max(0, Math.ceil((endTime - Date.now()) / 1000));
+      const el = document.getElementById('cd-timer');
+      if (el) el.textContent = remaining;
+      if (remaining <= 0) {
+        clearInterval(_countdownInterval);
+        _countdownInterval = null;
+      }
+    }, 250);
+  });
+
+  socket.on('countdown_resolved', () => {
+    if (_countdownInterval) { clearInterval(_countdownInterval); _countdownInterval = null; }
+    const overlay = document.getElementById('countdown-overlay');
+    if (overlay) {
+      overlay.classList.add('hiding');
+      setTimeout(() => overlay.remove(), 400);
+    }
+  });
+
+  socket.on('countdown_choice_ack', (data) => {
+    // Could show other players' choices — for now just chat
+    if (data.playerId !== myId) {
+      const verb = data.choice === 'sit_out' ? 'is sitting out' : 'is playing';
+      addChatMessage({ type: 'system', text: `${data.playerName} ${verb}` });
+    }
   });
 
   socket.on('chat_message', (msg) => {

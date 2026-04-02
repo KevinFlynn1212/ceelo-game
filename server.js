@@ -34,6 +34,7 @@ const TIMER_REANTE_MS       = 5_000;
 const TIMER_RESULTS_MS      = 6_000;
 const TIMER_SHOOTOUT_RAISE_MS = 5_000;
 const TIMER_BETWEEN_MS      = 2_000;
+const TIMER_COUNTDOWN_MS    = 5_000;  // "Play Again / Sit Out" window
 
 // Pre-configured room definitions — each ante level gets its own alley theme
 const ROOM_CONFIGS = [
@@ -78,7 +79,7 @@ function createRoom(config) {
     name:              config.name,
     ante:              config.ante,
     theme:             config.theme || 'red',
-    state:             'lobby',  // lobby | ante | rolling | re_ante | shootout | results
+    state:             'lobby',  // lobby | countdown | ante | rolling | re_ante | shootout | results
     round:             0,
     pot:               0,
     rake:              0,
@@ -306,6 +307,66 @@ function setRoomTimer(room, ms, fn) {
 function checkAutoStart(room) {
   if (room.state !== 'lobby') return;
   if (room.players.length >= 2) startAntePhase(room);
+}
+
+// Phase 0.5: "Play Again / Sit Out" countdown between rounds
+function startCountdown(room) {
+  clearRoomTimer(room);
+  room.state = 'countdown';
+  room.countdownChoices = {};  // socketId → 'play' | 'sit_out'
+
+  const playerList = room.players.map(p => ({ id: p.id, name: p.name }));
+  sysMsg(room, `⏳ Next round in 5 seconds — choose to play or sit out!`);
+
+  io.to(room.id).emit('countdown_start', {
+    roomId:   room.id,
+    durationMs: TIMER_COUNTDOWN_MS,
+    players:  playerList,
+  });
+  broadcast(room);
+  broadcastLobby();
+
+  setRoomTimer(room, TIMER_COUNTDOWN_MS, () => resolveCountdown(room));
+}
+
+function resolveCountdown(room) {
+  if (room.state !== 'countdown') return;
+
+  // Anyone who didn't respond defaults to "play"
+  const sitOutIds = [];
+  room.players.forEach(p => {
+    if (room.countdownChoices[p.id] === 'sit_out') sitOutIds.push(p.id);
+  });
+
+  // Move sit-out players to spectators
+  sitOutIds.forEach(id => {
+    const p = room.players.find(x => x.id === id);
+    if (!p) return;
+    // Preserve their wallet by keeping them as a spectator with wallet ref
+    room.spectators.push({ id: p.id, name: p.name, wallet: p.wallet });
+    sysMsg(room, `💤 ${p.name} is sitting out`);
+    removePlayer(room, id);
+    // Update socket data so they're treated as spectator
+    const sock = io.sockets.sockets.get(id);
+    if (sock) sock.data.isSpectator = true;
+  });
+
+  delete room.countdownChoices;
+
+  io.to(room.id).emit('countdown_resolved', {
+    roomId:  room.id,
+    sitOuts: sitOutIds,
+  });
+
+  if (room.players.length >= 2) {
+    startAntePhase(room);
+  } else {
+    room.state = 'lobby';
+    room.pot   = 0;
+    sysMsg(room, '⚠️ Not enough players to start. Waiting...');
+    broadcast(room);
+    broadcastLobby();
+  }
 }
 
 // Phase 1: Ante collection countdown
@@ -585,7 +646,7 @@ function endRound(room) {
     broadcast(room);
 
     setRoomTimer(room, TIMER_RESULTS_MS, () => {
-      if (room.players.length >= 2) startAntePhase(room);
+      if (room.players.length >= 2) startCountdown(room);
       else { room.state = 'lobby'; broadcast(room); broadcastLobby(); }
     });
     return;
@@ -661,7 +722,7 @@ function endRound(room) {
   broadcast(room);
 
   setRoomTimer(room, TIMER_RESULTS_MS, () => {
-    if (room.players.length >= 2) startAntePhase(room);
+    if (room.players.length >= 2) startCountdown(room);
     else { room.state = 'lobby'; broadcast(room); broadcastLobby(); }
   });
 }
@@ -826,7 +887,7 @@ function resolveShootout(room) {
     broadcast(room);
 
     setRoomTimer(room, TIMER_RESULTS_MS, () => {
-      if (room.players.length >= 2) startAntePhase(room);
+      if (room.players.length >= 2) startCountdown(room);
       else { room.state = 'lobby'; broadcast(room); broadcastLobby(); }
     });
   } else {
@@ -881,8 +942,8 @@ io.on('connection', socket => {
     if (!isSpectator) {
       if (room.players.length >= MAX_PLAYERS)
         return socket.emit('error', { msg: `Room full (max ${MAX_PLAYERS} players).` });
-      // Only allow joining during lobby or brief results window
-      if (room.state !== 'lobby' && room.state !== 'results')
+      // Only allow joining during lobby, results, or countdown window
+      if (room.state !== 'lobby' && room.state !== 'results' && room.state !== 'countdown')
         return socket.emit('error', { msg: 'Game in progress — join as spectator?' });
       room.players.push(makePlayer(socket.id, n));
     } else {
@@ -924,6 +985,47 @@ io.on('connection', socket => {
 
     clearRoomTimer(room);
     performRoll(room, player, false);
+  });
+
+  // ── Countdown choice (play again / sit out) ─────────────────────────────────
+  socket.on('countdown_choice', ({ choice }) => {
+    const room = rooms.get(socket.data.room);
+    if (!room || room.state !== 'countdown') return;
+
+    if (choice === 'rejoin' && socket.data.isSpectator) {
+      // Spectator wants back in
+      if (room.players.length >= MAX_PLAYERS) {
+        socket.emit('error', { msg: 'Table is full.' });
+        return;
+      }
+      const specIdx = room.spectators.findIndex(s => s.id === socket.id);
+      if (specIdx === -1) return;
+      const spec = room.spectators[specIdx];
+      room.spectators.splice(specIdx, 1);
+      // Re-create as player, restore wallet if they had one
+      const newP = makePlayer(socket.id, spec.name);
+      if (spec.wallet) newP.wallet = spec.wallet;
+      room.players.push(newP);
+      socket.data.isSpectator = false;
+      sysMsg(room, `🎲 ${spec.name} is back in!`);
+      broadcast(room);
+      broadcastLobby();
+      return;
+    }
+
+    // Player choosing play or sit_out
+    if (socket.data.isSpectator) return;
+    const player = room.players.find(p => p.id === socket.id);
+    if (!player) return;
+    if (!room.countdownChoices) return;
+    room.countdownChoices[socket.id] = choice === 'sit_out' ? 'sit_out' : 'play';
+
+    // Emit ack so client can update UI
+    io.to(room.id).emit('countdown_choice_ack', {
+      playerId: socket.id,
+      playerName: player.name,
+      choice: room.countdownChoices[socket.id],
+    });
   });
 
   // ── Re-ante decision ───────────────────────────────────────────────────────
