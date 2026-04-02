@@ -539,7 +539,6 @@ function finalisePlayerResult(room, player, ev) {
   player.finalScore = ev.score;
   player.done       = true;
 }
-}
 
 // ── Turn advancement ─────────────────────────────────────────────────────────
 function advanceTurn(room) {
