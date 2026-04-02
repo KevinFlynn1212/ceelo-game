@@ -2041,16 +2041,17 @@
     if (state.state === 'rolling' || state.state === 'shootout') {
       hideRoundStartCountdown();
     }
-    // Clear per-round animation state when a new rolling phase starts
-    if (state.state === 'rolling' && (!prevState || prevState.state !== 'rolling')) {
+    // Clear per-round animation state when a new ROUND starts (ante → rolling transition)
+    if (state.state === 'rolling' && prevState && prevState.state === 'ante') {
       _diceRevealedFor.clear();
       _coinLaunchedFor.clear();
       _rollQueue = [];
       _rollAnimating = false;
       _animatingForPlayer = null;
+      _winnerDismissedSent = false;
     }
-    // Clean up between-rounds countdown overlay if state moved on without event
-    if (state.state !== 'countdown') {
+    // Clean up countdown overlay when leaving countdown state
+    if (prevState && prevState.state === 'countdown' && state.state !== 'countdown') {
       const cdOv = document.getElementById('countdown-overlay');
       if (cdOv) { cdOv.classList.add('hiding'); setTimeout(() => cdOv.remove(), 400); }
       if (_countdownInterval) { clearInterval(_countdownInterval); _countdownInterval = null; }
@@ -2123,8 +2124,8 @@
 
   socket.on('countdown_start', (data) => {
     _countdownChoice = null;
-    // Fully dismiss winner overlay (clears _coinLaunchedFor, _diceRevealedFor, etc.)
-    dismissWinner();
+    // Dismiss winner without re-emitting winner_dismissed (server already knows)
+    dismissWinner(true);
 
     // Remove any existing countdown overlay
     const old = document.getElementById('countdown-overlay');
@@ -3377,11 +3378,16 @@
     }
   }
 
-  function dismissWinner() {
+  let _winnerDismissedSent = false;
+  function dismissWinner(fromCountdown = false) {
     if (winnerDismissTimer) { clearTimeout(winnerDismissTimer); winnerDismissTimer = null; }
     _blockGameScreen = false;
-    // Tell server winner was dismissed — triggers next round countdown immediately
-    socket.emit('winner_dismissed');
+    // Tell server winner was dismissed — triggers next round countdown
+    // Don't send if already sent or if triggered by countdown_start (server already knows)
+    if (!fromCountdown && !_winnerDismissedSent) {
+      _winnerDismissedSent = true;
+      socket.emit('winner_dismissed');
+    }
     // Animate alley overlay out
     const awOverlay = document.getElementById('alley-winner');
     if (awOverlay) {

@@ -921,7 +921,7 @@ io.on('connection', socket => {
   // ── Winner dismissed ────────────────────────────────────────────────
   socket.on('winner_dismissed', () => {
     const room = rooms.get(socket.data.room);
-    if (!room || room.state !== 'rolling') return; // only trigger from post-round state
+    if (!room || room.state !== 'results') return;
     // Fire countdown immediately, cancelling the fallback timer
     if (room.players.length >= 2) startCountdown(room);
     else { room.state = 'lobby'; broadcast(room); broadcastLobby(); }
