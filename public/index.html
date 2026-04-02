@@ -578,6 +578,99 @@
     border-bottom: 1px solid rgba(0, 140, 220, 0.25);
   }
 
+  /* ════════════════════════════════════════════
+     GREEN THEME — $20 Alley ("The Strip")
+     Urban graffiti alley, orange/amber neon
+     ════════════════════════════════════════════ */
+
+  @keyframes neonFlickerGreen {
+    0%,100%  { opacity: 1; }
+    3%       { opacity: 0.85; }
+    6%       { opacity: 1; }
+    42%      { opacity: 1; }
+    43%      { opacity: 0.3; }
+    44%      { opacity: 1; }
+    72%      { opacity: 1; }
+    73%      { opacity: 0.6; }
+    74%      { opacity: 0.1; }
+    75%      { opacity: 0.9; }
+    76%      { opacity: 1; }
+  }
+
+  @keyframes neonWashGreen {
+    0%,100%  { opacity: 0.85; }
+    43%      { opacity: 0.2; }
+    44%      { opacity: 0.85; }
+    74%      { opacity: 0.15; }
+    75%      { opacity: 0.85; }
+  }
+
+  .theme-green .alley-section {
+    background: url('/alley-green-bg.jpg') center 65% / cover no-repeat;
+  }
+
+  .theme-green .alley-section::before {
+    background: linear-gradient(180deg,
+      rgba(15,8,2,0.45) 0%,
+      rgba(20,10,3,0.15) 40%,
+      rgba(15,8,2,0.55) 100%);
+  }
+
+  /* Orange/amber neon sign */
+  .theme-green .neon-rect {
+    color: #FFAA33;
+    animation: neonFlickerGreen 9s infinite;
+    text-shadow:
+      0 0 8px #FF8800,
+      0 0 18px #FF6600,
+      0 0 35px #DD4400,
+      0 0 70px #AA3300,
+      0 0 120px #882200;
+    top: 8%;
+    left: 45%;
+    right: auto;
+    font-size: 1.4rem;
+    letter-spacing: 12px;
+    transform: none;
+    transform-origin: center center;
+  }
+
+  /* Orange ambient wash */
+  .theme-green .neon-blue-wash {
+    background: radial-gradient(ellipse at 50% 20%, rgba(255,120,30,0.18) 0%, rgba(180,80,10,0.07) 45%, transparent 70%);
+    animation: neonWashGreen 9s infinite;
+  }
+
+  .theme-green .neon-floor-glow {
+    background: radial-gradient(ellipse at 50% 0%, rgba(220,100,20,0.12) 0%, transparent 60%);
+    animation: neonWashGreen 9s infinite;
+  }
+
+  /* Warm orange distant glow (the lamp) */
+  .theme-green .distant-amber {
+    width: 60px; height: 60px;
+    background: radial-gradient(circle, rgba(255,160,50,0.7) 0%, rgba(255,100,20,0.2) 40%, transparent 70%);
+    filter: blur(14px);
+  }
+
+  /* Steam puffs — warm exhaust tint */
+  .theme-green .steam-puff {
+    background: radial-gradient(ellipse at center, rgba(180,160,130,0.65) 0%, rgba(140,120,90,0.3) 50%, transparent 70%);
+  }
+
+  .theme-green .manhole-glow {
+    background: radial-gradient(ellipse, rgba(220,160,80,0.3) 0%, transparent 70%);
+  }
+
+  /* Hide blue-specific steam in green theme */
+  .theme-green .blue-steam { display: none; }
+
+  /* Dark urban info bar */
+  .theme-green .game-info-bar {
+    background: rgba(12, 6, 2, 0.9);
+    border-bottom: 1px solid rgba(220, 100, 20, 0.3);
+  }
+
   /* Three.js canvas is injected directly into .alley-section */
   .dice-3d-container { display: none; } /* hidden — Three.js takes over */
 
@@ -2093,7 +2186,8 @@
   let _currentTheme = 'red';
   function getActiveTheme() {
     const g = document.getElementById('screen-game');
-    if (g && g.classList.contains('theme-blue')) return 'blue';
+    if (g && g.classList.contains('theme-blue'))  return 'blue';
+    if (g && g.classList.contains('theme-green')) return 'green';
     return 'red';
   }
   function stopAmbientSound() {
@@ -2220,7 +2314,89 @@
         // Next meow well spaced out
         setTimeout(catMeow, 40000 + Math.random() * 70000);
       }
-      setTimeout(catMeow, _currentTheme === 'blue' ? 60000 + Math.random() * 90000 : 20000 + Math.random() * 30000);
+      setTimeout(catMeow, _currentTheme === 'blue' ? 60000 + Math.random() * 90000 : _currentTheme === 'green' ? 30000 + Math.random() * 60000 : 20000 + Math.random() * 30000);
+
+      // ── Green alley exclusive sounds — urban strip ──
+      if (_currentTheme === 'green') {
+        // Heavier traffic rumble
+        rumbleGain.gain.value = 0.04;
+        lpf.frequency.value = 200;
+        texGain.gain.value = 0.018;
+
+        // Distant bass thump — club music bleeding through a wall
+        function bassThump() {
+          try {
+            const bCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const t = bCtx.currentTime;
+            const count = 4 + Math.floor(Math.random() * 4);
+            const bpm = 125 + Math.random() * 10;
+            const interval = 60 / bpm;
+            for (let i = 0; i < count; i++) {
+              const osc = bCtx.createOscillator();
+              const g = bCtx.createGain();
+              osc.type = 'sine';
+              osc.frequency.value = 55 + Math.random() * 10;
+              const st = t + i * interval;
+              g.gain.setValueAtTime(0, st);
+              g.gain.linearRampToValueAtTime(0.07, st + 0.04);
+              g.gain.exponentialRampToValueAtTime(0.001, st + interval * 0.85);
+              osc.connect(g); g.connect(bCtx.destination);
+              osc.start(st); osc.stop(st + interval);
+            }
+          } catch(e) {}
+          setTimeout(bassThump, 25000 + Math.random() * 40000);
+        }
+        setTimeout(bassThump, 12000 + Math.random() * 20000);
+
+        // Distant dog bark — synthesized
+        function dogBark() {
+          try {
+            const dCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const t = dCtx.currentTime;
+            const barks = 1 + Math.floor(Math.random() * 3);
+            for (let i = 0; i < barks; i++) {
+              const osc = dCtx.createOscillator();
+              const g = dCtx.createGain();
+              const hpf = dCtx.createBiquadFilter();
+              hpf.type = 'bandpass'; hpf.frequency.value = 800; hpf.Q.value = 0.8;
+              osc.type = 'sawtooth';
+              const st = t + i * 0.4;
+              osc.frequency.setValueAtTime(380, st);
+              osc.frequency.linearRampToValueAtTime(180, st + 0.18);
+              g.gain.setValueAtTime(0, st);
+              g.gain.linearRampToValueAtTime(0.06, st + 0.03);
+              g.gain.exponentialRampToValueAtTime(0.001, st + 0.22);
+              osc.connect(hpf); hpf.connect(g); g.connect(dCtx.destination);
+              osc.start(st); osc.stop(st + 0.3);
+            }
+          } catch(e) {}
+          setTimeout(dogBark, 45000 + Math.random() * 90000);
+        }
+        setTimeout(dogBark, 18000 + Math.random() * 30000);
+
+        // Bottle smash — very rare
+        function bottleSmash() {
+          try {
+            const sCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const t = sCtx.currentTime;
+            const bufSize = 2048;
+            const noise = sCtx.createScriptProcessor(bufSize, 1, 1);
+            noise.onaudioprocess = (e) => {
+              const out = e.outputBuffer.getChannelData(0);
+              for (let i = 0; i < bufSize; i++) out[i] = (Math.random() * 2 - 1);
+            };
+            const hpf = sCtx.createBiquadFilter();
+            hpf.type = 'highpass'; hpf.frequency.value = 3000;
+            const g = sCtx.createGain();
+            g.gain.setValueAtTime(0.12, t);
+            g.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
+            noise.connect(hpf); hpf.connect(g); g.connect(sCtx.destination);
+            setTimeout(() => { try { noise.disconnect(); } catch(e){} }, 500);
+          } catch(e) {}
+          setTimeout(bottleSmash, 90000 + Math.random() * 180000);
+        }
+        setTimeout(bottleSmash, 60000 + Math.random() * 60000);
+      }
 
       // ── Blue alley exclusive sounds ──
       if (_currentTheme === 'blue') {
