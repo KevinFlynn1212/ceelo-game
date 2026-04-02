@@ -2377,7 +2377,7 @@
         osc.start(); osc.stop(ctx.currentTime + 5);
         setTimeout(windGust, 14000 + Math.random() * 20000);
       }
-      setTimeout(windGust, 8000 + Math.random() * 10000);
+      if (_currentTheme !== 'blue' && _currentTheme !== 'gold') setTimeout(windGust, 8000 + Math.random() * 10000);
 
       // Distant siren — real "siren passing" MP3 via Web Audio API for smooth gain control
       let _sirenBuffer = null;
@@ -2421,7 +2421,7 @@
         } catch(e) {}
         setTimeout(distantSiren, 50000 + Math.random() * 70000);
       }
-      setTimeout(distantSiren, 20000 + Math.random() * 30000);
+      if (_currentTheme !== 'blue' && _currentTheme !== 'gold') setTimeout(distantSiren, 20000 + Math.random() * 30000);
 
       // Real cat meow — short, soft, no double-meow
       const _meowSfx = new Audio('/cat-meow.wav');
@@ -2437,8 +2437,8 @@
         // Next meow well spaced out
         setTimeout(catMeow, 40000 + Math.random() * 70000);
       }
-      if (_currentTheme !== 'gold') {
-        setTimeout(catMeow, _currentTheme === 'blue' ? 60000 + Math.random() * 90000 : _currentTheme === 'green' ? 30000 + Math.random() * 60000 : 20000 + Math.random() * 30000);
+      if (_currentTheme !== 'gold' && _currentTheme !== 'blue') {
+        setTimeout(catMeow, _currentTheme === 'green' ? 30000 + Math.random() * 60000 : 20000 + Math.random() * 30000);
       }
 
       // ── Green alley exclusive sounds — urban strip ──
@@ -2523,7 +2523,7 @@
         setTimeout(bottleSmash, 60000 + Math.random() * 60000);
       }
 
-      // ── Gold alley exclusive sounds — jazz only ──
+      // ── Gold alley exclusive sounds — jazz + distant dog ──
       if (_currentTheme === 'gold') {
         // Kill the synthesized rumble — just silence + jazz
         rumbleGain.gain.value = 0;
@@ -2542,6 +2542,32 @@
             if (jv >= 0.18) clearInterval(jazzFade);
           }, 60);
         } catch(e) {}
+
+        // Distant dog bark — rare, echoes down the stone alley
+        function goldDogBark() {
+          try {
+            const dCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const t = dCtx.currentTime;
+            const barks = 1 + Math.floor(Math.random() * 2);
+            for (let i = 0; i < barks; i++) {
+              const osc = dCtx.createOscillator();
+              const g = dCtx.createGain();
+              const hpf = dCtx.createBiquadFilter();
+              hpf.type = 'bandpass'; hpf.frequency.value = 700; hpf.Q.value = 1.2;
+              osc.type = 'sawtooth';
+              const st = t + i * 0.5;
+              osc.frequency.setValueAtTime(320, st);
+              osc.frequency.linearRampToValueAtTime(150, st + 0.2);
+              g.gain.setValueAtTime(0, st);
+              g.gain.linearRampToValueAtTime(0.04, st + 0.03);
+              g.gain.exponentialRampToValueAtTime(0.001, st + 0.28);
+              osc.connect(hpf); hpf.connect(g); g.connect(dCtx.destination);
+              osc.start(st); osc.stop(st + 0.35);
+            }
+          } catch(e) {}
+          setTimeout(goldDogBark, 60000 + Math.random() * 120000);
+        }
+        setTimeout(goldDogBark, 30000 + Math.random() * 60000);
       }
 
       // ── Blue alley exclusive sounds ──
