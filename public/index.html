@@ -523,8 +523,8 @@
       0 0 35px #0066BB,
       0 0 70px #0055AA,
       0 0 120px #003377;
-    top: 6%;
-    left: 56.5%;
+    top: 6%;   /* overridden by JS repositionBlueSign() */
+    left: 56.5%; /* overridden by JS repositionBlueSign() */
     right: auto;
     font-size: 1.4rem;
     letter-spacing: 12px;
@@ -2887,6 +2887,74 @@
       socket.emit('get_lobby');
     }
   }, 5000);
+
+  // ===== BLUE ALLEY: DYNAMIC SIGN POSITIONING =====
+  // The photo's neon rectangle moves with screen size changes (cover cropping).
+  // We calculate the correct CSS position by tracking where the photo point maps
+  // to in the container at any given viewport size.
+  // Photo's neon rectangle: ~56% from left, ~22% from top of photo
+  // Background position: center 35% (vertical)
+  const BLUE_SIGN_IMG_X = 0.56; // horizontal position in photo (0-1)
+  const BLUE_SIGN_IMG_Y = 0.22; // vertical position in photo (0-1)
+  const BLUE_BG_POS_Y   = 0.35; // background-position-y (0=top, 1=bottom)
+  let _blueImgNaturalW = 0, _blueImgNaturalH = 0;
+
+  // Load image to get natural dimensions
+  const _bgImg = new Image();
+  _bgImg.onload = () => {
+    _blueImgNaturalW = _bgImg.naturalWidth;
+    _blueImgNaturalH = _bgImg.naturalHeight;
+    repositionBlueSign();
+  };
+  _bgImg.src = '/alley-blue-bg.jpg';
+
+  function repositionBlueSign() {
+    const gameEl = document.getElementById('screen-game');
+    if (!gameEl || !gameEl.classList.contains('theme-blue')) return;
+    if (!_blueImgNaturalW || !_blueImgNaturalH) return;
+    const alley = gameEl.querySelector('.alley-section');
+    const sign  = gameEl.querySelector('.neon-rect');
+    if (!alley || !sign) return;
+
+    const cW = alley.clientWidth;
+    const cH = alley.clientHeight;
+    if (!cW || !cH) return;
+
+    const imgAspect = _blueImgNaturalW / _blueImgNaturalH;
+    const containerAspect = cW / cH;
+
+    let renderedW, renderedH;
+    if (containerAspect > imgAspect) {
+      // Container wider — scale image to fill width
+      renderedW = cW;
+      renderedH = cW / imgAspect;
+    } else {
+      // Container taller — scale image to fill height
+      renderedH = cH;
+      renderedW = cH * imgAspect;
+    }
+
+    const offsetX = (renderedW - cW) * 0.5;            // center horizontally
+    const offsetY = (renderedH - cH) * BLUE_BG_POS_Y;  // 35% vertical position
+
+    const signPxX = renderedW * BLUE_SIGN_IMG_X - offsetX;
+    const signPxY = renderedH * BLUE_SIGN_IMG_Y - offsetY;
+
+    sign.style.left = Math.max(0, Math.min(95, (signPxX / cW) * 100)).toFixed(1) + '%';
+    sign.style.top  = Math.max(0, Math.min(80, (signPxY / cH) * 100)).toFixed(1) + '%';
+  }
+
+  // Reposition on resize
+  window.addEventListener('resize', repositionBlueSign);
+  // Also reposition when theme is applied
+  const _origShowScreen = window.showScreen;
+  // Hook into room_state theme changes via MutationObserver on screen-game classList
+  new MutationObserver(() => {
+    const g = document.getElementById('screen-game');
+    if (g && g.classList.contains('theme-blue')) {
+      setTimeout(repositionBlueSign, 50);
+    }
+  }).observe(document.getElementById('screen-game'), { attributes: true, attributeFilter: ['class'] });
 
 })();
 </script>
