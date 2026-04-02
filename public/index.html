@@ -3103,6 +3103,15 @@
 
   // ===== LEAVE =====
   document.getElementById('btn-leave').addEventListener('click', () => {
+    // Block leave if player has paid ante and game is still in progress
+    if (roomState) {
+      const me = roomState.players && roomState.players.find(p => p.name === myName);
+      const inProgress = ['ante','rolling','re_ante','shootout'].includes(roomState.state);
+      if (me && me.antePaid && inProgress && !me.done) {
+        showError('Finish your turn before leaving — you have a bet in play!');
+        return;
+      }
+    }
     socket.emit('leave_room');
     stopAmbientSound(); // reset so next alley starts with correct theme
     currentRoom = null;
