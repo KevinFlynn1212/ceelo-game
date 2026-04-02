@@ -412,11 +412,13 @@
     15%,18%,23%,66% { opacity: 0.01; }
     17%,20%,21%,39% { opacity: 0.08; }
   }
-  /* Clip wrapper — hard boundary, nothing inside can escape the alley section */
+  /* Clip wrapper — force GPU compositing + clip-path to contain animated sign */
   .neon-sign-clip {
     position: absolute;
     inset: 0;
-    overflow: hidden;
+    clip-path: inset(0px);
+    transform: translateZ(0);
+    will-change: transform;
     pointer-events: none;
     z-index: 4;
   }
