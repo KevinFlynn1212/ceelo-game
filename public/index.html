@@ -524,10 +524,11 @@
       0 0 70px #0055AA,
       0 0 120px #003377;
     top: 22%;
-    right: 28%;
-    font-size: 2.0rem;
-    transform: perspective(300px) rotateY(-28deg);
-    transform-origin: right center;
+    left: 70%;
+    right: auto;
+    font-size: 1.6rem;
+    transform: perspective(200px) rotateY(-20deg);
+    transform-origin: left center;
   }
 
   /* Blue ambient wash from neon */
@@ -2235,30 +2236,7 @@
             if (rv >= 0.18) clearInterval(rainFade);
           }, 50);
         } catch(e) {}
-        // Water drip — random single drips
-        function waterDrip() {
-          try {
-            const dCtx = new (window.AudioContext || window.webkitAudioContext)();
-            const t = dCtx.currentTime;
-            const osc = dCtx.createOscillator();
-            const g = dCtx.createGain();
-            const f = dCtx.createBiquadFilter();
-            // Short high-pitched ping
-            osc.type = 'sine';
-            const freq = 2200 + Math.random() * 800;
-            osc.frequency.setValueAtTime(freq, t);
-            osc.frequency.exponentialRampToValueAtTime(freq * 0.4, t + 0.15);
-            f.type = 'bandpass'; f.frequency.value = 2000; f.Q.value = 2;
-            g.gain.setValueAtTime(0.03 + Math.random() * 0.02, t);
-            g.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
-            osc.connect(f); f.connect(g); g.connect(dCtx.destination);
-            osc.start(t); osc.stop(t + 0.15);
-          } catch(e) {}
-          // Sometimes double drip
-          if (Math.random() < 0.3) setTimeout(waterDrip, 200 + Math.random() * 400);
-          setTimeout(waterDrip, 4000 + Math.random() * 12000);
-        }
-        setTimeout(waterDrip, 3000 + Math.random() * 6000);
+        // Water drip removed — rain file covers ambient texture
 
         // Distant thunder — very rare low rumble
         function distantThunder() {
