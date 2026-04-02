@@ -343,8 +343,8 @@
   .room-card[data-theme="red"]:hover  { border-color: #ff4422; box-shadow: 0 12px 36px rgba(220,50,0,0.5); }
   .room-card[data-theme="blue"] { border-color: #0088cc; box-shadow: 0 4px 24px rgba(0,120,200,0.35); }
   .room-card[data-theme="blue"]:hover { border-color: #22aaff; box-shadow: 0 12px 36px rgba(0,150,255,0.5); }
-  .room-card[data-theme="green"]{ border-color: #bb6600; box-shadow: 0 4px 24px rgba(180,90,0,0.35); }
-  .room-card[data-theme="green"]:hover{ border-color: #ffaa22; box-shadow: 0 12px 36px rgba(220,130,0,0.5); }
+  .room-card[data-theme="green"]{ border-color: #7722cc; box-shadow: 0 4px 24px rgba(120,30,200,0.35); }
+  .room-card[data-theme="green"]:hover{ border-color: #aa44ff; box-shadow: 0 12px 36px rgba(160,60,255,0.5); }
   .room-card[data-theme="gold"] { border-color: #aa8800; box-shadow: 0 4px 24px rgba(180,150,0,0.35); }
   .room-card[data-theme="gold"]:hover { border-color: #ffdd44; box-shadow: 0 12px 36px rgba(220,190,0,0.5); }
 
@@ -356,7 +356,7 @@
   }
   .room-card[data-theme="red"]  .room-card-name { color: #ff6644; }
   .room-card[data-theme="blue"] .room-card-name { color: #44ccff; }
-  .room-card[data-theme="green"].room-card-name { color: #ffaa44; }
+  .room-card[data-theme="green"].room-card-name { color: #cc88ff; }
   .room-card[data-theme="gold"] .room-card-name { color: #ffdd66; }
 
   .room-card-ante {
@@ -367,7 +367,7 @@
   }
   .room-card[data-theme="red"]  .room-card-ante { color: #ff6644; text-shadow: 0 0 12px rgba(255,60,0,0.5); }
   .room-card[data-theme="blue"] .room-card-ante { color: #44ccff; text-shadow: 0 0 12px rgba(0,160,255,0.5); }
-  .room-card[data-theme="green"].room-card-ante { color: #ffaa44; text-shadow: 0 0 12px rgba(255,140,0,0.5); }
+  .room-card[data-theme="green"].room-card-ante { color: #cc88ff; text-shadow: 0 0 12px rgba(160,60,255,0.5); }
   .room-card[data-theme="gold"] .room-card-ante { color: #ffdd66; text-shadow: 0 0 12px rgba(255,200,0,0.5); }
 
   .room-card-ante-label {
@@ -660,15 +660,15 @@
      ════════════════════════════════════════════ */
 
   @keyframes neonFlickerGreen {
-    0%,100%  { color: #FFAA33; text-shadow: 0 0 8px #FF8800, 0 0 18px #FF6600, 0 0 35px #DD4400, 0 0 50px #AA3300; }
-    3%       { color: #cc7700; text-shadow: 0 0 4px #FF8800; }
-    6%       { color: #FFAA33; text-shadow: 0 0 8px #FF8800, 0 0 35px #DD4400; }
-    43%      { color: #553300; text-shadow: none; }
-    44%      { color: #FFAA33; text-shadow: 0 0 8px #FF8800, 0 0 35px #DD4400; }
-    73%      { color: #cc7700; text-shadow: 0 0 6px #FF8800; }
-    74%      { color: #221100; text-shadow: none; }
-    75%      { color: #dd8800; text-shadow: 0 0 8px #FF8800; }
-    76%      { color: #FFAA33; text-shadow: 0 0 8px #FF8800, 0 0 35px #DD4400; }
+    0%,100%  { color: #cc88ff; text-shadow: 0 0 8px #9933ff, 0 0 18px #7722dd, 0 0 35px #5511bb, 0 0 50px #440099; }
+    3%       { color: #7733aa; text-shadow: 0 0 4px #9933ff; }
+    6%       { color: #cc88ff; text-shadow: 0 0 8px #9933ff, 0 0 35px #5511bb; }
+    43%      { color: #220033; text-shadow: none; }
+    44%      { color: #cc88ff; text-shadow: 0 0 8px #9933ff, 0 0 35px #5511bb; }
+    73%      { color: #8844cc; text-shadow: 0 0 6px #9933ff; }
+    74%      { color: #110022; text-shadow: none; }
+    75%      { color: #aa66ee; text-shadow: 0 0 8px #9933ff; }
+    76%      { color: #cc88ff; text-shadow: 0 0 8px #9933ff, 0 0 35px #5511bb; }
   }
 
   @keyframes neonWashGreen {
@@ -693,25 +693,25 @@
   /* Orange/amber neon sign */
   .theme-green .neon-sign-pos { top: 28%; right: 8%; }
   .theme-green .neon-char {
-    color: #FFAA33;
+    color: #cc88ff;
     animation: neonFlickerGreen 9s infinite;
     text-shadow:
-      0 0 8px #FF8800,
-      0 0 18px #FF6600,
-      0 0 35px #DD4400,
-      0 0 70px #AA3300,
-      0 0 120px #882200;
+      0 0 8px #9933ff,
+      0 0 18px #7722dd,
+      0 0 35px #5511bb,
+      0 0 70px #440099,
+      0 0 120px #330077;
     font-size: clamp(1rem, 3vw, 1.4rem);
   }
 
   /* Orange ambient wash */
   .theme-green .neon-blue-wash {
-    background: radial-gradient(ellipse at 50% 20%, rgba(255,120,30,0.18) 0%, rgba(180,80,10,0.07) 45%, transparent 70%);
+    background: radial-gradient(ellipse at 50% 20%, rgba(150,50,255,0.18) 0%, rgba(100,20,180,0.07) 45%, transparent 70%);
     animation: neonWashGreen 9s infinite;
   }
 
   .theme-green .neon-floor-glow {
-    background: radial-gradient(ellipse at 50% 0%, rgba(220,100,20,0.12) 0%, transparent 60%);
+    background: radial-gradient(ellipse at 50% 0%, rgba(150,50,255,0.12) 0%, transparent 60%);
     animation: neonWashGreen 9s infinite;
   }
 
