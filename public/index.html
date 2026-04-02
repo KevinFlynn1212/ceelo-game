@@ -671,6 +671,105 @@
     border-bottom: 1px solid rgba(220, 100, 20, 0.3);
   }
 
+  /* ════════════════════════════════════════════
+     GOLD THEME — $25 Alley ("The Stone")
+     Ancient narrow alley, gold lantern, silence
+     ════════════════════════════════════════════ */
+
+  @keyframes neonFlickerGold {
+    0%,100%  { opacity: 1; }
+    8%       { opacity: 0.9; }
+    9%       { opacity: 0.4; }
+    10%      { opacity: 1; }
+    55%      { opacity: 1; }
+    56%      { opacity: 0.15; }
+    57%      { opacity: 0.8; }
+    58%      { opacity: 0.15; }
+    59%      { opacity: 1; }
+    88%      { opacity: 1; }
+    89%      { opacity: 0.6; }
+    90%      { opacity: 1; }
+  }
+
+  @keyframes neonWashGold {
+    0%,100%  { opacity: 0.9; }
+    56%      { opacity: 0.1; }
+    59%      { opacity: 0.9; }
+  }
+
+  @keyframes lanternSway {
+    0%,100%  { opacity: 0.9; transform: scale(1); }
+    25%      { opacity: 1; transform: scale(1.05); }
+    75%      { opacity: 0.85; transform: scale(0.97); }
+  }
+
+  .theme-gold .alley-section {
+    background: url('/alley-gold-bg.jpg') center 22% / cover no-repeat;
+  }
+
+  .theme-gold .alley-section::before {
+    background: linear-gradient(180deg,
+      rgba(5,3,0,0.55) 0%,
+      rgba(10,7,2,0.1) 35%,
+      rgba(5,3,0,0.6) 100%);
+  }
+
+  /* Deep gold neon sign */
+  .theme-gold .neon-rect {
+    color: #FFD700;
+    animation: neonFlickerGold 11s infinite;
+    text-shadow:
+      0 0 8px #FFAA00,
+      0 0 18px #FF9900,
+      0 0 35px #CC7700,
+      0 0 70px #AA5500,
+      0 0 120px #884400;
+    top: 8%;
+    left: 58%;
+    right: auto;
+    font-size: 1.4rem;
+    letter-spacing: 12px;
+    transform: none;
+    transform-origin: center center;
+  }
+
+  /* Gold ambient wash — warm lantern light */
+  .theme-gold .neon-blue-wash {
+    background: radial-gradient(ellipse at 35% 45%, rgba(255,200,80,0.2) 0%, rgba(200,140,30,0.08) 45%, transparent 70%);
+    animation: lanternSway 8s ease-in-out infinite;
+  }
+
+  .theme-gold .neon-floor-glow {
+    background: radial-gradient(ellipse at 35% 0%, rgba(255,180,50,0.18) 0%, transparent 60%);
+    animation: lanternSway 8s ease-in-out infinite;
+  }
+
+  /* The lantern itself */
+  .theme-gold .distant-amber {
+    width: 55px; height: 55px;
+    background: radial-gradient(circle, rgba(255,240,180,0.9) 0%, rgba(255,200,80,0.3) 40%, transparent 70%);
+    filter: blur(10px);
+    animation: lanternSway 8s ease-in-out infinite;
+  }
+
+  /* Steam — barely visible wisps */
+  .theme-gold .steam-puff {
+    background: radial-gradient(ellipse at center, rgba(160,140,100,0.4) 0%, rgba(120,100,70,0.2) 50%, transparent 70%);
+  }
+
+  .theme-gold .manhole-glow {
+    background: radial-gradient(ellipse, rgba(200,160,60,0.2) 0%, transparent 70%);
+  }
+
+  .theme-gold .blue-steam { display: none; }
+  .theme-gold .steam-puff:not(.blue-steam) { opacity: 0.4; }
+
+  /* Dark stone info bar */
+  .theme-gold .game-info-bar {
+    background: rgba(8, 5, 1, 0.92);
+    border-bottom: 1px solid rgba(200, 160, 30, 0.35);
+  }
+
   /* Three.js canvas is injected directly into .alley-section */
   .dice-3d-container { display: none; } /* hidden — Three.js takes over */
 
@@ -2188,6 +2287,7 @@
     const g = document.getElementById('screen-game');
     if (g && g.classList.contains('theme-blue'))  return 'blue';
     if (g && g.classList.contains('theme-green')) return 'green';
+    if (g && g.classList.contains('theme-gold'))  return 'gold';
     return 'red';
   }
   function stopAmbientSound() {
@@ -2314,7 +2414,7 @@
         // Next meow well spaced out
         setTimeout(catMeow, 40000 + Math.random() * 70000);
       }
-      setTimeout(catMeow, _currentTheme === 'blue' ? 60000 + Math.random() * 90000 : _currentTheme === 'green' ? 30000 + Math.random() * 60000 : 20000 + Math.random() * 30000);
+      setTimeout(catMeow, _currentTheme === 'blue' ? 60000 + Math.random() * 90000 : _currentTheme === 'green' ? 30000 + Math.random() * 60000 : _currentTheme === 'gold' ? 90000 + Math.random() * 120000 : 20000 + Math.random() * 30000);
 
       // ── Green alley exclusive sounds — urban strip ──
       if (_currentTheme === 'green') {
@@ -2396,6 +2496,89 @@
           setTimeout(bottleSmash, 90000 + Math.random() * 180000);
         }
         setTimeout(bottleSmash, 60000 + Math.random() * 60000);
+      }
+
+      // ── Gold alley exclusive sounds — The Stone, ancient and quiet ──
+      if (_currentTheme === 'gold') {
+        // Much quieter rumble — still, secretive alley
+        rumbleGain.gain.value = 0.012;
+        lpf.frequency.value = 100;
+        texGain.gain.value = 0.006;
+
+        // Water drip — slow, echoing
+        function stoneDrip() {
+          try {
+            const dCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const t = dCtx.currentTime;
+            const osc = dCtx.createOscillator();
+            const g = dCtx.createGain();
+            const hpf = dCtx.createBiquadFilter();
+            hpf.type = 'bandpass'; hpf.frequency.value = 1800; hpf.Q.value = 8;
+            osc.type = 'sine';
+            osc.frequency.value = 1200 + Math.random() * 400;
+            g.gain.setValueAtTime(0, t);
+            g.gain.linearRampToValueAtTime(0.04, t + 0.01);
+            g.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+            osc.connect(hpf); hpf.connect(g); g.connect(dCtx.destination);
+            osc.start(t); osc.stop(t + 0.4);
+            // Faint echo
+            const e2 = dCtx.createOscillator();
+            const g2 = dCtx.createGain();
+            e2.type = 'sine'; e2.frequency.value = osc.frequency.value * 0.98;
+            g2.gain.setValueAtTime(0, t + 0.18);
+            g2.gain.linearRampToValueAtTime(0.015, t + 0.2);
+            g2.gain.exponentialRampToValueAtTime(0.001, t + 0.55);
+            e2.connect(g2); g2.connect(dCtx.destination);
+            e2.start(t + 0.18); e2.stop(t + 0.6);
+          } catch(e) {}
+          setTimeout(stoneDrip, 4000 + Math.random() * 8000);
+        }
+        setTimeout(stoneDrip, 3000 + Math.random() * 5000);
+
+        // Distant footsteps passing — rare
+        function footsteps() {
+          try {
+            const fCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const t = fCtx.currentTime;
+            const steps = 3 + Math.floor(Math.random() * 5);
+            for (let i = 0; i < steps; i++) {
+              const noise = fCtx.createScriptProcessor(512, 1, 1);
+              noise.onaudioprocess = (e) => {
+                const out = e.outputBuffer.getChannelData(0);
+                for (let j = 0; j < out.length; j++) out[j] = (Math.random() * 2 - 1);
+              };
+              const lpf2 = fCtx.createBiquadFilter();
+              lpf2.type = 'bandpass'; lpf2.frequency.value = 200; lpf2.Q.value = 1.5;
+              const g = fCtx.createGain();
+              const st = t + i * (0.45 + Math.random() * 0.15);
+              g.gain.setValueAtTime(0, st);
+              g.gain.linearRampToValueAtTime(0.025, st + 0.03);
+              g.gain.exponentialRampToValueAtTime(0.001, st + 0.18);
+              noise.connect(lpf2); lpf2.connect(g); g.connect(fCtx.destination);
+              setTimeout(() => { try { noise.disconnect(); } catch(e){} }, (st - t + 0.3) * 1000);
+            }
+          } catch(e) {}
+          setTimeout(footsteps, 30000 + Math.random() * 60000);
+        }
+        setTimeout(footsteps, 15000 + Math.random() * 25000);
+
+        // Distant church bell — very rare, single toll
+        function churchBell() {
+          try {
+            const bCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const t = bCtx.currentTime;
+            const osc = bCtx.createOscillator();
+            const g = bCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.value = 220 + Math.random() * 40;
+            g.gain.setValueAtTime(0.06, t);
+            g.gain.exponentialRampToValueAtTime(0.001, t + 4);
+            osc.connect(g); g.connect(bCtx.destination);
+            osc.start(t); osc.stop(t + 4.5);
+          } catch(e) {}
+          setTimeout(churchBell, 120000 + Math.random() * 180000);
+        }
+        setTimeout(churchBell, 45000 + Math.random() * 60000);
       }
 
       // ── Blue alley exclusive sounds ──
