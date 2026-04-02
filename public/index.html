@@ -83,31 +83,79 @@
   ═══════════════════════════════ */
   #screen-login { flex-direction: column; gap: 20px; }
 
+  /* Lantern string — five lanterns on a wire */
   .login-lanterns {
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    gap: 0;
+    position: relative;
+    width: 100%;
+    max-width: 420px;
+    height: 64px;
+    margin: 0 auto -8px;
+  }
+  .login-lanterns::before {
+    content: '';
+    position: absolute;
+    top: 8px;
+    left: 8%;
+    right: 8%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(180,120,20,0.6) 15%, rgba(200,140,30,0.8) 50%, rgba(180,120,20,0.6) 85%, transparent);
+    border-radius: 2px;
+  }
+  .lantern {
+    font-size: 2rem;
+    line-height: 1;
+    flex: 1;
     text-align: center;
-    font-size: 2.2rem;
-    letter-spacing: 0.3em;
-    filter: drop-shadow(0 0 18px rgba(255, 140, 0, 0.55));
-    animation: lanternSway 4s ease-in-out infinite;
+    transform-origin: top center;
+    filter: drop-shadow(0 0 10px rgba(255,140,0,0.6));
+  }
+  .lantern:nth-child(1) { animation: lsway1 3.8s ease-in-out infinite; }
+  .lantern:nth-child(2) { animation: lsway2 4.2s ease-in-out infinite 0.3s; }
+  .lantern:nth-child(3) { animation: lsway3 3.5s ease-in-out infinite 0.6s; }
+  .lantern:nth-child(4) { animation: lsway2 4.0s ease-in-out infinite 0.9s; }
+  .lantern:nth-child(5) { animation: lsway1 3.7s ease-in-out infinite 1.2s; }
+  @keyframes lsway1 {
+    0%,100% { transform: rotate(-6deg); filter: drop-shadow(0 0 10px rgba(255,140,0,0.6)); }
+    50%     { transform: rotate(6deg);  filter: drop-shadow(0 0 18px rgba(255,160,20,0.85)); }
+  }
+  @keyframes lsway2 {
+    0%,100% { transform: rotate(5deg);  filter: drop-shadow(0 0 8px rgba(255,140,0,0.5)); }
+    50%     { transform: rotate(-5deg); filter: drop-shadow(0 0 16px rgba(255,160,20,0.8)); }
+  }
+  @keyframes lsway3 {
+    0%,100% { transform: rotate(-3deg); filter: drop-shadow(0 0 12px rgba(255,140,0,0.7)); }
+    50%     { transform: rotate(3deg);  filter: drop-shadow(0 0 20px rgba(255,170,0,0.9)); }
   }
 
-  @keyframes lanternSway {
-    0%, 100% { filter: drop-shadow(0 0 16px rgba(255,140,0,0.5)); }
-    50% { filter: drop-shadow(0 0 28px rgba(255,160,20,0.75)); }
+  /* CEE-LO logo with neon flicker */
+  @keyframes logoFlicker {
+    0%,18%,20%,24%,55%,57%,80%,82%,100% {
+      color: #f5c842;
+      text-shadow: 0 0 20px rgba(245,200,66,0.9), 0 0 50px rgba(245,160,0,0.6), 0 0 100px rgba(200,120,0,0.3), 0 4px 8px rgba(0,0,0,0.6);
+    }
+    19%  { color: #aa8800; text-shadow: 0 0 8px rgba(180,130,0,0.4); }
+    23%  { color: #cc9900; text-shadow: 0 0 14px rgba(200,150,0,0.5); }
+    56%  { color: #997700; text-shadow: none; }
+    81%  { color: #bb9900; text-shadow: 0 0 10px rgba(190,150,0,0.4); }
   }
-
   .logo {
     font-family: 'Cinzel Decorative', serif;
     font-weight: 900;
-    font-size: clamp(3.5rem, 11vw, 6.5rem);
+    font-size: clamp(4rem, 13vw, 7.5rem);
     color: var(--gold);
-    letter-spacing: 8px;
+    letter-spacing: 10px;
     text-shadow:
-      0 0 30px rgba(245,200,66,0.7),
-      0 0 70px rgba(245,160,0,0.3),
+      0 0 20px rgba(245,200,66,0.9),
+      0 0 50px rgba(245,160,0,0.6),
+      0 0 100px rgba(200,120,0,0.3),
       0 4px 8px rgba(0,0,0,0.6);
     text-align: center;
     line-height: 1.1;
+    animation: logoFlicker 8s infinite;
   }
 
   .logo-sub {
@@ -1635,7 +1683,13 @@
 
 <!-- ===== SCREEN 1: LOGIN ===== -->
 <div id="screen-login" class="screen active">
-  <div class="login-lanterns">🏮 🏮</div>
+  <div class="login-lanterns">
+    <span class="lantern">🏮</span>
+    <span class="lantern">🏮</span>
+    <span class="lantern">🏮</span>
+    <span class="lantern">🏮</span>
+    <span class="lantern">🏮</span>
+  </div>
   <div class="logo">CEE-LO</div>
   <div class="logo-sub">骰子 · Street Dice</div>
   <div class="login-card">
