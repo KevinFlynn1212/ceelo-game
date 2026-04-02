@@ -2001,6 +2001,14 @@
     // Start ambient sound for this alley's theme (safe — triggered by prior user gesture)
     startAmbientSound(state.theme || 'red');
 
+    // Pre-populate _diceRevealedFor for players who already rolled (reconnect / late join)
+    // Only do this when the roll queue is empty (not mid-animation)
+    if (!_rollAnimating && _rollQueue.length === 0 && state.players) {
+      state.players.forEach(p => {
+        if (p.rolls && p.rolls.length > 0) _diceRevealedFor.add(p.id);
+      });
+    }
+
     renderGameState(state);
 
     // Don't override winner screen while it's showing
@@ -2013,6 +2021,14 @@
     // Hide round-start countdown once rolling begins
     if (state.state === 'rolling' || state.state === 'shootout') {
       hideRoundStartCountdown();
+    }
+    // Clear per-round animation state when a new rolling phase starts
+    if (state.state === 'rolling' && (!prevState || prevState.state !== 'rolling')) {
+      _diceRevealedFor.clear();
+      _coinLaunchedFor.clear();
+      _rollQueue = [];
+      _rollAnimating = false;
+      _animatingForPlayer = null;
     }
     // Clean up between-rounds countdown overlay if state moved on without event
     if (state.state !== 'countdown') {
@@ -2401,9 +2417,9 @@
           actionClass = 'act-waiting';
         }
 
-        // Result — server types: '456', '123', 'trips', 'point', 'none', 'bust'
+        // Result — only reveal after animation for this player
         let resultText = '—', resultClass = '';
-        if (player.result) {
+        if (player.result && _diceRevealedFor.has(player.id)) {
           const t = player.result.type || '';
           if (t === '456')    { resultText = '🌟 STRUNGFLOWERS'; resultClass = 'res-strung'; }
           else if (t === 'trips') { resultText = `⚡ TRIPS ${player.result.point||''}`; resultClass = 'res-triple'; }
@@ -2411,15 +2427,13 @@
           else if (t === '123')   { resultText = '🐉 DANCING DRAGON'; resultClass = 'res-dragon'; }
           else if (t === 'bust')  { resultText = 'bust'; resultClass = 'res-dragon'; }
           else if (t === 'none')  { resultText = 'no combo'; resultClass = 'res-nocombo'; }
-        } else if (player.rollCount > 0) { resultText = '...'; }
+        } else if (player.rollCount > 0 && !_diceRevealedFor.has(player.id)) { resultText = '...'; }
 
         const youTag = player.id === myId ? '<span class="you-tag">YOU</span>' : '';
         const lastRoll = player.rolls && player.rolls.length > 0 ? player.rolls[player.rolls.length - 1] : null;
-        // Only show mini dice after animation finishes for this player
-        const diceVisible = lastRoll && (player.id !== _animatingForPlayer) && _diceRevealedFor.has(player.id);
-        // Other players' dice (not animating locally) always show
-        const showDice = lastRoll && (player.id !== myId || diceVisible);
-        const miniDiceHtml = showDice
+        // Only show dice + result after animation finishes for this player
+        const diceVisible = lastRoll && _diceRevealedFor.has(player.id);
+        const miniDiceHtml = diceVisible
           ? `<div class="hud-mini-dice">${lastRoll.map(d => `<span class="mini-die">${d}</span>`).join('')}</div>`
           : '';
 
