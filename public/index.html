@@ -2095,12 +2095,22 @@
   socket.on('round_end', (data) => {
     _blockGameScreen = true;
     hideRoundStartCountdown();
-    // Wait for all dice animations to finish before showing winner
+
+    // Every player who rolled must have their animation complete before we show the winner.
+    // We wait until:
+    //   1. The roll queue is empty AND no animation is running
+    //   2. Every player in data.results has their dice revealed (_diceRevealedFor)
+    // Cap at 8s so we never hang forever.
+    const playerIds = (data.results || []).map(p => p.id);
+    const deadline = Date.now() + 8000;
+
     const waitForAnims = () => {
-      if (_rollAnimating || _rollQueue.length > 0) {
-        setTimeout(waitForAnims, 100);
+      const queueDone = !_rollAnimating && _rollQueue.length === 0;
+      const allRevealed = playerIds.every(id => _diceRevealedFor.has(id));
+      if ((queueDone && allRevealed) || Date.now() > deadline) {
+        setTimeout(() => showWinner(data), 300); // brief pause after last die settles
       } else {
-        setTimeout(() => showWinner(data), 100); // 100ms after last die settles
+        setTimeout(waitForAnims, 100);
       }
     };
     waitForAnims();
