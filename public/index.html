@@ -3114,6 +3114,9 @@
     }
     socket.emit('leave_room');
     stopAmbientSound(); // reset so next alley starts with correct theme
+    // Clear theme class so old alley doesn't bleed into next one
+    const gameEl = document.getElementById('screen-game');
+    gameEl.classList.remove('theme-red', 'theme-blue', 'theme-green', 'theme-gold');
     currentRoom = null;
     roomState = null;
     isSpectator = false;
