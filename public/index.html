@@ -2102,13 +2102,8 @@
 
   socket.on('countdown_start', (data) => {
     _countdownChoice = null;
-    // Force-dismiss winner overlay so countdown shows clean
-    if (winnerDismissTimer) { clearTimeout(winnerDismissTimer); winnerDismissTimer = null; }
-    _blockGameScreen = false;
-    const awOv = document.getElementById('alley-winner');
-    if (awOv) { awOv.classList.add('hiding'); setTimeout(() => awOv.remove(), 400); }
-    const flashOv = document.querySelector('.winner-flash-overlay');
-    if (flashOv) flashOv.remove();
+    // Fully dismiss winner overlay (clears _coinLaunchedFor, _diceRevealedFor, etc.)
+    dismissWinner();
 
     // Remove any existing countdown overlay
     const old = document.getElementById('countdown-overlay');
