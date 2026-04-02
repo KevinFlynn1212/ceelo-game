@@ -1803,9 +1803,10 @@
 
   let _prevRoomState = null;
   let _blockGameScreen = false; // prevents room_state from hiding winner screen
+  let _justLeft = false;
+
   socket.on('room_state', (state) => {
-    // Ignore if we've left (currentRoom nulled) and this state is for a different room
-    if (currentRoom === null && roomState === null) return;
+    if (_justLeft) return; // ignore the single stale room_state fired after Leave
     const prevState = _prevRoomState;
     _prevRoomState = state;
     roomState = state;
@@ -1986,6 +1987,7 @@
     isSpectator = false;
     // Stop any previous ambient sound so it restarts with the correct new theme
     stopAmbientSound();
+    _justLeft = false;
     socket.emit('join_room', { name: myName, roomId });
     clearChat();
   }
@@ -3112,6 +3114,8 @@
         return;
       }
     }
+    _justLeft = true;
+    setTimeout(() => { _justLeft = false; }, 300);
     socket.emit('leave_room');
     stopAmbientSound(); // reset so next alley starts with correct theme
     // Clear theme class so old alley doesn't bleed into next one
