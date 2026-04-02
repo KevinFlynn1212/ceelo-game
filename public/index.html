@@ -2894,24 +2894,13 @@
   // to in the container at any given viewport size.
   // Photo's neon rectangle: ~56% from left, ~22% from top of photo
   // Background position: center 35% (vertical)
-  const BLUE_SIGN_IMG_X = 0.56; // horizontal position in photo (0-1)
-  const BLUE_SIGN_IMG_Y = 0.22; // vertical position in photo (0-1)
+  const BLUE_SIGN_IMG_X = 0.53; // horizontal position in photo (0-1) — neon rectangle center
+  const BLUE_SIGN_IMG_Y = 0.19; // vertical position in photo (0-1) — neon rectangle center
   const BLUE_BG_POS_Y   = 0.35; // background-position-y (0=top, 1=bottom)
-  let _blueImgNaturalW = 0, _blueImgNaturalH = 0;
-
-  // Load image to get natural dimensions
-  const _bgImg = new Image();
-  _bgImg.onload = () => {
-    _blueImgNaturalW = _bgImg.naturalWidth;
-    _blueImgNaturalH = _bgImg.naturalHeight;
-    repositionBlueSign();
-  };
-  _bgImg.src = '/alley-blue-bg.jpg';
-
+  const BLUE_IMG_ASPECT = 895 / 1280; // known image dimensions 895x1280
   function repositionBlueSign() {
     const gameEl = document.getElementById('screen-game');
     if (!gameEl || !gameEl.classList.contains('theme-blue')) return;
-    if (!_blueImgNaturalW || !_blueImgNaturalH) return;
     const alley = gameEl.querySelector('.alley-section');
     const sign  = gameEl.querySelector('.neon-rect');
     if (!alley || !sign) return;
@@ -2920,7 +2909,7 @@
     const cH = alley.clientHeight;
     if (!cW || !cH) return;
 
-    const imgAspect = _blueImgNaturalW / _blueImgNaturalH;
+    const imgAspect = BLUE_IMG_ASPECT; // 895/1280 = 0.699
     const containerAspect = cW / cH;
 
     let renderedW, renderedH;
