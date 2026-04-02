@@ -420,44 +420,26 @@
     z-index: 4;
   }
 
-  /* Positioner — uses horizontal writing mode so right/top behave predictably */
+  /* Sign positioner — absolute positioned, no writing-mode, no transform */
   .neon-sign-pos {
     position: absolute;
-    top: 21%;
-    right: 8%;
-    writing-mode: horizontal-tb;
+    top: 12%;
+    right: 6%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    pointer-events: none;
   }
 
-  .neon-rect {
-    position: relative;
-    top: auto;
-    right: auto;
+  /* Individual character — no writing-mode, just normal block chars stacked by flex */
+  .neon-char {
+    display: block;
     font-size: clamp(1.2rem, 4vw, 2rem);
     font-weight: 900;
-    writing-mode: vertical-rl;
-    letter-spacing: 6px;
+    line-height: 1;
     color: #ff5500;
-    pointer-events: none;
     animation: neonFlicker 7s infinite;
-    text-shadow:
-      0 0 8px #ff5500,
-      0 0 18px #ff3300,
-      0 0 35px #ff2200,
-      0 0 50px #cc1100;
-    transform: none;
-    transform-origin: right center;
-  }
-
-  /* Red alley explicit overrides — no 3D transform, mobile safe */
-  .theme-red .neon-sign-pos { top: 12%; right: 6%; }
-  .theme-red .neon-rect {
-    top: auto;
-    right: auto;
-    left: auto;
-    font-size: clamp(1.1rem, 3.5vw, 1.8rem);
-    letter-spacing: 8px;
-    transform: none;
-    color: #ff5500;
     text-shadow:
       0 0 8px #ff5500,
       0 0 18px #ff3300,
@@ -545,7 +527,7 @@
 
   /* Neon sign — cyan blue */
   .theme-blue .neon-sign-pos { top: 6%; right: 8%; }
-  .theme-blue .neon-rect {
+  .theme-blue .neon-char {
     color: #66DDFF;
     animation: neonFlickerBlue 7s infinite;
     text-shadow:
@@ -555,9 +537,6 @@
       0 0 70px #0055AA,
       0 0 120px #003377;
     font-size: clamp(1rem, 3vw, 1.4rem);
-    letter-spacing: 10px;
-    transform: none;
-    transform-origin: center center;
   }
 
   /* Blue ambient wash from neon */
@@ -643,7 +622,7 @@
 
   /* Orange/amber neon sign */
   .theme-green .neon-sign-pos { top: 8%; right: 8%; }
-  .theme-green .neon-rect {
+  .theme-green .neon-char {
     color: #FFAA33;
     animation: neonFlickerGreen 9s infinite;
     text-shadow:
@@ -653,9 +632,6 @@
       0 0 70px #AA3300,
       0 0 120px #882200;
     font-size: clamp(1rem, 3vw, 1.4rem);
-    letter-spacing: 10px;
-    transform: none;
-    transform-origin: center center;
   }
 
   /* Orange ambient wash */
@@ -737,7 +713,7 @@
 
   /* Deep gold neon sign — faint, deep in the alley */
   .theme-gold .neon-sign-pos { top: 8%; right: 8%; }
-  .theme-gold .neon-rect {
+  .theme-gold .neon-char {
     color: rgba(255, 200, 80, 0.55);
     animation: neonFlickerGold 11s infinite;
     text-shadow:
@@ -745,9 +721,6 @@
       0 0 10px rgba(200,120,0,0.25),
       0 0 20px rgba(150,90,0,0.15);
     font-size: clamp(0.85rem, 2.5vw, 1.1rem);
-    letter-spacing: 8px;
-    transform: none;
-    transform-origin: center center;
   }
 
   /* Gold ambient wash — warm lantern light */
@@ -1669,7 +1642,7 @@
 
     <!-- Atmospheric overlays -->
     <!-- Neon sign: 四五六 (4-5-6 Strungflowers) vertical on right wall -->
-    <div class="neon-sign-clip"><div class="neon-sign-pos"><div class="neon-rect">四五六</div></div></div>
+    <div class="neon-sign-clip"><div class="neon-sign-pos"><span class="neon-char">四</span><span class="neon-char">五</span><span class="neon-char">六</span></div></div>
     <!-- Blue ambient wash from neon -->
     <div class="neon-blue-wash"></div>
     <!-- Warm amber distant glow (street lamp far end of alley) -->
@@ -3236,7 +3209,7 @@
     }
   }, 5000);
 
-  // Blue alley sign position handled by CSS .theme-blue .neon-rect
+  // Blue alley sign position handled by CSS .theme-blue .neon-sign-pos
 
 })();
 </script>
