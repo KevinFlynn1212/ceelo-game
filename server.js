@@ -506,18 +506,6 @@ function performRoll(room, player, isAuto) {
     animationData: { dice, duration: 800, bounces: 3 },
   });
 
-  // ── Re-ante roll: exactly one roll, final regardless ──────────────────────
-  if (player.reAnteActive) {
-    player.reAnteActive = false;
-    const finalEv = ev.type === 'none'
-      ? { type: 'bust', score: -2, label: '💥 Re-ante bust!', emoji: '💥', point: null, pair: null }
-      : ev;
-    finalisePlayerResult(room, player, finalEv);
-    advanceTurn(room);
-    broadcast(room);
-    return;
-  }
-
   // ── Valid combo obtained ──────────────────────────────────────────────────
   if (ev.type !== 'none') {
     if      (ev.type === '456')   sysMsg(room, `🌸 ${player.name} rolled Strungflowers (4-5-6)! INSTANT WIN!`);
