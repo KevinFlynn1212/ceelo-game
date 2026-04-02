@@ -31,7 +31,7 @@ const RAKE_PCT              = 0.05;           // 5%
 const TIMER_ANTE_MS         = 5_000;
 const TIMER_ROLL_MS         = 10_000; // 10s to roll
 const TIMER_REANTE_MS       = 5_000;
-const TIMER_RESULTS_MS      = 3_000;  // winner shows briefly, then countdown takes over
+const TIMER_RESULTS_MS      = 15_000; // fallback if client never sends winner_dismissed
 const TIMER_SHOOTOUT_RAISE_MS = 5_000;
 const TIMER_BETWEEN_MS      = 2_000;
 const TIMER_COUNTDOWN_MS    = 5_000;  // "Play Again / Sit Out" window
@@ -916,6 +916,15 @@ io.on('connection', socket => {
 
     clearRoomTimer(room);
     performRoll(room, player, false);
+  });
+
+  // ── Winner dismissed ────────────────────────────────────────────────
+  socket.on('winner_dismissed', () => {
+    const room = rooms.get(socket.data.room);
+    if (!room || room.state !== 'rolling') return; // only trigger from post-round state
+    // Fire countdown immediately, cancelling the fallback timer
+    if (room.players.length >= 2) startCountdown(room);
+    else { room.state = 'lobby'; broadcast(room); broadcastLobby(); }
   });
 
   // ── Countdown choice (play again / sit out) ─────────────────────────────────

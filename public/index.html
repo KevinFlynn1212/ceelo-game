@@ -3331,7 +3331,7 @@
     if (winner && !isTie && !allDancing) launchCoins(winner === myId ? 30 : 12);
 
     if (winnerDismissTimer) clearTimeout(winnerDismissTimer);
-    winnerDismissTimer = setTimeout(() => dismissWinner(), 10000);
+    winnerDismissTimer = setTimeout(() => dismissWinner(), 8000);
   }
 
   function launchCoinsFromSeat(slotEl) {
@@ -3380,6 +3380,8 @@
   function dismissWinner() {
     if (winnerDismissTimer) { clearTimeout(winnerDismissTimer); winnerDismissTimer = null; }
     _blockGameScreen = false;
+    // Tell server winner was dismissed — triggers next round countdown immediately
+    socket.emit('winner_dismissed');
     // Animate alley overlay out
     const awOverlay = document.getElementById('alley-winner');
     if (awOverlay) {
