@@ -124,7 +124,7 @@
 
   .login-card {
     background: var(--card);
-    border: 1px solid var(--border);
+    border: 2px solid var(--border);
     border-radius: 14px;
     padding: 32px 40px;
     display: flex;
@@ -141,7 +141,7 @@
   ═══════════════════════════════ */
   input[type="text"], input[type="number"] {
     background: rgba(10, 6, 2, 0.75);
-    border: 1px solid var(--border);
+    border: 2px solid var(--border);
     border-radius: 8px;
     color: var(--paper);
     font-family: 'Lato', sans-serif;
@@ -190,7 +190,7 @@
 
   .btn-outline {
     background: transparent;
-    border: 1px solid var(--border);
+    border: 2px solid var(--border);
     color: var(--muted);
     border-radius: 8px;
     font-family: 'Lato', sans-serif;
@@ -256,7 +256,7 @@
 
   .balance-display {
     background: var(--card);
-    border: 1px solid var(--border);
+    border: 2px solid var(--border);
     border-radius: 8px;
     padding: 8px 20px;
     font-family: 'Lato', sans-serif;
@@ -273,36 +273,55 @@
 
   .room-card {
     background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 22px;
+    border: 3px solid var(--border);
+    border-radius: 16px;
+    padding: 22px 18px;
     cursor: pointer;
-    transition: all 0.25s;
+    transition: all 0.2s;
     display: flex;
     flex-direction: column;
+    align-items: center;
+    text-align: center;
     gap: 8px;
     backdrop-filter: blur(6px);
-    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    box-shadow: 0 4px 24px rgba(0,0,0,0.5);
   }
   .room-card:hover {
-    border-color: rgba(220,160,30,0.55);
-    transform: translateY(-3px);
-    box-shadow: 0 10px 32px rgba(200,148,10,0.2), 0 0 0 1px rgba(220,160,30,0.15);
+    transform: translateY(-4px);
+    box-shadow: 0 12px 36px rgba(0,0,0,0.6);
   }
+  /* Per-alley card colors */
+  .room-card[data-theme="red"]  { border-color: #cc2200; box-shadow: 0 4px 24px rgba(200,30,0,0.35); }
+  .room-card[data-theme="red"]:hover  { border-color: #ff4422; box-shadow: 0 12px 36px rgba(220,50,0,0.5); }
+  .room-card[data-theme="blue"] { border-color: #0088cc; box-shadow: 0 4px 24px rgba(0,120,200,0.35); }
+  .room-card[data-theme="blue"]:hover { border-color: #22aaff; box-shadow: 0 12px 36px rgba(0,150,255,0.5); }
+  .room-card[data-theme="green"]{ border-color: #bb6600; box-shadow: 0 4px 24px rgba(180,90,0,0.35); }
+  .room-card[data-theme="green"]:hover{ border-color: #ffaa22; box-shadow: 0 12px 36px rgba(220,130,0,0.5); }
+  .room-card[data-theme="gold"] { border-color: #aa8800; box-shadow: 0 4px 24px rgba(180,150,0,0.35); }
+  .room-card[data-theme="gold"]:hover { border-color: #ffdd44; box-shadow: 0 12px 36px rgba(220,190,0,0.5); }
 
   .room-card-name {
     font-family: 'Cinzel', serif;
-    font-size: 1.15rem;
+    font-size: 1.2rem;
     font-weight: 700;
-    color: var(--gold);
+    text-align: center;
   }
+  .room-card[data-theme="red"]  .room-card-name { color: #ff6644; }
+  .room-card[data-theme="blue"] .room-card-name { color: #44ccff; }
+  .room-card[data-theme="green"].room-card-name { color: #ffaa44; }
+  .room-card[data-theme="gold"] .room-card-name { color: #ffdd66; }
+
   .room-card-ante {
     font-family: 'Cinzel', serif;
-    font-size: 1.3rem;
+    font-size: 1.5rem;
     font-weight: 700;
-    color: var(--gold);
-    text-shadow: 0 0 12px rgba(245,200,66,0.3);
+    text-align: center;
   }
+  .room-card[data-theme="red"]  .room-card-ante { color: #ff6644; text-shadow: 0 0 12px rgba(255,60,0,0.5); }
+  .room-card[data-theme="blue"] .room-card-ante { color: #44ccff; text-shadow: 0 0 12px rgba(0,160,255,0.5); }
+  .room-card[data-theme="green"].room-card-ante { color: #ffaa44; text-shadow: 0 0 12px rgba(255,140,0,0.5); }
+  .room-card[data-theme="gold"] .room-card-ante { color: #ffdd66; text-shadow: 0 0 12px rgba(255,200,0,0.5); }
+
   .room-card-ante-label {
     font-family: 'Lato', sans-serif;
     font-size: 0.7rem;
@@ -310,28 +329,31 @@
     text-transform: uppercase;
     letter-spacing: 0.12em;
     margin-top: -6px;
+    text-align: center;
   }
   .room-card-info {
     font-size: 0.9rem;
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
+    gap: 16px;
     margin-top: 4px;
+    width: 100%;
   }
   .room-card-players { color: var(--paper); font-family: 'Lato', sans-serif; }
   .room-card-pot { color: var(--gold); font-weight: 700; font-family: 'Lato', sans-serif; }
   .room-card-state {
     font-family: 'Lato', sans-serif;
     font-size: 0.7rem;
-    padding: 3px 10px;
+    padding: 4px 12px;
     border-radius: 20px;
     background: rgba(255,255,255,0.06);
-    align-self: flex-start;
     text-transform: uppercase;
     letter-spacing: 0.1em;
     font-weight: 700;
+    border: 1.5px solid transparent;
   }
-  .room-card-state.waiting { color: var(--green); background: rgba(76,175,80,0.12); }
-  .room-card-state.active { color: var(--gold); background: rgba(245,200,66,0.1); }
+  .room-card-state.waiting { color: #66ee88; background: rgba(76,175,80,0.15); border-color: rgba(76,175,80,0.4); }
+  .room-card-state.active  { color: #ffcc44; background: rgba(245,200,66,0.12); border-color: rgba(245,200,66,0.4); }
 
   /* ═══════════════════════════════
      GAME SCREEN — ALLEY LAYOUT
@@ -808,7 +830,7 @@
 
   .chat-toggle-btn {
     background: rgba(20, 12, 4, 0.8);
-    border: 1px solid rgba(180, 120, 20, 0.3);
+    border: 2px solid rgba(180, 120, 20, 0.4);
     border-radius: 7px;
     color: var(--gold);
     font-size: 1rem;
@@ -1963,12 +1985,11 @@
     rooms.forEach(room => {
       const card = document.createElement('div');
       card.className = 'room-card';
-      if (room.theme === 'blue') card.style.borderColor = 'rgba(0,140,220,0.4)';
+      card.dataset.theme = room.theme || 'red';
       const stateClass = room.state === 'waiting' ? 'waiting' : 'active';
       const stateLabel = room.state === 'waiting' ? 'Waiting' : 'In Progress';
-      const themeColor = room.theme === 'blue' ? '#00AAFF' : '#ff5500';
       card.innerHTML = `
-        <div class="room-card-name" style="color:${themeColor}">${escHtml(room.name)}</div>
+        <div class="room-card-name">${escHtml(room.name)}</div>
         <div class="room-card-ante">$${room.ante}</div>
         <div class="room-card-ante-label">Ante per round</div>
         <div class="room-card-info">
@@ -2277,6 +2298,8 @@
   // ─── Ambient city soundscape ──────────────────────────────────────────────
   let _ambientStarted = false;
   let _currentTheme = 'red';
+  let _ambientCtx = null;      // Web Audio context — closed to kill all sound nodes
+  let _ambientAudioEls = [];   // <Audio> elements (jazz, rain) — paused on stop
   function getActiveTheme() {
     const g = document.getElementById('screen-game');
     if (g && g.classList.contains('theme-blue'))  return 'blue';
@@ -2285,7 +2308,11 @@
     return 'red';
   }
   function stopAmbientSound() {
-    // Reset so next joinRoom starts fresh with the correct theme
+    // Stop all Audio elements (jazz, rain)
+    _ambientAudioEls.forEach(a => { try { a.pause(); a.currentTime = 0; } catch(e){} });
+    _ambientAudioEls = [];
+    // Close Web Audio context — kills rumble, synth sounds, all nodes
+    if (_ambientCtx) { try { _ambientCtx.close(); } catch(e){} _ambientCtx = null; }
     _ambientStarted = false;
   }
   function startAmbientSound(theme) {
@@ -2294,6 +2321,7 @@
     _currentTheme = theme || getActiveTheme();
     try {
       const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      _ambientCtx = ctx;
 
       // Low city rumble — brown noise
       const bufSize = 4096;
@@ -2505,6 +2533,7 @@
           const jazzSfx = new Audio('/ambient-gold.mp3');
           jazzSfx.loop = true;
           jazzSfx.volume = 0;
+          _ambientAudioEls.push(jazzSfx);
           jazzSfx.play().catch(()=>{});
           let jv = 0;
           const jazzFade = setInterval(() => {
@@ -2548,6 +2577,7 @@
           const rainSfx = new Audio('/ambient-blue.mp3');
           rainSfx.loop = true;
           rainSfx.volume = 0;
+          _ambientAudioEls.push(rainSfx);
           rainSfx.play().catch(()=>{});
           // Fade in over 4s to quiet level
           let rv = 0;
