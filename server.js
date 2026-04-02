@@ -1007,11 +1007,15 @@ io.on('connection', socket => {
       if (spec.wallet) newP.wallet = spec.wallet;
       room.players.push(newP);
       socket.data.isSpectator = false;
+      socket.emit('room_joined', { roomId: room.id, playerId: socket.id, isSpectator: false });
       sysMsg(room, `🎲 ${spec.name} is back in!`);
       broadcast(room);
       broadcastLobby();
       return;
     }
+
+    // Spectator who didn't sit out (originally joined as spectator) can also rejoin
+    if (choice === 'rejoin' && !socket.data.isSpectator) return; // already a player, ignore
 
     // Player choosing play or sit_out
     if (socket.data.isSpectator) return;

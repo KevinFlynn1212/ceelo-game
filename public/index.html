@@ -1005,11 +1005,15 @@
   /* Between-rounds countdown (Play Again / Sit Out) */
   .countdown-overlay {
     position: fixed;
-    top: 35%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+    inset: 0;
     z-index: 9100;
     pointer-events: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.4);
+  }
+  .countdown-overlay .countdown-card {
     animation: alleyWinIn 0.45s cubic-bezier(0.175,0.885,0.32,1.275) forwards;
   }
   .countdown-overlay.hiding {
@@ -2291,9 +2295,14 @@
     // Players HUD
     renderPlayers(state);
 
-    // Timer
-    if (state.timerEnd && state.timerEnd > Date.now()) {
+    // Timer (skip tick sounds during countdown — overlay has its own timer)
+    if (state.timerEnd && state.timerEnd > Date.now() && state.state !== 'countdown') {
       startTimer(state.timerEnd);
+    } else if (state.state === 'countdown') {
+      // Clear any running HUD timer so ticks stop
+      if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+      const el = document.getElementById('game-timer');
+      if (el) el.textContent = '';
     }
 
     // Round history (kept for JS state, hidden visually)
