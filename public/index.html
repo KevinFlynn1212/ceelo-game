@@ -704,7 +704,7 @@
   }
 
   .theme-gold .alley-section {
-    background: url('/alley-gold-bg.jpg') center 22% / cover no-repeat;
+    background: url('/alley-gold-bg.jpg') center 55% / cover no-repeat;
   }
 
   .theme-gold .alley-section::before {
@@ -714,23 +714,22 @@
       rgba(5,3,0,0.6) 100%);
   }
 
-  /* Deep gold neon sign */
+  /* Deep gold neon sign — faint, deep in the alley */
   .theme-gold .neon-rect {
-    color: #FFD700;
+    color: rgba(255, 200, 80, 0.55);
     animation: neonFlickerGold 11s infinite;
     text-shadow:
-      0 0 8px #FFAA00,
-      0 0 18px #FF9900,
-      0 0 35px #CC7700,
-      0 0 70px #AA5500,
-      0 0 120px #884400;
-    top: 8%;
-    left: 58%;
+      0 0 4px rgba(255,160,0,0.4),
+      0 0 10px rgba(200,120,0,0.25),
+      0 0 20px rgba(150,90,0,0.15);
+    top: 30%;
+    left: 36%;
     right: auto;
-    font-size: 1.4rem;
-    letter-spacing: 12px;
+    font-size: 0.85rem;
+    letter-spacing: 8px;
     transform: none;
     transform-origin: center center;
+    opacity: 0.6;
   }
 
   /* Gold ambient wash — warm lantern light */
