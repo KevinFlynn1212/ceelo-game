@@ -19,11 +19,11 @@ app.get('/', (_req, res) =>
 );
 
 // ─── Constants ──────────────────────────────────────────────────────────────────
-const STARTING_BALANCE      = 50_000;
+const STARTING_BALANCE      = 500;
 const MAX_PLAYERS           = 5;
 const MAX_SPECTATORS        = 20;
 const MAX_CHAT_HISTORY      = 100;
-const MAX_RAISE             = 50_000;
+const MAX_RAISE             = 500;
 const MAX_ROLL_ATTEMPTS     = 7;
 const MAX_MISSED_ROUNDS     = 5;
 const RAKE_PCT              = 0.05;           // 5%
@@ -37,10 +37,10 @@ const TIMER_BETWEEN_MS      = 2_000;
 
 // Pre-configured room definitions — each ante level gets its own alley theme
 const ROOM_CONFIGS = [
-  { id: 'room-100',  name: '$5 Alley',   ante: 100,  theme: 'red'  },
-  { id: 'room-500',  name: '$10 Alley',  ante: 500,  theme: 'blue' },
-  { id: 'room-1000', name: '金1000 Alley', ante: 1000, theme: 'red'  },
-  { id: 'room-5000', name: '金5000 Alley', ante: 5000, theme: 'blue' },
+  { id: 'room-5',   name: '$5 Alley',   ante: 5,   theme: 'red'  },
+  { id: 'room-10',  name: '$10 Alley',  ante: 10,  theme: 'blue' },
+  { id: 'room-20',  name: '$20 Alley',  ante: 20,  theme: 'green' },
+  { id: 'room-25',  name: '$25 Alley',  ante: 25,  theme: 'gold'  },
 ];
 
 // ─── Wallet abstraction ─────────────────────────────────────────────────────────
