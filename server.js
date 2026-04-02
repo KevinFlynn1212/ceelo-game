@@ -549,7 +549,11 @@ function advanceTurn(room) {
   let next = room.currentTurnIndex + 1;
   while (next < room.players.length && room.players[next].done) next++;
 
-  if (next >= room.players.length) { endRound(room); return; }
+  // If we've gone past the end, wrap around to find any undone player
+  if (next >= room.players.length) {
+    next = room.players.findIndex(p => !p.done);
+    if (next === -1) { endRound(room); return; } // all done
+  }
 
   room.currentTurnIndex = next;
   scheduleTurnTimer(room);
