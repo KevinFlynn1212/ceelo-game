@@ -523,8 +523,8 @@
       0 0 35px #0066BB,
       0 0 70px #0055AA,
       0 0 120px #003377;
-    top: 10%;
-    right: 7%;
+    top: 22%;
+    right: 28%;
     font-size: 2.0rem;
     transform: perspective(300px) rotateY(-28deg);
     transform-origin: right center;
@@ -561,7 +561,12 @@
 
   /* Blue alley steam — show blue-specific puffs, hide red alley puffs */
   .blue-steam { display: none; }
-  .theme-blue .blue-steam { display: block; }
+  .theme-blue .blue-steam {
+    display: block;
+    /* More prominent — larger, more opaque */
+    background: radial-gradient(ellipse at center, rgba(200,210,220,0.9) 0%, rgba(160,180,200,0.55) 45%, transparent 70%);
+    filter: blur(11px);
+  }
   .theme-blue .steam-puff:not(.blue-steam) { display: none; }
 
   /* Blue-tinted info bar */
@@ -1465,12 +1470,12 @@
     <div class="steam-puff" style="--sd:5.5s;--sdelay:1.8s; --sw:38px; left:54%; bottom:57%;"></div>
     <div class="steam-puff" style="--sd:4.3s;--sdelay:2.7s; --sw:48px; left:48%; bottom:55%;"></div>
     <div class="steam-puff" style="--sd:6.0s;--sdelay:3.5s; --sw:36px; left:52%; bottom:56%;"></div>
-    <!-- Blue alley steam — positioned over the steam plume in the photo (center-mid, slightly left) -->
-    <div class="steam-puff blue-steam" style="--sd:5.0s;--sdelay:0s;   --sw:55px; left:43%; bottom:60%;"></div>
-    <div class="steam-puff blue-steam" style="--sd:6.5s;--sdelay:1.2s; --sw:65px; left:46%; bottom:60%;"></div>
-    <div class="steam-puff blue-steam" style="--sd:4.8s;--sdelay:2.4s; --sw:48px; left:40%; bottom:61%;"></div>
-    <div class="steam-puff blue-steam" style="--sd:7.0s;--sdelay:0.6s; --sw:72px; left:44%; bottom:59%;"></div>
-    <div class="steam-puff blue-steam" style="--sd:5.5s;--sdelay:3.0s; --sw:42px; left:48%; bottom:61%;"></div>
+    <!-- Blue alley steam — matched to photo: ~42% from left, rising from 30% top (=70% bottom of alley section) -->
+    <div class="steam-puff blue-steam" style="--sd:5.0s;--sdelay:0s;   --sw:70px;  left:40%; bottom:68%;"></div>
+    <div class="steam-puff blue-steam" style="--sd:6.5s;--sdelay:1.2s; --sw:85px;  left:43%; bottom:67%;"></div>
+    <div class="steam-puff blue-steam" style="--sd:4.8s;--sdelay:2.4s; --sw:60px;  left:38%; bottom:69%;"></div>
+    <div class="steam-puff blue-steam" style="--sd:7.0s;--sdelay:0.6s; --sw:90px;  left:42%; bottom:66%;"></div>
+    <div class="steam-puff blue-steam" style="--sd:5.5s;--sdelay:3.0s; --sw:55px;  left:45%; bottom:68%;"></div>
 
     <!-- 3D Dice Container -->
     <div class="dice-3d-container" id="dice-3d-container">
