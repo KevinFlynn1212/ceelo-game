@@ -420,10 +420,18 @@
     z-index: 4;
   }
 
-  .neon-rect {
+  /* Positioner — uses horizontal writing mode so right/top behave predictably */
+  .neon-sign-pos {
     position: absolute;
     top: 21%;
     right: 8%;
+    writing-mode: horizontal-tb;
+  }
+
+  .neon-rect {
+    position: relative;
+    top: auto;
+    right: auto;
     font-size: clamp(1.2rem, 4vw, 2rem);
     font-weight: 900;
     writing-mode: vertical-rl;
@@ -441,9 +449,10 @@
   }
 
   /* Red alley explicit overrides — no 3D transform, mobile safe */
+  .theme-red .neon-sign-pos { top: 12%; right: 6%; }
   .theme-red .neon-rect {
-    top: 12%;
-    right: 6%;
+    top: auto;
+    right: auto;
     left: auto;
     font-size: clamp(1.1rem, 3.5vw, 1.8rem);
     letter-spacing: 8px;
@@ -535,6 +544,7 @@
   }
 
   /* Neon sign — cyan blue */
+  .theme-blue .neon-sign-pos { top: 6%; right: 8%; }
   .theme-blue .neon-rect {
     color: #66DDFF;
     animation: neonFlickerBlue 7s infinite;
@@ -544,9 +554,6 @@
       0 0 35px #0066BB,
       0 0 70px #0055AA,
       0 0 120px #003377;
-    top: 6%;
-    left: 56.5%;
-    right: auto;
     font-size: clamp(1rem, 3vw, 1.4rem);
     letter-spacing: 10px;
     transform: none;
@@ -635,6 +642,7 @@
   }
 
   /* Orange/amber neon sign */
+  .theme-green .neon-sign-pos { top: 8%; right: 8%; }
   .theme-green .neon-rect {
     color: #FFAA33;
     animation: neonFlickerGreen 9s infinite;
@@ -644,9 +652,6 @@
       0 0 35px #DD4400,
       0 0 70px #AA3300,
       0 0 120px #882200;
-    top: 8%;
-    left: 45%;
-    right: auto;
     font-size: clamp(1rem, 3vw, 1.4rem);
     letter-spacing: 10px;
     transform: none;
@@ -731,6 +736,7 @@
   }
 
   /* Deep gold neon sign — faint, deep in the alley */
+  .theme-gold .neon-sign-pos { top: 8%; right: 8%; }
   .theme-gold .neon-rect {
     color: rgba(255, 200, 80, 0.55);
     animation: neonFlickerGold 11s infinite;
@@ -738,9 +744,6 @@
       0 0 4px rgba(255,160,0,0.4),
       0 0 10px rgba(200,120,0,0.25),
       0 0 20px rgba(150,90,0,0.15);
-    top: 8%;
-    left: 64%;
-    right: auto;
     font-size: clamp(0.85rem, 2.5vw, 1.1rem);
     letter-spacing: 8px;
     transform: none;
@@ -1666,7 +1669,7 @@
 
     <!-- Atmospheric overlays -->
     <!-- Neon sign: 四五六 (4-5-6 Strungflowers) vertical on right wall -->
-    <div class="neon-sign-clip"><div class="neon-rect">四五六</div></div>
+    <div class="neon-sign-clip"><div class="neon-sign-pos"><div class="neon-rect">四五六</div></div></div>
     <!-- Blue ambient wash from neon -->
     <div class="neon-blue-wash"></div>
     <!-- Warm amber distant glow (street lamp far end of alley) -->
