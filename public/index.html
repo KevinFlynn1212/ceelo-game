@@ -2010,9 +2010,15 @@
     if (state.state === 'ante' && (!prevState || prevState.state !== 'ante')) {
       showRoundStartCountdown(state.round);
     }
-    // Hide countdown once rolling begins
+    // Hide round-start countdown once rolling begins
     if (state.state === 'rolling' || state.state === 'shootout') {
       hideRoundStartCountdown();
+    }
+    // Clean up between-rounds countdown overlay if state moved on without event
+    if (state.state !== 'countdown') {
+      const cdOv = document.getElementById('countdown-overlay');
+      if (cdOv) { cdOv.classList.add('hiding'); setTimeout(() => cdOv.remove(), 400); }
+      if (_countdownInterval) { clearInterval(_countdownInterval); _countdownInterval = null; }
     }
   });
 
@@ -2096,7 +2102,13 @@
 
   socket.on('countdown_start', (data) => {
     _countdownChoice = null;
-    dismissWinner();  // clear winner overlay if still showing
+    // Force-dismiss winner overlay so countdown shows clean
+    if (winnerDismissTimer) { clearTimeout(winnerDismissTimer); winnerDismissTimer = null; }
+    _blockGameScreen = false;
+    const awOv = document.getElementById('alley-winner');
+    if (awOv) { awOv.classList.add('hiding'); setTimeout(() => awOv.remove(), 400); }
+    const flashOv = document.querySelector('.winner-flash-overlay');
+    if (flashOv) flashOv.remove();
 
     // Remove any existing countdown overlay
     const old = document.getElementById('countdown-overlay');
@@ -2119,7 +2131,7 @@
                <button class="countdown-btn sit-out" id="cd-sitout">💤 Sit Out</button>`
           }
         </div>
-        <div class="countdown-status" id="cd-status">${amSpectator ? 'Jump back in?' : 'Defaults to Play Again'}</div>
+        <div class="countdown-status" id="cd-status">${amSpectator ? 'Tap to jump back in!' : 'Tap Play Again to stay — default is Sit Out'}</div>
       </div>`;
     document.body.appendChild(overlay);
 

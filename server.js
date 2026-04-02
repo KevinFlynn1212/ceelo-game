@@ -29,9 +29,9 @@ const MAX_MISSED_ROUNDS     = 5;
 const RAKE_PCT              = 0.05;           // 5%
 
 const TIMER_ANTE_MS         = 5_000;
-const TIMER_ROLL_MS         = 5_000;
+const TIMER_ROLL_MS         = 10_000; // 10s to roll
 const TIMER_REANTE_MS       = 5_000;
-const TIMER_RESULTS_MS      = 6_000;
+const TIMER_RESULTS_MS      = 3_000;  // winner shows briefly, then countdown takes over
 const TIMER_SHOOTOUT_RAISE_MS = 5_000;
 const TIMER_BETWEEN_MS      = 2_000;
 const TIMER_COUNTDOWN_MS    = 5_000;  // "Play Again / Sit Out" window
@@ -316,7 +316,7 @@ function startCountdown(room) {
   room.countdownChoices = {};  // socketId → 'play' | 'sit_out'
 
   const playerList = room.players.map(p => ({ id: p.id, name: p.name }));
-  sysMsg(room, `⏳ Next round in 5 seconds — choose to play or sit out!`);
+  sysMsg(room, `⏳ Next round in 5 seconds — tap Play Again to stay in!`);
 
   io.to(room.id).emit('countdown_start', {
     roomId:   room.id,
@@ -332,10 +332,10 @@ function startCountdown(room) {
 function resolveCountdown(room) {
   if (room.state !== 'countdown') return;
 
-  // Anyone who didn't respond defaults to "play"
+  // Anyone who didn't respond defaults to "sit out"
   const sitOutIds = [];
   room.players.forEach(p => {
-    if (room.countdownChoices[p.id] === 'sit_out') sitOutIds.push(p.id);
+    if (room.countdownChoices[p.id] !== 'play') sitOutIds.push(p.id);
   });
 
   // Move sit-out players to spectators
