@@ -1987,6 +1987,7 @@
     isSpectator = false;
     // Stop any previous ambient sound so it restarts with the correct new theme
     stopAmbientSound();
+    _leavingRoom = false; // clear leave guard before joining new room
     socket.emit('join_room', { name: myName, roomId });
     clearChat();
   }
@@ -3120,7 +3121,7 @@
     document.getElementById('game-timer').textContent = '—';
     showScreen('lobby');
     socket.emit('get_lobby');
-    setTimeout(() => { _leavingRoom = false; }, 1500); // re-enable after lobby loads
+    setTimeout(() => { _leavingRoom = false; }, 400); // clear after stale room_state arrives
   });
 
   // ===== ADD BOT =====
