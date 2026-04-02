@@ -354,6 +354,7 @@
     flex-shrink: 1;
     overflow: hidden;
     clip-path: inset(0);
+    isolation: isolate; /* ensures children are clipped within this stacking context */
   }
 
   /* Dark gradient overlay for contrast */
