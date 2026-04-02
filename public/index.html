@@ -2504,6 +2504,20 @@
         lpf.frequency.value = 100;
         texGain.gain.value = 0.006;
 
+        // Jazz from somewhere nearby — fades in softly
+        try {
+          const jazzSfx = new Audio('/ambient-gold.mp3');
+          jazzSfx.loop = true;
+          jazzSfx.volume = 0;
+          jazzSfx.play().catch(()=>{});
+          let jv = 0;
+          const jazzFade = setInterval(() => {
+            jv = Math.min(jv + 0.002, 0.14);
+            jazzSfx.volume = jv;
+            if (jv >= 0.14) clearInterval(jazzFade);
+          }, 60);
+        } catch(e) {}
+
         // Water drip — slow, echoing
         function stoneDrip() {
           try {
