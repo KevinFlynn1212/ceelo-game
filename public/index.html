@@ -2019,9 +2019,10 @@
     // Start ambient sound for this alley's theme (safe — triggered by prior user gesture)
     startAmbientSound(state.theme || 'red');
 
-    // Pre-populate _diceRevealedFor for players who already rolled (reconnect / late join)
-    // Only do this when the roll queue is empty (not mid-animation)
-    if (!_rollAnimating && _rollQueue.length === 0 && state.players) {
+    // Pre-populate _diceRevealedFor only on reconnect/late-join (not during live rolling)
+    // During rolling/shootout, dice reveal is gated by animation events only
+    const isLiveRolling = state.state === 'rolling' || state.state === 'shootout';
+    if (!isLiveRolling && !_rollAnimating && _rollQueue.length === 0 && state.players) {
       state.players.forEach(p => {
         if (p.rolls && p.rolls.length > 0) _diceRevealedFor.add(p.id);
       });
