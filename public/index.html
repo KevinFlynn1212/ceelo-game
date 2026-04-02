@@ -704,7 +704,7 @@
   }
 
   .theme-gold .alley-section {
-    background: url('/alley-gold-bg.jpg') center 55% / cover no-repeat;
+    background: url('/alley-gold-bg.jpg') center 40% / cover no-repeat;
   }
 
   .theme-gold .alley-section::before {
@@ -2413,7 +2413,9 @@
         // Next meow well spaced out
         setTimeout(catMeow, 40000 + Math.random() * 70000);
       }
-      setTimeout(catMeow, _currentTheme === 'blue' ? 60000 + Math.random() * 90000 : _currentTheme === 'green' ? 30000 + Math.random() * 60000 : _currentTheme === 'gold' ? 90000 + Math.random() * 120000 : 20000 + Math.random() * 30000);
+      if (_currentTheme !== 'gold') {
+        setTimeout(catMeow, _currentTheme === 'blue' ? 60000 + Math.random() * 90000 : _currentTheme === 'green' ? 30000 + Math.random() * 60000 : 20000 + Math.random() * 30000);
+      }
 
       // ── Green alley exclusive sounds — urban strip ──
       if (_currentTheme === 'green') {
@@ -2497,12 +2499,11 @@
         setTimeout(bottleSmash, 60000 + Math.random() * 60000);
       }
 
-      // ── Gold alley exclusive sounds — The Stone, ancient and quiet ──
+      // ── Gold alley exclusive sounds — jazz only ──
       if (_currentTheme === 'gold') {
-        // Much quieter rumble — still, secretive alley
-        rumbleGain.gain.value = 0.012;
-        lpf.frequency.value = 100;
-        texGain.gain.value = 0.006;
+        // Kill the synthesized rumble — just silence + jazz
+        rumbleGain.gain.value = 0;
+        texGain.gain.value = 0;
 
         // Jazz from somewhere nearby — fades in softly
         try {
@@ -2512,86 +2513,11 @@
           jazzSfx.play().catch(()=>{});
           let jv = 0;
           const jazzFade = setInterval(() => {
-            jv = Math.min(jv + 0.002, 0.14);
+            jv = Math.min(jv + 0.002, 0.18);
             jazzSfx.volume = jv;
-            if (jv >= 0.14) clearInterval(jazzFade);
+            if (jv >= 0.18) clearInterval(jazzFade);
           }, 60);
         } catch(e) {}
-
-        // Water drip — slow, echoing
-        function stoneDrip() {
-          try {
-            const dCtx = new (window.AudioContext || window.webkitAudioContext)();
-            const t = dCtx.currentTime;
-            const osc = dCtx.createOscillator();
-            const g = dCtx.createGain();
-            const hpf = dCtx.createBiquadFilter();
-            hpf.type = 'bandpass'; hpf.frequency.value = 1800; hpf.Q.value = 8;
-            osc.type = 'sine';
-            osc.frequency.value = 1200 + Math.random() * 400;
-            g.gain.setValueAtTime(0, t);
-            g.gain.linearRampToValueAtTime(0.04, t + 0.01);
-            g.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
-            osc.connect(hpf); hpf.connect(g); g.connect(dCtx.destination);
-            osc.start(t); osc.stop(t + 0.4);
-            // Faint echo
-            const e2 = dCtx.createOscillator();
-            const g2 = dCtx.createGain();
-            e2.type = 'sine'; e2.frequency.value = osc.frequency.value * 0.98;
-            g2.gain.setValueAtTime(0, t + 0.18);
-            g2.gain.linearRampToValueAtTime(0.015, t + 0.2);
-            g2.gain.exponentialRampToValueAtTime(0.001, t + 0.55);
-            e2.connect(g2); g2.connect(dCtx.destination);
-            e2.start(t + 0.18); e2.stop(t + 0.6);
-          } catch(e) {}
-          setTimeout(stoneDrip, 4000 + Math.random() * 8000);
-        }
-        setTimeout(stoneDrip, 3000 + Math.random() * 5000);
-
-        // Distant footsteps passing — rare
-        function footsteps() {
-          try {
-            const fCtx = new (window.AudioContext || window.webkitAudioContext)();
-            const t = fCtx.currentTime;
-            const steps = 3 + Math.floor(Math.random() * 5);
-            for (let i = 0; i < steps; i++) {
-              const noise = fCtx.createScriptProcessor(512, 1, 1);
-              noise.onaudioprocess = (e) => {
-                const out = e.outputBuffer.getChannelData(0);
-                for (let j = 0; j < out.length; j++) out[j] = (Math.random() * 2 - 1);
-              };
-              const lpf2 = fCtx.createBiquadFilter();
-              lpf2.type = 'bandpass'; lpf2.frequency.value = 200; lpf2.Q.value = 1.5;
-              const g = fCtx.createGain();
-              const st = t + i * (0.45 + Math.random() * 0.15);
-              g.gain.setValueAtTime(0, st);
-              g.gain.linearRampToValueAtTime(0.025, st + 0.03);
-              g.gain.exponentialRampToValueAtTime(0.001, st + 0.18);
-              noise.connect(lpf2); lpf2.connect(g); g.connect(fCtx.destination);
-              setTimeout(() => { try { noise.disconnect(); } catch(e){} }, (st - t + 0.3) * 1000);
-            }
-          } catch(e) {}
-          setTimeout(footsteps, 30000 + Math.random() * 60000);
-        }
-        setTimeout(footsteps, 15000 + Math.random() * 25000);
-
-        // Distant church bell — very rare, single toll
-        function churchBell() {
-          try {
-            const bCtx = new (window.AudioContext || window.webkitAudioContext)();
-            const t = bCtx.currentTime;
-            const osc = bCtx.createOscillator();
-            const g = bCtx.createGain();
-            osc.type = 'sine';
-            osc.frequency.value = 220 + Math.random() * 40;
-            g.gain.setValueAtTime(0.06, t);
-            g.gain.exponentialRampToValueAtTime(0.001, t + 4);
-            osc.connect(g); g.connect(bCtx.destination);
-            osc.start(t); osc.stop(t + 4.5);
-          } catch(e) {}
-          setTimeout(churchBell, 120000 + Math.random() * 180000);
-        }
-        setTimeout(churchBell, 45000 + Math.random() * 60000);
       }
 
       // ── Blue alley exclusive sounds ──
