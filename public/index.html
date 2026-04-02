@@ -416,10 +416,10 @@
     position: absolute;
     top: 21%;
     right: 8%;
-    font-size: 3.2rem;
+    font-size: clamp(1.2rem, 4vw, 2rem);
     font-weight: 900;
     writing-mode: vertical-rl;
-    letter-spacing: 8px;
+    letter-spacing: 6px;
     color: #ff5500;
     pointer-events: none;
     z-index: 4;
@@ -428,12 +428,25 @@
       0 0 8px #ff5500,
       0 0 18px #ff3300,
       0 0 35px #ff2200,
-      0 0 70px #cc1100,
-      0 0 120px #990000;
-    filter: blur(0.3px);
-    /* Perspective angle — looks mounted on right wall facing inward */
-    transform: perspective(300px) rotateY(-28deg);
+      0 0 50px #cc1100;
+    transform: none;
     transform-origin: right center;
+  }
+
+  /* Red alley explicit overrides — no 3D transform, mobile safe */
+  .theme-red .neon-rect {
+    top: 12%;
+    right: 6%;
+    left: auto;
+    font-size: clamp(1.1rem, 3.5vw, 1.8rem);
+    letter-spacing: 8px;
+    transform: none;
+    color: #ff5500;
+    text-shadow:
+      0 0 8px #ff5500,
+      0 0 18px #ff3300,
+      0 0 35px #ff2200,
+      0 0 50px #cc1100;
   }
   /* Red ambient wash originating from mid-alley right wall */
   .neon-blue-wash {
@@ -528,8 +541,8 @@
     top: 6%;
     left: 56.5%;
     right: auto;
-    font-size: 1.4rem;
-    letter-spacing: 12px;
+    font-size: clamp(1rem, 3vw, 1.4rem);
+    letter-spacing: 10px;
     transform: none;
     transform-origin: center center;
   }
@@ -630,8 +643,8 @@
     top: 8%;
     left: 45%;
     right: auto;
-    font-size: 1.4rem;
-    letter-spacing: 12px;
+    font-size: clamp(1rem, 3vw, 1.4rem);
+    letter-spacing: 10px;
     transform: none;
     transform-origin: center center;
   }
@@ -724,9 +737,9 @@
       0 0 10px rgba(200,120,0,0.25),
       0 0 20px rgba(150,90,0,0.15);
     top: 6%;
-    left: 60%;
+    left: 52%;
     right: auto;
-    font-size: 0.85rem;
+    font-size: clamp(0.75rem, 2vw, 0.9rem);
     letter-spacing: 8px;
     transform: none;
     transform-origin: center center;
