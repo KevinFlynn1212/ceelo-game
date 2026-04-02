@@ -1830,7 +1830,10 @@
 
   let _prevRoomState = null;
   let _blockGameScreen = false; // prevents room_state from hiding winner screen
+  let _leavingRoom = false;
+
   socket.on('room_state', (state) => {
+    if (_leavingRoom) return; // ignore stale room_state fired after clicking Leave
     const prevState = _prevRoomState;
     _prevRoomState = state;
     roomState = state;
@@ -3128,6 +3131,7 @@
 
   // ===== LEAVE =====
   document.getElementById('btn-leave').addEventListener('click', () => {
+    _leavingRoom = true;
     socket.emit('leave_room');
     stopAmbientSound(); // reset so next alley starts with correct theme
     currentRoom = null;
@@ -3143,6 +3147,7 @@
     document.getElementById('game-timer').textContent = '—';
     showScreen('lobby');
     socket.emit('get_lobby');
+    setTimeout(() => { _leavingRoom = false; }, 1500); // re-enable after lobby loads
   });
 
   // ===== ADD BOT =====
