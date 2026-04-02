@@ -1185,52 +1185,7 @@
   }
 
   /* ── Re-ante overlay (center of alley) ── */
-  .reante-overlay {
-    position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
-    z-index: 20;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    background: rgba(0, 0, 0, 0.58);
-    backdrop-filter: blur(3px);
-  }
-  .reante-overlay.visible {
-    display: flex;
-  }
-
-  /* Inner card inside overlay */
-  .reante-card {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-    align-items: center;
-    background: rgba(10, 6, 2, 0.94);
-    border: 1px solid rgba(245,200,66,0.4);
-    border-radius: 16px;
-    padding: 30px 40px;
-    backdrop-filter: blur(10px);
-    box-shadow: 0 0 80px rgba(0,0,0,0.8), 0 0 40px rgba(245,200,66,0.1);
-  }
-
-  .reante-label {
-    color: var(--gold);
-    font-family: 'Cinzel', serif;
-    font-weight: 700;
-    font-size: 1.05rem;
-    text-align: center;
-    letter-spacing: 0.05em;
-    line-height: 1.5;
-  }
-  .reante-label strong {
-    color: #ffffff;
-    font-size: 1.15rem;
-  }
-
-  .reante-btn-row {
-    display: flex;
-    gap: 12px;
-  }
+  /* re-ante styles removed */
 
   /* ── Shootout banner ── */
   .shootout-banner {
@@ -1474,7 +1429,7 @@
   }
   .hud-action.act-throw    { background: rgba(245,200,66,0.2); color: var(--gold); }
   .hud-action.act-win      { background: rgba(76,175,80,0.35); color: #7eff8a; letter-spacing: 0.1em; font-size: 0.68rem; }
-  .hud-action.act-reante   { background: rgba(200,100,0,0.25); color: #ffaa44; }
+
   .hud-action.act-waiting  { background: transparent; color: rgba(255,255,255,0.2); }
   .hud-action.act-done     { background: rgba(76,175,80,0.1); color: var(--green); }
 
@@ -1844,12 +1799,11 @@
       </section>
 
       <section>
-        <div style="font-family:'Cinzel',serif;font-size:0.8rem;font-weight:700;color:var(--gold);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:6px;">💰 Antes &amp; Raises</div>
+        <div style="font-family:'Cinzel',serif;font-size:0.8rem;font-weight:700;color:var(--gold);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:6px;">💰 Antes</div>
         <ul style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px;">
           <li>Each round starts with everyone paying the <strong>ante</strong> (the alley's stake level).</li>
-          <li>Before rolling, any player can place a <strong>raise</strong> — others must match or fold.</li>
-          <li>A <strong>re-ante</strong> offer may appear mid-round if you have a weak roll — pay again to re-roll.</li>
-          <li>Raises are capped at $500.</li>
+          <li>Antes are collected automatically when the round begins.</li>
+          <li>Can't afford the ante? You'll be removed from the table and can rebuy.</li>
         </ul>
       </section>
 
@@ -1959,16 +1913,7 @@
     </div>
 
     <!-- Re-ante overlay (center of alley) -->
-    <!-- NOTE: id="reante-buttons" kept so existing JS toggle logic works -->
-    <div class="reante-overlay" id="reante-buttons">
-      <div class="reante-card">
-        <div class="reante-label" id="reante-label">Re-Ante offered!</div>
-        <div class="reante-btn-row">
-          <button class="btn btn-green" id="btn-reante-yes">✓ Yes, Re-Ante</button>
-          <button class="btn btn-red"   id="btn-reante-no">✗ No Thanks</button>
-        </div>
-      </div>
-    </div>
+
 
     <!-- Shootout banner -->
     <div class="shootout-banner" id="shootout-banner" style="display:none;">⚔ SHOOTOUT ⚔</div>
@@ -2134,31 +2079,7 @@
     enqueueRoll(playerId, dice, evaluation);
   });
 
-  socket.on('re_ante_offer', ({ playerId, timerEnd, ante }) => {
-    if (playerId === myId) {
-      startTimer(timerEnd);
-      // Delay popup 2s so player sees their roll first
-      setTimeout(() => {
-        // Build hand description from current room state
-        let handDesc = 'your current roll';
-        if (roomState) {
-          const me = roomState.players && roomState.players.find(p => p.id === myId);
-          if (me && me.result) {
-            const t = me.result.type || '';
-            const anteCost = ante || roomState.ante || '';
-            if      (t === '456')   handDesc = '🌟 Strungflowers!';
-            else if (t === 'trips') handDesc = `⚡ Trips ${me.result.point || ''}`;
-            else if (t === 'point') handDesc = `Point ${me.result.point || ''}`;
-            else if (t === '123')   handDesc = '🐉 Dancing Dragon';
-            else if (t === 'none')  handDesc = 'No combo';
-          }
-        }
-        const label = document.getElementById('reante-label');
-        if (label) label.innerHTML = `You rolled <strong>${handDesc}</strong><br><span style="font-size:0.85em;opacity:0.75;">Re-ante to roll again?</span>`;
-        showReAnteOffer();
-      }, 2000);
-    }
-  });
+  // re_ante_offer handler removed
 
   socket.on('shootout_start', ({ playerIds, round, timerEnd }) => {
     addChatMessage({ type: 'system', text: `🔫 Shootout Round ${round}! Players: ${playerIds.length}` });
@@ -2438,7 +2359,7 @@
       && state.players[state.currentTurnIndex]
       && state.players[state.currentTurnIndex].id === myId;
 
-    if (me.done || me.reAnteActive || !isMyTurn || animating) {
+    if (me.done || !isMyTurn || animating) {
       // Not your turn — hide the button completely
       if (wrapper) wrapper.style.display = 'none';
     } else {
@@ -2497,9 +2418,6 @@
         } else if (isActiveTurn) {
           actionText = player.rollCount > 0 ? '↩ Throw Again' : '🎲 Throw';
           actionClass = 'act-throw';
-        } else if (player.reAnteActive) {
-          actionText = '💰 Re-Ante?';
-          actionClass = 'act-reante';
         } else {
           actionText = '· · ·';
           actionClass = 'act-waiting';
@@ -3265,22 +3183,7 @@
     }
   }
 
-  // ===== RE-ANTE =====
-  function showReAnteOffer() {
-    document.getElementById('reante-buttons').classList.add('visible');
-  }
-  function hideReAnteOffer() {
-    document.getElementById('reante-buttons').classList.remove('visible');
-  }
-
-  document.getElementById('btn-reante-yes').addEventListener('click', () => {
-    socket.emit('re_ante_accept');
-    hideReAnteOffer();
-  });
-  document.getElementById('btn-reante-no').addEventListener('click', () => {
-    socket.emit('re_ante_decline');
-    hideReAnteOffer();
-  });
+  // re-ante UI removed
 
   // ===== WINNER =====
   function showWinner(ev) {

@@ -23,7 +23,7 @@ const STARTING_BALANCE      = 500;
 const MAX_PLAYERS           = 5;
 const MAX_SPECTATORS        = 20;
 const MAX_CHAT_HISTORY      = 100;
-const MAX_RAISE             = 500;
+// MAX_RAISE removed — raises disabled
 const MAX_ROLL_ATTEMPTS     = 7;
 const MAX_MISSED_ROUNDS     = 5;
 const RAKE_PCT              = 0.05;           // 5%
@@ -115,9 +115,6 @@ function makePlayer(id, name) {
     antePaid:        false,
     raise:           0,
     missedRounds:    0,
-    reAnteOffered:   false,
-    reAntePaid:      false,
-    reAnteActive:    false,    // currently on the re-ante roll
     inShootout:      false,
     shootoutScore:   null,
     shootoutRolls:   [],
@@ -270,9 +267,6 @@ function serializeRoom(room) {
       raise:          p.raise,
       missedRounds:   p.missedRounds,
       isWinner:       room.winner === p.name,
-      reAnteOffered:  p.reAnteOffered,
-      reAntePaid:     p.reAntePaid,
-      reAnteActive:   p.reAnteActive,
       inShootout:     p.inShootout,
       shootoutScore:  p.shootoutScore,
       shootoutRolls:  p.shootoutRolls,
@@ -434,9 +428,6 @@ function startRolling(room) {
     p.done           = false;
     p.finalScore     = null;
     p.raise          = 0;
-    p.reAnteOffered  = false;
-    p.reAntePaid     = false;
-    p.reAnteActive   = false;
     p.inShootout     = false;
     p.shootoutScore  = null;
     p.shootoutRolls  = [];
@@ -511,7 +502,7 @@ function performRoll(room, player, isAuto) {
     evaluation:    ev,
     rollCount:     player.rollCount,
     isAuto,
-    isReAnte:      player.reAnteActive,
+    isReAnte:      false,
     animationData: { dice, duration: 800, bounces: 3 },
   });
 
@@ -533,14 +524,6 @@ function performRoll(room, player, isAuto) {
     else if (ev.type === '123')   sysMsg(room, `🐉 ${player.name} rolled Dancing Dragon (1-2-3)!`);
     else if (ev.type === 'trips') sysMsg(room, `🔥 ${player.name} rolled Trips ${ev.point}!`);
     else if (ev.type === 'point') sysMsg(room, `🎯 ${player.name}: Point ${ev.point} (pair of ${ev.pair})`);
-
-    // Offer re-ante only for point results, not on auto-roll
-    if (ev.type === 'point' && !isAuto && WalletService.canAfford(player.wallet, room.ante)) {
-      finalisePlayerResult(room, player, ev);
-      offerReAnte(room, player);
-      broadcast(room);
-      return;
-    }
 
     finalisePlayerResult(room, player, ev);
     advanceTurn(room);
@@ -568,36 +551,6 @@ function finalisePlayerResult(room, player, ev) {
   player.finalScore = ev.score;
   player.done       = true;
 }
-
-// ── Re-Ante offer ─────────────────────────────────────────────────────────────
-function offerReAnte(room, player) {
-  clearRoomTimer(room);
-  room.state          = 're_ante';
-  player.reAnteOffered = true;
-
-  sysMsg(room, `💰 ${player.name}: Re-ante 金${room.ante.toLocaleString()} to re-roll once? (5s)`);
-  broadcast(room);
-
-  const sock = io.sockets.sockets.get(player.id);
-  if (sock) {
-    sock.emit('re_ante_offer', {
-      playerId:      player.id,
-      ante:          room.ante,
-      currentScore:  player.finalScore,
-      currentResult: player.result,
-      timerMs:       TIMER_REANTE_MS,
-    });
-  }
-
-  setRoomTimer(room, TIMER_REANTE_MS, () => {
-    if (player.reAnteOffered) {
-      player.reAnteOffered = false;
-      sysMsg(room, `⏱️ ${player.name} passed on re-ante (timeout).`);
-      room.state = 'rolling';
-      advanceTurn(room);
-      broadcast(room);
-    }
-  });
 }
 
 // ── Turn advancement ─────────────────────────────────────────────────────────
@@ -731,7 +684,7 @@ function endRound(room) {
 function startShootout(room, tiedPlayers, pot) {
   clearRoomTimer(room);
   room.state             = 'shootout';
-  room.shootoutPhase     = 'raise';
+  room.shootoutPhase     = 'rolling';
   room.shootoutRound    += 1;
   room.pot               = pot;
   room.shootoutPlayerIds = tiedPlayers.map(p => p.id);
@@ -745,16 +698,15 @@ function startShootout(room, tiedPlayers, pot) {
     p.done          = false;
   });
 
-  // Point currentTurnIndex at first tied player (for raise window UX)
   room.currentTurnIndex = room.players.findIndex(p => p.id === tiedPlayers[0].id);
 
-  sysMsg(room, `⚔️ SHOOTOUT Round ${room.shootoutRound}: ${tiedPlayers.map(p => p.name).join(' vs ')} | Optional raise for 5 seconds...`);
+  sysMsg(room, `⚔️ SHOOTOUT Round ${room.shootoutRound}: ${tiedPlayers.map(p => p.name).join(' vs ')} — roll to break the tie!`);
 
   io.to(room.id).emit('shootout_start', {
     roomId:          room.id,
     shootoutRound:   room.shootoutRound,
     pot:             room.pot,
-    raisePeriodMs:   TIMER_SHOOTOUT_RAISE_MS,
+    raisePeriodMs:   0,
     shootoutPlayers: tiedPlayers.map(p => ({
       id:      p.id,
       name:    p.name,
@@ -763,15 +715,7 @@ function startShootout(room, tiedPlayers, pot) {
   });
 
   broadcast(room);
-
-  setRoomTimer(room, TIMER_SHOOTOUT_RAISE_MS, () => {
-    room.shootoutPhase = 'rolling';
-    // Start rolling for first tied player
-    const firstIdx = room.players.findIndex(p => p.inShootout && !p.shootoutDone);
-    room.currentTurnIndex = firstIdx !== -1 ? firstIdx : 0;
-    broadcast(room);
-    scheduleShootoutTimer(room);
-  });
+  scheduleShootoutTimer(room);
 }
 
 function scheduleShootoutTimer(room) {
@@ -1033,45 +977,6 @@ io.on('connection', socket => {
   });
 
   // ── Re-ante decision ───────────────────────────────────────────────────────
-  socket.on('re_ante_decision', ({ accept }) => {
-    if (socket.data.isSpectator) return;
-    const room = rooms.get(socket.data.room);
-    if (!room || room.state !== 're_ante') return;
-
-    const player = room.players.find(p => p.id === socket.id);
-    if (!player || !player.reAnteOffered) return;
-
-    clearRoomTimer(room);
-    player.reAnteOffered = false;
-
-    if (accept) {
-      if (!WalletService.debit(player.wallet, room.ante)) {
-        sysMsg(room, `💸 ${player.name} couldn't afford the re-ante.`);
-        room.state = 'rolling';
-        advanceTurn(room);
-        broadcast(room);
-        return;
-      }
-
-      room.pot        += room.ante;
-      player.reAntePaid   = true;
-      player.reAnteActive = true;
-      player.done         = false;
-      player.result       = null;
-      player.finalScore   = null;
-      player.rollCount    = 0;
-
-      sysMsg(room, `💰 ${player.name} re-anted 金${room.ante.toLocaleString()} — one more roll! Pot: 金${room.pot.toLocaleString()}`);
-      room.state = 'rolling';
-      scheduleTurnTimer(room);
-      broadcast(room);
-    } else {
-      sysMsg(room, `${player.name} passed on re-ante.`);
-      room.state = 'rolling';
-      advanceTurn(room);
-      broadcast(room);
-    }
-  });
 
   // ── Shootout roll ──────────────────────────────────────────────────────────
   socket.on('shootout_roll', () => {
@@ -1089,54 +994,8 @@ io.on('connection', socket => {
   });
 
   // ── Shootout raise (during raise window) ──────────────────────────────────
-  socket.on('shootout_raise', ({ amount }) => {
-    if (socket.data.isSpectator) return;
-    const room = rooms.get(socket.data.room);
-    if (!room || room.state !== 'shootout' || room.shootoutPhase !== 'raise') return;
-
-    const player = room.players.find(p => p.id === socket.id);
-    if (!player || !player.inShootout || player.shootoutRaise > 0) return;
-
-    const a = parseInt(amount);
-    if (isNaN(a) || a <= 0 || a > MAX_RAISE)
-      return socket.emit('error', { msg: `Raise must be 1–${MAX_RAISE.toLocaleString()}.` });
-    if (!WalletService.canAfford(player.wallet, a))
-      return socket.emit('error', { msg: 'Not enough coins.' });
-
-    WalletService.debit(player.wallet, a);
-    player.shootoutRaise  = a;
-    player.raise         += a;
-    room.pot             += a;
-
-    sysMsg(room, `⚔️ ${player.name} raised 金${a.toLocaleString()} in shootout! Pot: 金${room.pot.toLocaleString()}`);
-    broadcast(room);
-  });
 
   // ── Regular raise (before first roll, main phase) ─────────────────────────
-  socket.on('place_raise', ({ amount }) => {
-    if (socket.data.isSpectator) return;
-    const room = rooms.get(socket.data.room);
-    if (!room || room.state !== 'rolling') return;
-
-    const idx = room.players.findIndex(p => p.id === socket.id);
-    if (idx !== room.currentTurnIndex) return socket.emit('error', { msg: 'Not your turn.' });
-    const player = room.players[idx];
-    if (player.rollCount > 0) return socket.emit('error', { msg: 'Can only raise before first roll.' });
-    if (player.reAnteActive)  return socket.emit('error', { msg: 'No raise on re-ante roll.' });
-
-    const a = parseInt(amount);
-    if (isNaN(a) || a <= 0 || a > MAX_RAISE)
-      return socket.emit('error', { msg: `Raise must be 1–${MAX_RAISE.toLocaleString()}.` });
-    if (!WalletService.canAfford(player.wallet, a))
-      return socket.emit('error', { msg: 'Not enough coins.' });
-
-    WalletService.debit(player.wallet, a);
-    player.raise  += a;
-    room.pot      += a;
-
-    sysMsg(room, `💰 ${player.name} raised 金${a.toLocaleString()} — Pot: 金${room.pot.toLocaleString()}`);
-    broadcast(room);
-  });
 
   // ── Rebuy ──────────────────────────────────────────────────────────────────
   socket.on('rebuy', () => {
@@ -1284,13 +1143,7 @@ function spawnBot(roomId) {
     }
   });
 
-  // Auto-accept re-ante (50% chance)
-  bot.on('re_ante_offer', () => {
-    setTimeout(() => {
-      if (Math.random() > 0.5) bot.emit('re_ante_accept');
-      else bot.emit('re_ante_decline');
-    }, 500 + Math.random() * 1000);
-  });
+  // re_ante_offer handler removed — feature disabled
 
   // Auto-roll in shootout
   bot.on('shootout_turn', () => {
