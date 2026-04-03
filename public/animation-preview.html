@@ -253,21 +253,6 @@ function fireStrungflowers() {
   document.body.appendChild(flash);
   setTimeout(() => flash.remove(), 1500);
 
-  // Central core flash
-  const core = document.createElement('div');
-  core.className = 'strung-core';
-  document.body.appendChild(core);
-  setTimeout(() => core.remove(), 600);
-
-  // Shockwave rings (3 waves)
-  [0, 150, 320].forEach((delay, i) => {
-    const ring = document.createElement('div');
-    ring.className = 'strung-ring';
-    ring.style.cssText = `--rd:${0.7 + i*0.1}s;--rdelay:${delay}ms;`;
-    document.body.appendChild(ring);
-    setTimeout(() => ring.remove(), delay + 900);
-  });
-
   // Shimmer bg
   const shimmer = document.createElement('div');
   shimmer.className = 'strung-shimmer';
@@ -275,9 +260,9 @@ function fireStrungflowers() {
   setTimeout(() => shimmer.remove(), 1900);
 
   // Explosion burst — coins & flowers fire outward from center
-  const symbols = ['🪙','🪙','🪙','🪙','🪙','💰','💰','💰','🌸','🌸','🌸','🌸','🌺','🌺','🌼','🌷','🌷','🌛'];
+  const symbols = ['🪙','🪙','🪙','🪙','🪙','🪙','💰','💰','💰','💰','🌸','🌸','🌸','🌸','🌸','🌺','🌺','🌺','🌼','🌼','🌷','🌷','🌷'];
   const cx = window.innerWidth / 2, cy = window.innerHeight * 0.42;
-  const count = 100;
+  const count = 150;
   for (let i = 0; i < count; i++) {
     const el = document.createElement('div');
     el.textContent = symbols[Math.floor(Math.random() * symbols.length)];
@@ -300,38 +285,8 @@ function fireStrungflowers() {
     setTimeout(() => el.remove(), (dur + delay) * 1000 + 100);
   }
 
-  // Strungflowers fanfare
+  // Sound
   try { const snd = new Audio('/strung-fanfare.mp3'); snd.volume = 0.85; snd.play().catch(()=>{}); } catch(e) {}
-  try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const t = ctx.currentTime;
-    [[523,659,784], [659,784,1047], [784,1047,1319]].forEach((chord, ci) => {
-      chord.forEach(freq => {
-        const osc = ctx.createOscillator();
-        const g = ctx.createGain();
-        osc.connect(g); g.connect(ctx.destination);
-        osc.type = 'sine';
-        osc.frequency.value = freq;
-        const start = t + ci * 0.12;
-        g.gain.setValueAtTime(0, start);
-        g.gain.linearRampToValueAtTime(0.1, start + 0.03);
-        g.gain.exponentialRampToValueAtTime(0.001, start + 0.5);
-        osc.start(start); osc.stop(start + 0.5);
-      });
-    });
-    // High sparkle notes
-    [1319,1568,2093].forEach((freq, i) => {
-      const osc = ctx.createOscillator();
-      const g = ctx.createGain();
-      osc.connect(g); g.connect(ctx.destination);
-      osc.type = 'sine';
-      osc.frequency.value = freq;
-      const start = t + 0.3 + i * 0.1;
-      g.gain.setValueAtTime(0.08, start);
-      g.gain.exponentialRampToValueAtTime(0.001, start + 0.4);
-      osc.start(start); osc.stop(start + 0.4);
-    });
-  } catch(e) {}
 }
 
 function fireDancingDragon() {

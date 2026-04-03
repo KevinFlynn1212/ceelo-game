@@ -3318,31 +3318,16 @@
     document.body.appendChild(flash);
     setTimeout(() => flash.remove(), 1500);
 
-    // Central core burst
-    const core = document.createElement('div');
-    core.className = 'strung-core';
-    document.body.appendChild(core);
-    setTimeout(() => core.remove(), 600);
-
-    // 3 shockwave rings
-    [0, 150, 320].forEach((delay, i) => {
-      const ring = document.createElement('div');
-      ring.className = 'strung-ring';
-      ring.style.cssText = `--rd:${0.7 + i * 0.1}s;--rdelay:${delay}ms;`;
-      document.body.appendChild(ring);
-      setTimeout(() => ring.remove(), delay + 900);
-    });
-
     // Shimmer bg
     const shimmer = document.createElement('div');
     shimmer.className = 'strung-shimmer';
     document.body.appendChild(shimmer);
     setTimeout(() => shimmer.remove(), 1900);
 
-    // COINS & FLOWERS explosion — lots of them!
-    const symbols = ['🪙','🪙','🪙','🪙','🪙','💰','💰','💰','🌸','🌸','🌸','🌸','🌺','🌺','🌼','🌷','🌷','🌛'];
+    // COINS & FLOWERS explosion
+    const symbols = ['🪙','🪙','🪙','🪙','🪙','🪙','💰','💰','💰','💰','🌸','🌸','🌸','🌸','🌸','🌺','🌺','🌺','🌼','🌼','🌷','🌷','🌷'];
     const cx = window.innerWidth / 2, cy = window.innerHeight * 0.42;
-    const count = 100;
+    const count = 150;
     for (let i = 0; i < count; i++) {
       const el = document.createElement('div');
       el.className = 'strung-particle';
