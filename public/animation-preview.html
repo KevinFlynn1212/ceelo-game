@@ -262,22 +262,23 @@ function fireStrungflowers() {
   // Explosion burst — coins & flowers fire outward from center
   const symbols = ['🪙','🪙','🪙','🪙','🪙','🪙','💰','💰','💰','💰','🌸','🌸','🌸','🌸','🌸','🌺','🌺','🌺','🌼','🌼','🌷','🌷','🌷'];
   const cx = window.innerWidth / 2, cy = window.innerHeight * 0.42;
-  const count = 150;
+  const soundDuration = 6.1; // seconds
+  const count = 200;
   for (let i = 0; i < count; i++) {
     const el = document.createElement('div');
     el.textContent = symbols[Math.floor(Math.random() * symbols.length)];
-    const angle = (Math.PI * 2 * i / count) + (Math.random() - 0.5) * 0.4;
-    const dist = 60 + Math.random() * 340;
+    const angle = (Math.PI * 2 * i / count) + (Math.random() - 0.5) * 0.5;
+    const dist = 80 + Math.random() * 380;
     const px = Math.cos(angle) * dist;
     const py = Math.sin(angle) * dist;
-    const size = 1.2 + Math.random() * 1.6;
-    const dur = 0.6 + Math.random() * 0.8;
-    const delay = Math.random() * 0.2;
+    const size = 1.2 + Math.random() * 1.8;
+    const dur = 1.2 + Math.random() * 2.5;  // longer travel
+    const delay = Math.random() * (soundDuration - 1.0); // spread over sound duration
     el.style.cssText = `
       position:fixed; pointer-events:none; z-index:9500;
       left:${cx}px; top:${cy}px;
       font-size:${size}rem;
-      filter: drop-shadow(0 0 6px rgba(255,220,50,0.8));
+      filter: drop-shadow(0 0 8px rgba(255,220,50,0.9));
       animation: strungParticle ${dur}s ease-out ${delay}s forwards;
       --px:${px}px; --py:${py}px;
     `;
