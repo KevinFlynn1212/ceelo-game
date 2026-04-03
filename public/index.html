@@ -1332,6 +1332,30 @@
     letter-spacing: 0.25em;
     text-transform: uppercase;
   }
+  .btn-join-seat {
+    background: rgba(245,200,66,0.1);
+    border: 1.5px dashed rgba(245,200,66,0.35);
+    border-radius: 10px;
+    color: rgba(245,200,66,0.55);
+    font-family: 'Cinzel', serif;
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 8px 4px;
+    cursor: pointer;
+    width: 100%;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+  .btn-join-seat:hover {
+    background: rgba(245,200,66,0.2);
+    border-color: rgba(245,200,66,0.7);
+    color: var(--gold);
+  }
 
   .hud-avatar {
     width: 34px;
@@ -2396,7 +2420,18 @@
       slot.className = 'hud-slot';
 
       if (!player) {
-        slot.innerHTML = `<div class="hud-slot-empty" style="margin:auto;text-align:center;">STAND<br>HERE</div>`;
+        // Show join button if not already in the game
+        const alreadyPlaying = state.players && state.players.some(p => p.id === myId);
+        if (!alreadyPlaying && myName) {
+          const midGame = state.state === 'rolling' || state.state === 'shootout';
+          const label = midGame ? 'Join Next' : 'Join';
+          slot.innerHTML = `<button class="btn-join-seat" data-join-seat="true">
+            <span style="font-size:1.1rem;">🎲</span>
+            <span>${label}</span>
+          </button>`;
+        } else {
+          slot.innerHTML = `<div class="hud-slot-empty" style="margin:auto;text-align:center;">OPEN</div>`;
+        }
       } else {
         const isActiveTurn = state.currentTurnIndex === idx && !player.done;
         const isWinner = player.isWinner;
@@ -3418,6 +3453,14 @@
   document.getElementById('btn-roll').addEventListener('click', () => {
     if (animating) return;
     socket.emit('roll_dice');
+  });
+
+  // Join from empty seat in HUD
+  document.getElementById('players-list').addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-join-seat]');
+    if (!btn) return;
+    if (!myName || !currentRoom) return;
+    socket.emit('join_room', { name: myName, roomId: currentRoom });
   });
 
   // ===== LEAVE =====

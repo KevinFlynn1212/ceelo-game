@@ -873,10 +873,16 @@ io.on('connection', socket => {
     if (!isSpectator) {
       if (room.players.length >= MAX_PLAYERS)
         return socket.emit('error', { msg: `Room full (max ${MAX_PLAYERS} players).` });
-      // Only allow joining during lobby, results, or countdown window
-      if (room.state !== 'lobby' && room.state !== 'results' && room.state !== 'countdown')
-        return socket.emit('error', { msg: 'Game in progress — join as spectator?' });
-      room.players.push(makePlayer(socket.id, n));
+      // Allow joining any time — mid-game joiners wait for next round
+      const midGame = room.state === 'rolling' || room.state === 'shootout';
+      if (midGame) {
+        // Mark player as done so they sit out the current round
+        const p = makePlayer(socket.id, n);
+        p.done = true;
+        room.players.push(p);
+      } else {
+        room.players.push(makePlayer(socket.id, n));
+      }
     } else {
       if (room.spectators.length >= MAX_SPECTATORS)
         return socket.emit('error', { msg: 'Spectator slots full.' });
