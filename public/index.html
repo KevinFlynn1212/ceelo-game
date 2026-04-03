@@ -2076,7 +2076,7 @@
       if (_pendingRoundEnd) {
         const data = _pendingRoundEnd;
         _pendingRoundEnd = null;
-        setTimeout(() => showWinner(data), 400);
+        setTimeout(() => showWinner(data), 150);
       }
       return;
     }
@@ -2114,7 +2114,7 @@
       _pendingRoundEnd = data;
     } else {
       // Queue already empty — show winner after short pause
-      setTimeout(() => showWinner(data), 400);
+      setTimeout(() => showWinner(data), 150);
     }
   });
 
