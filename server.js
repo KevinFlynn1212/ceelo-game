@@ -866,6 +866,26 @@ io.on('connection', socket => {
 
     const isSpectator = !!spectator;
 
+    // If this socket is already a spectator in this room, treat as rejoin
+    const existingSpecIdx = room.spectators.findIndex(s => s.id === socket.id);
+    if (existingSpecIdx !== -1 && !isSpectator) {
+      if (room.players.length >= MAX_PLAYERS)
+        return socket.emit('error', { msg: `Room full (max ${MAX_PLAYERS} players).` });
+      const spec = room.spectators[existingSpecIdx];
+      room.spectators.splice(existingSpecIdx, 1);
+      const newP = makePlayer(socket.id, spec.name);
+      if (spec.wallet) newP.wallet = spec.wallet;
+      // Mid-game joiners wait for next round
+      if (room.state === 'rolling' || room.state === 'shootout') newP.done = true;
+      room.players.push(newP);
+      socket.data.isSpectator = false;
+      socket.emit('room_joined', { roomId: rid, playerId: socket.id, isSpectator: false });
+      sysMsg(room, `🎲 ${spec.name} is back in!`);
+      broadcast(room);
+      broadcastLobby();
+      return;
+    }
+
     const nameTaken = [...room.players, ...room.spectators]
       .some(p => p.name.toLowerCase() === n.toLowerCase());
     if (nameTaken) return socket.emit('error', { msg: `Name "${n}" is taken.` });
@@ -876,7 +896,6 @@ io.on('connection', socket => {
       // Allow joining any time — mid-game joiners wait for next round
       const midGame = room.state === 'rolling' || room.state === 'shootout';
       if (midGame) {
-        // Mark player as done so they sit out the current round
         const p = makePlayer(socket.id, n);
         p.done = true;
         room.players.push(p);
