@@ -272,6 +272,7 @@ function serializeRoom(room) {
       shootoutRolls:  p.shootoutRolls,
       shootoutDone:   p.shootoutDone,
       shootoutRaise:  p.shootoutRaise,
+      seatIdx:        p.seatIdx,
     })),
   };
 }
@@ -877,6 +878,14 @@ io.on('connection', socket => {
       if (spec.wallet) newP.wallet = spec.wallet;
       // Mid-game joiners wait for next round
       if (room.state === 'rolling' || room.state === 'shootout') newP.done = true;
+      // Assign requested seat
+      const reqSeat = typeof seatIdx === 'number' ? seatIdx : -1;
+      const takenSeats = new Set(room.players.map(p => p.seatIdx).filter(s => s != null));
+      if (reqSeat >= 0 && reqSeat < MAX_PLAYERS && !takenSeats.has(reqSeat)) {
+        newP.seatIdx = reqSeat;
+      } else {
+        for (let s = 0; s < MAX_PLAYERS; s++) { if (!takenSeats.has(s)) { newP.seatIdx = s; break; } }
+      }
       room.players.push(newP);
       socket.data.isSpectator = false;
       socket.emit('room_joined', { roomId: rid, playerId: socket.id, isSpectator: false });
@@ -898,7 +907,14 @@ io.on('connection', socket => {
       const midGame = room.state === 'rolling' || room.state === 'shootout';
       const p = makePlayer(socket.id, n);
       if (midGame) p.done = true;
-      // Simply push — seat visual position handled client-side
+      // Assign requested seat
+      const reqSeat = typeof seatIdx === 'number' ? seatIdx : -1;
+      const takenSeats = new Set(room.players.map(pl => pl.seatIdx).filter(s => s != null));
+      if (reqSeat >= 0 && reqSeat < MAX_PLAYERS && !takenSeats.has(reqSeat)) {
+        p.seatIdx = reqSeat;
+      } else {
+        for (let s = 0; s < MAX_PLAYERS; s++) { if (!takenSeats.has(s)) { p.seatIdx = s; break; } }
+      }
       room.players.push(p);
     } else {
       if (room.spectators.length >= MAX_SPECTATORS)
@@ -968,6 +984,9 @@ io.on('connection', socket => {
       // Re-create as player, restore wallet if they had one
       const newP = makePlayer(socket.id, spec.name);
       if (spec.wallet) newP.wallet = spec.wallet;
+      // Assign first available seat
+      const takenSeats = new Set(room.players.map(p => p.seatIdx).filter(s => s != null));
+      for (let s = 0; s < MAX_PLAYERS; s++) { if (!takenSeats.has(s)) { newP.seatIdx = s; break; } }
       room.players.push(newP);
       socket.data.isSpectator = false;
       socket.emit('room_joined', { roomId: room.id, playerId: socket.id, isSpectator: false });

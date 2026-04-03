@@ -1700,6 +1700,18 @@
     font-size: var(--ps, 1.4rem);
     animation: dragonParticle var(--pd, 0.9s) ease-out var(--pdelay, 0s) forwards;
   }
+  /* ── Fire puff (trail behind dragon) ── */
+  @keyframes firePuff {
+    0%   { transform: translate(var(--fx), var(--fy)) scale(0.5); opacity: 0.9; }
+    100% { transform: translate(var(--fx), calc(var(--fy) - 60px)) scale(1.5); opacity: 0; }
+  }
+  .fire-puff {
+    position: fixed;
+    pointer-events: none;
+    z-index: 9590;
+    font-size: var(--fs, 1.5rem);
+    animation: firePuff var(--fd, 0.6s) ease-out var(--fdelay, 0s) forwards;
+  }
 
   /* ── Screen shake for Dragon ── */
   @keyframes screenShake {
@@ -1714,7 +1726,7 @@
     80%  { transform: translate(3px, -1px); }
     90%  { transform: translate(-1px, 2px); }
   }
-  .screen-shaking { animation: screenShake 0.5s ease-out; }
+  .screen-shaking { animation: screenShake 0.6s ease-out; }
 
   /* ── Strungflowers golden shimmer overlay ── */
   @keyframes strungShimmer {
@@ -1761,7 +1773,7 @@
   .dragon-smoke {
     position: fixed; inset: 0; z-index: 9400; pointer-events: none;
     background: radial-gradient(ellipse at 50% 60%, rgba(180,20,0,0.35) 0%, rgba(80,0,0,0.2) 50%, transparent 75%);
-    animation: dragonSmoke 1.2s ease-out forwards;
+    animation: dragonSmoke 1.5s ease-out forwards;
   }
 
   /* ── Dancing dragon ── */
@@ -1781,7 +1793,7 @@
   }
   .dragon-dance {
     position: fixed;
-    left: 50%; top: 40%;
+    left: 50%; top: 42%;
     pointer-events: none;
     z-index: 9600;
     font-size: 7rem;
@@ -1802,7 +1814,7 @@
   }
   .dragon-dice {
     position: fixed;
-    left: 50%; top: 56%;
+    left: 50%; top: 58%;
     transform: translateX(-50%);
     pointer-events: none;
     z-index: 9550;
@@ -2379,12 +2391,20 @@
     const btnSit  = document.getElementById('cd-sitout');
     const btnRejoin = document.getElementById('cd-rejoin');
 
+    function dismissCountdownOverlay() {
+      const ov = document.getElementById('countdown-overlay');
+      if (ov) {
+        ov.classList.add('hiding');
+        setTimeout(() => ov.remove(), 400);
+      }
+    }
     if (btnPlay) btnPlay.addEventListener('click', () => {
       _countdownChoice = 'play';
       socket.emit('countdown_choice', { choice: 'play' });
       btnPlay.classList.add('selected');
       if (btnSit) btnSit.classList.remove('selected');
       document.getElementById('cd-status').textContent = '✅ Playing next round';
+      setTimeout(dismissCountdownOverlay, 600);
     });
     if (btnSit) btnSit.addEventListener('click', () => {
       _countdownChoice = 'sit_out';
@@ -2392,12 +2412,14 @@
       btnSit.classList.add('selected');
       if (btnPlay) btnPlay.classList.remove('selected');
       document.getElementById('cd-status').textContent = '💤 Sitting out';
+      setTimeout(dismissCountdownOverlay, 600);
     });
     if (btnRejoin) btnRejoin.addEventListener('click', () => {
       _countdownChoice = 'rejoin';
       socket.emit('countdown_choice', { choice: 'rejoin' });
       btnRejoin.classList.add('selected');
       document.getElementById('cd-status').textContent = '🎲 Joining next round!';
+      setTimeout(dismissCountdownOverlay, 600);
     });
 
     // Tick timer
@@ -2615,8 +2637,17 @@
     list.innerHTML = '';
     const MAX_SLOTS = 5;
 
+    // Build a seat-indexed map: seatIdx -> player (with array index for turn tracking)
+    const seatMap = {};
+    if (state.players) {
+      state.players.forEach((p, arrIdx) => {
+        const seat = (p.seatIdx != null) ? p.seatIdx : arrIdx;
+        seatMap[seat] = { ...p, _arrIdx: arrIdx };
+      });
+    }
+
     for (let idx = 0; idx < MAX_SLOTS; idx++) {
-      const player = state.players && state.players[idx] ? state.players[idx] : null;
+      const player = seatMap[idx] || null;
       const slot = document.createElement('div');
       slot.className = 'hud-slot';
 
@@ -2640,7 +2671,7 @@
           <span class="join-label">${label}</span>
         </button>`;
       } else {
-        const isActiveTurn = state.currentTurnIndex === idx && !player.done;
+        const isActiveTurn = state.currentTurnIndex === player._arrIdx && !player.done;
         const isWinner = player.isWinner;
         if (player.id === myId) slot.classList.add('is-me');
         if (isActiveTurn) slot.classList.add('active-turn');
@@ -3390,20 +3421,20 @@
     dragon.textContent = '🐉';
     document.body.appendChild(dragon);
 
-    // Fire puffs
-    const cx = window.innerWidth / 2, cy = window.innerHeight * 0.42;
+    // Fire puffs — trail around dragon (matches demo)
+    const fireCx = window.innerWidth / 2, fireCy = window.innerHeight * 0.42;
     for (let i = 0; i < 20; i++) {
       setTimeout(() => {
         const f = document.createElement('div');
-        f.className = 'dragon-particle';
+        f.className = 'fire-puff';
         f.textContent = ['🔥','🔥','💨'][Math.floor(Math.random()*3)];
-        const angle = Math.random() * Math.PI * 2;
-        const dist = 60 + Math.random() * 120;
-        const px = Math.cos(angle) * dist, py = Math.sin(angle) * dist - 40;
-        const size = 1.0 + Math.random() * 0.8, dur = 0.4 + Math.random() * 0.5;
-        f.style.cssText = `left:${cx}px;top:${cy}px;--px:${px}px;--py:${py}px;--ps:${size}rem;--pd:${dur}s;--pdelay:0s;--pr:0deg;`;
+        const fx = fireCx + (Math.random() - 0.5) * 180 + 'px';
+        const fy = fireCy + (Math.random() - 0.5) * 80 + 'px';
+        const fs = 1.0 + Math.random() * 0.8;
+        const fd = 0.4 + Math.random() * 0.5;
+        f.style.cssText = `left:${fx};top:${fy};--fx:0px;--fy:0px;--fs:${fs}rem;--fd:${fd}s;--fdelay:0s;`;
         document.body.appendChild(f);
-        setTimeout(() => f.remove(), dur * 1000 + 100);
+        setTimeout(() => f.remove(), fd * 1000 + 100);
       }, i * 120);
     }
 
