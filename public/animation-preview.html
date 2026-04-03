@@ -81,45 +81,64 @@
   }
 
   /* ── Dancing Dragon ── */
-  /* Dragon swoops in from top-right, grows, then chomps down */
-  @keyframes dragonSwoop {
-    0%   { transform: translate(120vw, -30vh) scale(0.2) rotate(-30deg); opacity: 0; }
-    30%  { opacity: 1; }
-    65%  { transform: translate(0vw, 0vh) scale(1) rotate(0deg); opacity: 1; }
-    80%  { transform: translate(0vw, 0vh) scale(1.15) rotate(-5deg); }
-    90%  { transform: translate(0vw, 0vh) scale(1.05) rotate(3deg); }
-    100% { transform: translate(-120vw, 20vh) scale(0.3) rotate(20deg); opacity: 0; }
+  @keyframes dragonDance {
+    0%   { transform: translate(-50%,-50%) scale(1) rotate(-5deg); }
+    15%  { transform: translate(-50%,-60%) scale(1.08) rotate(5deg); }
+    30%  { transform: translate(-50%,-50%) scale(0.96) rotate(-8deg); }
+    45%  { transform: translate(-50%,-58%) scale(1.06) rotate(6deg); }
+    60%  { transform: translate(-50%,-50%) scale(1) rotate(-4deg); }
+    75%  { transform: translate(-50%,-56%) scale(1.05) rotate(7deg); }
+    90%  { transform: translate(-50%,-50%) scale(0.98) rotate(-5deg); }
+    100% { transform: translate(-50%,-50%) scale(1) rotate(-5deg); }
   }
-  .dragon-swoop {
-    position: fixed;
-    left: 50%; top: 35%;
-    transform-origin: center center;
-    pointer-events: none;
-    z-index: 9600;
-    font-size: 8rem;
-    filter: drop-shadow(0 0 30px rgba(255,60,0,0.9));
-    animation: dragonSwoop 2s cubic-bezier(0.25,0.46,0.45,0.94) forwards;
+  @keyframes dragonFadeOut {
+    0%   { opacity: 1; transform: translate(-50%,-50%) scale(1); }
+    100% { opacity: 0; transform: translate(-50%,-50%) scale(0.3); }
   }
-
-  /* Dice being eaten — shake then disappear */
-  @keyframes diceShake {
-    0%,100% { transform: translate(0,0) rotate(0deg); }
-    15% { transform: translate(-8px,4px) rotate(-10deg); }
-    30% { transform: translate(8px,-5px) rotate(10deg); }
-    45% { transform: translate(-6px,6px) rotate(-8deg); }
-    60% { transform: translate(6px,-3px) rotate(6deg); }
-    75% { transform: translate(-4px,4px) rotate(-4deg); opacity: 0.5; }
-    90% { transform: translate(0,0) rotate(0deg) scale(0.3); opacity: 0; }
-  }
-  .dice-eaten {
+  .dragon-dance {
     position: fixed;
     left: 50%; top: 42%;
     pointer-events: none;
-    z-index: 9550;
-    font-size: 2.8rem;
+    z-index: 9600;
+    font-size: 7rem;
+    filter: drop-shadow(0 0 30px rgba(255,60,0,0.9));
+    animation: dragonDance 0.5s ease-in-out infinite;
+  }
+  .dragon-dance.leaving {
+    animation: dragonFadeOut 0.5s ease-in forwards;
+  }
+
+  /* 1-2-3 dice display */
+  @keyframes diceReveal {
+    0%   { opacity: 0; transform: translateX(-50%) scale(0.3) rotate(-20deg); }
+    60%  { transform: translateX(-50%) scale(1.1) rotate(3deg); }
+    100% { opacity: 1; transform: translateX(-50%) scale(1) rotate(0deg); }
+  }
+  @keyframes diceFadeOut {
+    0%   { opacity: 1; transform: translateX(-50%) scale(1); }
+    100% { opacity: 0; transform: translateX(-50%) scale(0.2) rotate(15deg); }
+  }
+  .dragon-dice {
+    position: fixed;
+    left: 50%; top: 58%;
     transform: translateX(-50%);
-    animation: diceShake 1.4s ease-in-out 0.5s forwards;
-    filter: drop-shadow(0 0 8px rgba(255,100,0,0.7));
+    pointer-events: none;
+    z-index: 9550;
+    display: flex;
+    gap: 10px;
+    animation: diceReveal 0.4s cubic-bezier(0.175,0.885,0.32,1.275) forwards;
+  }
+  .dragon-dice.leaving {
+    animation: diceFadeOut 0.4s ease-in forwards;
+  }
+  .dragon-die {
+    width: 54px; height: 54px;
+    background: radial-gradient(circle at 38% 32%, #ff5555, #8b0a0a);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.8rem; color: white; font-weight: 900;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.8), inset 0 1px 3px rgba(255,140,140,0.3);
+    font-family: 'Georgia', serif;
   }
 
   /* Fire trail behind dragon */
@@ -262,79 +281,55 @@ function fireDancingDragon() {
   document.body.appendChild(smoke);
   setTimeout(() => smoke.remove(), 1600);
 
-  // Dice on screen (to be "eaten")
+  // Show 1-2-3 dice
   const diceEl = document.createElement('div');
-  diceEl.className = 'dice-eaten';
-  diceEl.textContent = '🎲🎲🎲';
+  diceEl.className = 'dragon-dice';
+  diceEl.innerHTML = '<div class="dragon-die">1</div><div class="dragon-die">2</div><div class="dragon-die">3</div>';
   document.body.appendChild(diceEl);
-  setTimeout(() => diceEl.remove(), 2000);
 
-  // Dragon swoops in
+  // Dragon dances
   const dragon = document.createElement('div');
-  dragon.className = 'dragon-swoop';
+  dragon.className = 'dragon-dance';
   dragon.textContent = '🐉';
   document.body.appendChild(dragon);
-  setTimeout(() => dragon.remove(), 2100);
 
-  // Fire puffs trailing behind dragon
-  const fireCx = window.innerWidth / 2, fireCy = window.innerHeight * 0.4;
-  for (let i = 0; i < 18; i++) {
+  // Fire puffs around dragon
+  const fireCx = window.innerWidth / 2, fireCy = window.innerHeight * 0.42;
+  for (let i = 0; i < 20; i++) {
     setTimeout(() => {
       const f = document.createElement('div');
       f.className = 'fire-puff';
-      f.textContent = ['🔥','💥','🔥'][Math.floor(Math.random()*3)];
-      const fx = fireCx + (Math.random() - 0.5) * 200 + 'px';
-      const fy = fireCy + (Math.random() - 0.5) * 100 + 'px';
-      const fs = 1.2 + Math.random() * 1.0;
-      const fd = 0.4 + Math.random() * 0.4;
+      f.textContent = ['🔥','🔥','💨'][Math.floor(Math.random()*3)];
+      const fx = fireCx + (Math.random() - 0.5) * 180 + 'px';
+      const fy = fireCy + (Math.random() - 0.5) * 80 + 'px';
+      const fs = 1.0 + Math.random() * 0.8;
+      const fd = 0.4 + Math.random() * 0.5;
       f.style.cssText = `left:${fx};top:${fy};--fx:0px;--fy:0px;--fs:${fs}rem;--fd:${fd}s;--fdelay:0s;`;
       document.body.appendChild(f);
       setTimeout(() => f.remove(), fd * 1000 + 100);
-    }, i * 80);
+    }, i * 120);
   }
 
-  // Screen shake (slight delay for drama)
+  // Screen shake
   setTimeout(() => {
     document.body.classList.remove('screen-shaking');
     void document.body.offsetWidth;
     document.body.classList.add('screen-shaking');
     setTimeout(() => document.body.classList.remove('screen-shaking'), 650);
-  }, 500);
+  }, 300);
 
-  // Bass roar
+  // Fade out after 3s
+  setTimeout(() => {
+    dragon.classList.add('leaving');
+    diceEl.classList.add('leaving');
+    setTimeout(() => { dragon.remove(); diceEl.remove(); }, 500);
+  }, 3000);
+
+  // Play the game-over sound
   try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const t = ctx.currentTime;
-
-    // Low roar
-    const osc = ctx.createOscillator();
-    const g = ctx.createGain();
-    const dist = ctx.createWaveShaper();
-    const curve = new Float32Array(256);
-    for (let i = 0; i < 256; i++) curve[i] = (i / 128 - 1) * 10;
-    dist.curve = curve;
-    osc.connect(dist); dist.connect(g); g.connect(ctx.destination);
-    osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(100, t);
-    osc.frequency.exponentialRampToValueAtTime(40, t + 0.8);
-    g.gain.setValueAtTime(0.3, t);
-    g.gain.exponentialRampToValueAtTime(0.001, t + 1.0);
-    osc.start(t); osc.stop(t + 1.0);
-
-    // Chomping crunch at 0.6s
-    setTimeout(() => {
-      const ctx2 = new (window.AudioContext || window.webkitAudioContext)();
-      const bufLen = ctx2.sampleRate * 0.15;
-      const buf = ctx2.createBuffer(1, bufLen, ctx2.sampleRate);
-      const data = buf.getChannelData(0);
-      for (let i = 0; i < bufLen; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i/bufLen, 2);
-      const src = ctx2.createBufferSource();
-      src.buffer = buf;
-      const gn = ctx2.createGain();
-      gn.gain.value = 0.4;
-      src.connect(gn); gn.connect(ctx2.destination);
-      src.start();
-    }, 600);
+    const snd = new Audio('/dragon-gameover.mp3');
+    snd.volume = 0.85;
+    snd.play().catch(()=>{});
   } catch(e) {}
 }
 </script>
