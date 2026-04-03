@@ -1673,6 +1673,73 @@
   .winner-flash-overlay.strung  { animation: strungFlash 1.2s ease forwards; }
   .winner-flash-overlay.dragon  { animation: dragonFlash 1.0s ease forwards; }
 
+  /* ── Strungflowers particle ── */
+  @keyframes strungParticle {
+    0%   { transform: translate(0,0) scale(1); opacity: 1; }
+    100% { transform: translate(var(--px), var(--py)) scale(0); opacity: 0; }
+  }
+  .strung-particle {
+    position: fixed;
+    pointer-events: none;
+    z-index: 9500;
+    font-size: var(--ps, 1.2rem);
+    animation: strungParticle var(--pd, 1s) ease-out var(--pdelay, 0s) forwards;
+  }
+
+  /* ── Dragon fire particle ── */
+  @keyframes dragonParticle {
+    0%   { transform: translate(0,0) scale(1) rotate(0deg); opacity: 1; }
+    60%  { opacity: 0.8; }
+    100% { transform: translate(var(--px), var(--py)) scale(0.2) rotate(var(--pr, 180deg)); opacity: 0; }
+  }
+  .dragon-particle {
+    position: fixed;
+    pointer-events: none;
+    z-index: 9500;
+    font-size: var(--ps, 1.4rem);
+    animation: dragonParticle var(--pd, 0.9s) ease-out var(--pdelay, 0s) forwards;
+  }
+
+  /* ── Screen shake for Dragon ── */
+  @keyframes screenShake {
+    0%,100% { transform: translate(0,0); }
+    10%  { transform: translate(-6px, 3px); }
+    20%  { transform: translate(6px, -4px); }
+    30%  { transform: translate(-4px, 5px); }
+    40%  { transform: translate(5px, -3px); }
+    50%  { transform: translate(-3px, 4px); }
+    60%  { transform: translate(4px, -2px); }
+    70%  { transform: translate(-2px, 3px); }
+    80%  { transform: translate(3px, -1px); }
+    90%  { transform: translate(-1px, 2px); }
+  }
+  .screen-shaking { animation: screenShake 0.5s ease-out; }
+
+  /* ── Strungflowers golden shimmer overlay ── */
+  @keyframes strungShimmer {
+    0%   { opacity: 0; }
+    15%  { opacity: 1; }
+    70%  { opacity: 0.7; }
+    100% { opacity: 0; }
+  }
+  .strung-shimmer {
+    position: fixed; inset: 0; z-index: 9400; pointer-events: none;
+    background: radial-gradient(ellipse at 50% 40%, rgba(255,220,50,0.25) 0%, rgba(255,180,0,0.1) 50%, transparent 80%);
+    animation: strungShimmer 2s ease-out forwards;
+  }
+
+  /* ── Dragon smoke overlay ── */
+  @keyframes dragonSmoke {
+    0%   { opacity: 0; transform: scale(0.8); }
+    20%  { opacity: 0.7; transform: scale(1); }
+    100% { opacity: 0; transform: scale(1.3); }
+  }
+  .dragon-smoke {
+    position: fixed; inset: 0; z-index: 9400; pointer-events: none;
+    background: radial-gradient(ellipse at 50% 60%, rgba(180,20,0,0.35) 0%, rgba(80,0,0,0.2) 50%, transparent 75%);
+    animation: dragonSmoke 1.2s ease-out forwards;
+  }
+
   #screen-winner {
     background: rgba(4,2,1,0.92);
     flex-direction: column;
@@ -3076,6 +3143,11 @@
               animating = false;
               _diceRevealedFor.add(myId);
               _animatingForPlayer = null;
+              // Fire special animations for 456 / 123
+              if (evaluation) {
+                if (evaluation.type === '456') setTimeout(fireStrungflowers, 100);
+                else if (evaluation.type === '123') setTimeout(fireDancingDragon, 100);
+              }
               if (roomState) renderPlayers(roomState); // refresh HUD now that dice are done
               if (evaluation) document.getElementById('result-label').textContent = (evaluation.emoji||'') + ' ' + (evaluation.label||'');
               setTimeout(() => {
@@ -3127,6 +3199,11 @@
             if (doneCount === 3) {
               stopDiceRattle();
               _diceRevealedFor.add(playerId);
+              // Fire special animations for other player's 456 / 123
+              if (evaluation) {
+                if (evaluation.type === '456') setTimeout(fireStrungflowers, 100);
+                else if (evaluation.type === '123') setTimeout(fireDancingDragon, 100);
+              }
               if (roomState) renderPlayers(roomState);
               if (evaluation) document.getElementById('result-label').textContent = (evaluation.emoji||'')+ ' '+(evaluation.label||'');
               if (onDone) setTimeout(onDone, 200);
@@ -3143,6 +3220,106 @@
   function clearDice() {
     if (_threeAnimId) { cancelAnimationFrame(_threeAnimId); _threeAnimId = null; }
     if (_three) { _three.dice.forEach(d => d.visible = false); _three.renderer.render(_three.scene, _three.camera); }
+  }
+
+  // ===== SPECIAL ROLL ANIMATIONS =====
+  function fireStrungflowers() {
+    // Golden shimmer overlay
+    const shimmer = document.createElement('div');
+    shimmer.className = 'strung-shimmer';
+    document.body.appendChild(shimmer);
+    setTimeout(() => shimmer.remove(), 2100);
+
+    // Burst of gold stars + coins from center
+    const symbols = ['⭐','🌟','✨','🪙','💫','💛','💠'];
+    const cx = window.innerWidth / 2, cy = window.innerHeight * 0.45;
+    for (let i = 0; i < 40; i++) {
+      const el = document.createElement('div');
+      el.className = 'strung-particle';
+      el.textContent = symbols[Math.floor(Math.random() * symbols.length)];
+      const angle = (Math.PI * 2 * i / 40) + (Math.random() - 0.5) * 0.4;
+      const dist = 120 + Math.random() * 200;
+      const px = Math.cos(angle) * dist;
+      const py = Math.sin(angle) * dist - 80;
+      const size = 0.9 + Math.random() * 1.2;
+      const dur = 0.8 + Math.random() * 0.7;
+      const delay = Math.random() * 0.3;
+      el.style.cssText = `left:${cx}px;top:${cy}px;--px:${px}px;--py:${py}px;--ps:${size}rem;--pd:${dur}s;--pdelay:${delay}s;`;
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), (dur + delay) * 1000 + 100);
+    }
+
+    // Play a bright shimmer sound
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const t = ctx.currentTime;
+      [523, 659, 784, 1047, 1319].forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc.connect(g); g.connect(ctx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, t + i * 0.07);
+        g.gain.setValueAtTime(0, t + i * 0.07);
+        g.gain.linearRampToValueAtTime(0.12, t + i * 0.07 + 0.04);
+        g.gain.exponentialRampToValueAtTime(0.001, t + i * 0.07 + 0.5);
+        osc.start(t + i * 0.07);
+        osc.stop(t + i * 0.07 + 0.5);
+      });
+    } catch(e) {}
+  }
+
+  function fireDancingDragon() {
+    // Screen shake
+    const gameEl = document.getElementById('screen-game');
+    gameEl.classList.remove('screen-shaking');
+    void gameEl.offsetWidth;
+    gameEl.classList.add('screen-shaking');
+    setTimeout(() => gameEl.classList.remove('screen-shaking'), 550);
+
+    // Red smoke overlay
+    const smoke = document.createElement('div');
+    smoke.className = 'dragon-smoke';
+    document.body.appendChild(smoke);
+    setTimeout(() => smoke.remove(), 1300);
+
+    // Fire + dragon emoji burst
+    const symbols = ['🔥','🐉','💨','💥','☠️','🔴','🖤'];
+    const cx = window.innerWidth / 2, cy = window.innerHeight * 0.45;
+    for (let i = 0; i < 30; i++) {
+      const el = document.createElement('div');
+      el.className = 'dragon-particle';
+      el.textContent = symbols[Math.floor(Math.random() * symbols.length)];
+      const angle = (Math.PI * 2 * i / 30) + (Math.random() - 0.5) * 0.5;
+      const dist = 80 + Math.random() * 180;
+      const px = Math.cos(angle) * dist;
+      const py = Math.sin(angle) * dist - 60;
+      const size = 1.0 + Math.random() * 1.4;
+      const dur = 0.6 + Math.random() * 0.5;
+      const delay = Math.random() * 0.25;
+      const rot = Math.round(Math.random() * 360 - 180);
+      el.style.cssText = `left:${cx}px;top:${cy}px;--px:${px}px;--py:${py}px;--ps:${size}rem;--pd:${dur}s;--pdelay:${delay}s;--pr:${rot}deg;`;
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), (dur + delay) * 1000 + 100);
+    }
+
+    // Low ominous thud sound
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const t = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      const dist = ctx.createWaveShaper();
+      const curve = new Float32Array(256);
+      for (let i = 0; i < 256; i++) curve[i] = (i / 128 - 1) * 8;
+      dist.curve = curve;
+      osc.connect(dist); dist.connect(g); g.connect(ctx.destination);
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(80, t);
+      osc.frequency.exponentialRampToValueAtTime(30, t + 0.6);
+      g.gain.setValueAtTime(0.25, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.7);
+      osc.start(t); osc.stop(t + 0.7);
+    } catch(e) {}
   }
 
   // ===== COUNTDOWN SOUND EFFECTS =====
