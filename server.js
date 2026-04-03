@@ -1080,6 +1080,34 @@ io.on('connection', socket => {
     const wasTheirTurn = ['rolling', 're_ante', 'shootout'].includes(room.state)
       && room.players[room.currentTurnIndex]?.id === sock.id;
 
+    // If they leave mid-round without rolling, auto-roll for them
+    if (['rolling', 'shootout'].includes(room.state) && player.antePaid && !player.done) {
+      sysMsg(room, `🤖 Auto-rolling for ${player.name} (left the alley)...`);
+      // Keep them in players temporarily, perform auto roll, then remove
+      if (room.state === 'rolling') {
+        // Roll until they get a result
+        let rollCount = 0;
+        while (!player.done && rollCount < MAX_ROLL_ATTEMPTS) {
+          const dice = roll3();
+          const ev = evaluate(dice);
+          player.rolls.push(dice);
+          player.rollCount++;
+          rollCount++;
+          if (ev.type !== 'none') {
+            finalisePlayerResult(room, player, ev);
+          } else if (rollCount >= MAX_ROLL_ATTEMPTS) {
+            finalisePlayerResult(room, player, { type: 'bust', score: -2, label: '💥 Bust!', emoji: '💥', point: null, pair: null });
+          }
+        }
+      } else if (room.state === 'shootout' && player.inShootout && !player.shootoutDone) {
+        const dice = roll3();
+        const ev = evaluate(dice);
+        player.shootoutRolls.push(dice);
+        player.shootoutScore = ev.score ?? -99;
+        player.shootoutDone = true;
+      }
+    }
+
     // Refund ante if they leave during ante countdown
     if (room.state === 'ante' && player.antePaid) {
       WalletService.credit(player.wallet, room.ante);

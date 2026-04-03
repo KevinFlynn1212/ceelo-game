@@ -3509,36 +3509,67 @@
 
   // ===== LEAVE =====
   document.getElementById('btn-leave').addEventListener('click', () => {
-    // Block leave if player has paid ante and game is still in progress
+    // If mid-round with a bet in play, show a quick confirmation
     if (roomState) {
-      const me = roomState.players && roomState.players.find(p => p.name === myName);
-      const inProgress = ['ante','rolling','re_ante','shootout'].includes(roomState.state);
+      const me = roomState.players && roomState.players.find(p => p.id === myId);
+      const inProgress = ['ante','rolling','shootout'].includes(roomState.state);
       if (me && me.antePaid && inProgress && !me.done) {
-        showError('Finish your turn before leaving — you have a bet in play!');
+        // Show confirmation overlay
+        const existing = document.getElementById('leave-confirm');
+        if (existing) return; // already showing
+        const ov = document.createElement('div');
+        ov.id = 'leave-confirm';
+        ov.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;';
+        ov.innerHTML = `
+          <div style="background:linear-gradient(160deg,rgba(20,14,2,0.98),rgba(8,5,1,0.98));border:2px solid rgba(245,200,66,0.6);border-radius:18px;padding:28px 32px;max-width:320px;text-align:center;display:flex;flex-direction:column;gap:14px;">
+            <div style="font-family:'Cinzel',serif;font-size:1rem;font-weight:700;color:var(--gold);">Leave Alley?</div>
+            <div style="font-family:'Lato',sans-serif;font-size:0.85rem;color:#ccc;line-height:1.6;">You have a bet in play. The system will finish the round for you automatically.</div>
+            <div style="display:flex;gap:12px;justify-content:center;">
+              <button id="leave-confirm-yes" style="background:rgba(200,50,50,0.4);border:1.5px solid #cc4444;color:#ff8888;font-family:'Cinzel',serif;font-size:0.8rem;font-weight:700;padding:10px 20px;border-radius:10px;cursor:pointer;letter-spacing:0.08em;">Leave</button>
+              <button id="leave-confirm-no" style="background:rgba(245,200,66,0.12);border:1.5px solid rgba(245,200,66,0.4);color:var(--gold);font-family:'Cinzel',serif;font-size:0.8rem;font-weight:700;padding:10px 20px;border-radius:10px;cursor:pointer;letter-spacing:0.08em;">Stay</button>
+            </div>
+          </div>`;
+        document.body.appendChild(ov);
+        document.getElementById('leave-confirm-no').onclick = () => ov.remove();
+        document.getElementById('leave-confirm-yes').onclick = () => {
+          ov.remove();
+          doLeave();
+        };
         return;
       }
     }
+    doLeave();
+  });
+
+  function doLeave() {
     _justLeft = true;
     setTimeout(() => { _justLeft = false; }, 300);
     socket.emit('leave_room');
-    stopAmbientSound(); // reset so next alley starts with correct theme
-    // Clear theme class so old alley doesn't bleed into next one
+    stopAmbientSound();
     const gameEl = document.getElementById('screen-game');
     gameEl.classList.remove('theme-red', 'theme-blue', 'theme-green', 'theme-gold');
     currentRoom = null;
     roomState = null;
     isSpectator = false;
-    // Hide dice
+    _blockGameScreen = false;
+    _pendingRoundEnd = null;
+    _rollQueue = [];
+    _rollAnimating = false;
     clearDice();
     document.getElementById('result-label').textContent = '';
-    hideReAnteOffer();
     clearChat();
     closeChatPanel();
     if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
     document.getElementById('game-timer').textContent = '—';
+    // Dismiss any open overlays
+    const awOv = document.getElementById('alley-winner');
+    if (awOv) awOv.remove();
+    const cdOv = document.getElementById('countdown-overlay');
+    if (cdOv) cdOv.remove();
+    if (winnerDismissTimer) { clearTimeout(winnerDismissTimer); winnerDismissTimer = null; }
     showScreen('lobby');
     socket.emit('get_lobby');
-  });
+  }
 
   // ===== ADD BOT =====
   document.getElementById('btn-add-bot').addEventListener('click', () => {
