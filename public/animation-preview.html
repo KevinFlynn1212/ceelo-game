@@ -34,50 +34,65 @@
   .btn-dragon { background: rgba(200,30,30,0.15); border-color: #cc3333; color: #ff6666; }
   .label { font-size: 0.8rem; color: #888; text-align: center; margin-top: -10px; }
 
-  /* ── Strungflowers: coin/flower rain ── */
-  @keyframes coinRain {
-    0%   { transform: translate(var(--rx), -60px) rotate(0deg); opacity: 1; }
-    80%  { opacity: 1; }
-    100% { transform: translate(calc(var(--rx) + var(--drift)), 110vh) rotate(var(--spin)); opacity: 0; }
+  /* ── Strungflowers: explosion burst ── */
+  @keyframes strungExplode {
+    0%   { transform: translate(var(--ex), var(--ey)) scale(0.3) rotate(0deg); opacity: 1; }
+    70%  { opacity: 1; }
+    100% { transform: translate(var(--ex2), var(--ey2)) scale(0) rotate(var(--espin)); opacity: 0; }
   }
-  .coin-rain {
+  .strung-explode {
     position: fixed;
-    top: 0;
-    left: var(--cx, 50%);
+    left: 50%; top: 42%;
     pointer-events: none;
     z-index: 9500;
     font-size: var(--ps, 1.4rem);
-    animation: coinRain var(--pd, 1.4s) ease-in var(--pdelay, 0s) forwards;
-    filter: drop-shadow(0 0 6px rgba(255,220,50,0.8));
+    filter: drop-shadow(0 0 8px rgba(255,220,50,0.9));
+    animation: strungExplode var(--pd, 0.9s) cubic-bezier(0.2,0.8,0.3,1) var(--pdelay, 0s) forwards;
   }
 
-  /* Shimmer burst from center */
-  @keyframes strungBurst {
-    0%   { transform: translate(-50%,-50%) scale(0); opacity: 0.9; }
-    60%  { opacity: 0.6; }
-    100% { transform: translate(-50%,-50%) scale(4); opacity: 0; }
+  /* Concentric ring shockwaves */
+  @keyframes strungRing {
+    0%   { transform: translate(-50%,-50%) scale(0); opacity: 0.9; border-width: 6px; }
+    100% { transform: translate(-50%,-50%) scale(3.5); opacity: 0; border-width: 1px; }
   }
-  .strung-burst {
+  .strung-ring {
     position: fixed;
-    left: 50%; top: 45%;
-    width: 200px; height: 200px;
+    left: 50%; top: 42%;
+    width: 180px; height: 180px;
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(255,230,50,0.7) 0%, rgba(255,180,0,0.3) 50%, transparent 80%);
+    border: 5px solid rgba(255,220,50,0.8);
     pointer-events: none;
-    z-index: 9400;
-    animation: strungBurst 1s ease-out forwards;
+    z-index: 9490;
+    animation: strungRing var(--rd, 0.8s) ease-out var(--rdelay, 0s) forwards;
+  }
+
+  /* Central flash */
+  @keyframes strungCore {
+    0%   { transform: translate(-50%,-50%) scale(0); opacity: 1; }
+    40%  { transform: translate(-50%,-50%) scale(1.2); opacity: 0.9; }
+    100% { transform: translate(-50%,-50%) scale(2.5); opacity: 0; }
+  }
+  .strung-core {
+    position: fixed;
+    left: 50%; top: 42%;
+    width: 120px; height: 120px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,255,200,0.95) 0%, rgba(255,220,50,0.7) 40%, transparent 75%);
+    pointer-events: none;
+    z-index: 9495;
+    animation: strungCore 0.5s ease-out forwards;
   }
 
   @keyframes strungShimmer {
     0%   { opacity: 0; }
-    10%  { opacity: 1; }
-    70%  { opacity: 0.5; }
+    8%   { opacity: 0.9; }
+    60%  { opacity: 0.4; }
     100% { opacity: 0; }
   }
   .strung-shimmer {
-    position: fixed; inset: 0; z-index: 9390; pointer-events: none;
-    background: radial-gradient(ellipse at 50% 40%, rgba(255,220,50,0.25) 0%, rgba(255,180,0,0.08) 60%, transparent 85%);
-    animation: strungShimmer 2.5s ease-out forwards;
+    position: fixed; inset: 0; z-index: 9389; pointer-events: none;
+    background: radial-gradient(ellipse at 50% 42%, rgba(255,230,50,0.35) 0%, rgba(255,180,0,0.1) 55%, transparent 80%);
+    animation: strungShimmer 1.8s ease-out forwards;
   }
 
   /* ── Dancing Dragon ── */
@@ -135,11 +150,24 @@
     width: 54px; height: 54px;
     background: radial-gradient(circle at 38% 32%, #ff5555, #8b0a0a);
     border-radius: 10px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 1.8rem; color: white; font-weight: 900;
+    display: grid;
+    padding: 9px;
+    box-sizing: border-box;
     box-shadow: 0 4px 16px rgba(0,0,0,0.8), inset 0 1px 3px rgba(255,140,140,0.3);
-    font-family: 'Georgia', serif;
   }
+  .dragon-die[data-face="1"] { grid-template-areas: ". . ." ". c ." ". . ."; }
+  .dragon-die[data-face="2"] { grid-template-areas: ". . a" ". . ." "b . ."; }
+  .dragon-die[data-face="3"] { grid-template-areas: ". . a" ". c ." "b . ."; }
+  .dragon-die .dp {
+    width: 8px; height: 8px;
+    background: #fff;
+    border-radius: 50%;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.5);
+    align-self: center; justify-self: center;
+  }
+  .dragon-die .dp-a { grid-area: a; }
+  .dragon-die .dp-b { grid-area: b; }
+  .dragon-die .dp-c { grid-area: c; }
 
   /* Fire trail behind dragon */
   @keyframes firePuff {
@@ -182,10 +210,11 @@
 
   /* Flash overlays */
   @keyframes strungFlash {
-    0%,100% { background: transparent; }
-    10%     { background: rgba(255,230,50,0.4); }
-    25%     { background: transparent; }
-    40%     { background: rgba(255,220,50,0.2); }
+    0%   { background: transparent; }
+    5%   { background: rgba(255,255,200,0.7); }
+    15%  { background: rgba(255,220,50,0.3); }
+    40%  { background: transparent; }
+    100% { background: transparent; }
   }
   @keyframes dragonFlash {
     0%,100% { background: transparent; }
@@ -219,51 +248,78 @@ function fireStrungflowers() {
   document.body.appendChild(flash);
   setTimeout(() => flash.remove(), 1500);
 
-  // Central burst
-  const burst = document.createElement('div');
-  burst.className = 'strung-burst';
-  document.body.appendChild(burst);
-  setTimeout(() => burst.remove(), 1100);
+  // Central core flash
+  const core = document.createElement('div');
+  core.className = 'strung-core';
+  document.body.appendChild(core);
+  setTimeout(() => core.remove(), 600);
 
-  // Shimmer
+  // Shockwave rings (3 waves)
+  [0, 150, 320].forEach((delay, i) => {
+    const ring = document.createElement('div');
+    ring.className = 'strung-ring';
+    ring.style.cssText = `--rd:${0.7 + i*0.1}s;--rdelay:${delay}ms;`;
+    document.body.appendChild(ring);
+    setTimeout(() => ring.remove(), delay + 900);
+  });
+
+  // Shimmer bg
   const shimmer = document.createElement('div');
   shimmer.className = 'strung-shimmer';
   document.body.appendChild(shimmer);
-  setTimeout(() => shimmer.remove(), 2600);
+  setTimeout(() => shimmer.remove(), 1900);
 
-  // Rain of coins + flowers from top
-  const symbols = ['🪙','🪙','🪙','💰','🌸','🌸','🌺','🌼','⭐','💛','🌟'];
-  for (let i = 0; i < 55; i++) {
+  // Explosion burst — particles fire outward from center
+  const symbols = ['🪙','🪙','💰','🌸','🌸','🌺','🌼','⭐','🌟','✨','💫'];
+  const count = 60;
+  for (let i = 0; i < count; i++) {
     const el = document.createElement('div');
-    el.className = 'coin-rain';
+    el.className = 'strung-explode';
     el.textContent = symbols[Math.floor(Math.random() * symbols.length)];
-    const cx = (10 + Math.random() * 80) + 'vw'; // spread across screen
-    const drift = (Math.random() - 0.5) * 120;
+    // Fire outward in all directions
+    const angle = (Math.PI * 2 * i / count) + (Math.random() - 0.5) * 0.3;
+    const dist = 80 + Math.random() * 280;
+    const ex2 = Math.cos(angle) * dist;
+    const ey2 = Math.sin(angle) * dist;
+    const size = 0.9 + Math.random() * 1.3;
+    const dur = 0.5 + Math.random() * 0.6;
+    const delay = Math.random() * 0.15; // tight delay for explosion feel
     const spin = Math.round(Math.random() * 720 - 360);
-    const size = 1.0 + Math.random() * 1.2;
-    const dur = 1.2 + Math.random() * 1.4;
-    const delay = Math.random() * 0.8;
-    const rx = (Math.random() - 0.5) * 30;
-    el.style.cssText = `--cx:${cx};--rx:${rx}px;--drift:${drift}px;--spin:${spin}deg;--ps:${size}rem;--pd:${dur}s;--pdelay:${delay}s;`;
+    el.style.cssText = `--ex:0px;--ey:0px;--ex2:${ex2}px;--ey2:${ey2}px;--ps:${size}rem;--pd:${dur}s;--pdelay:${delay}s;--espin:${spin}deg;`;
     document.body.appendChild(el);
-    setTimeout(() => el.remove(), (dur + delay) * 1000 + 200);
+    setTimeout(() => el.remove(), (dur + delay) * 1000 + 100);
   }
 
-  // Rising chime
+  // Triumphant fanfare
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
     const t = ctx.currentTime;
-    [523, 659, 784, 1047, 1319, 1568].forEach((freq, i) => {
+    // Big chord hit then arpeggio
+    [[523,659,784], [659,784,1047], [784,1047,1319]].forEach((chord, ci) => {
+      chord.forEach(freq => {
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc.connect(g); g.connect(ctx.destination);
+        osc.type = 'sine';
+        osc.frequency.value = freq;
+        const start = t + ci * 0.12;
+        g.gain.setValueAtTime(0, start);
+        g.gain.linearRampToValueAtTime(0.1, start + 0.03);
+        g.gain.exponentialRampToValueAtTime(0.001, start + 0.5);
+        osc.start(start); osc.stop(start + 0.5);
+      });
+    });
+    // High sparkle notes
+    [1319,1568,2093].forEach((freq, i) => {
       const osc = ctx.createOscillator();
       const g = ctx.createGain();
       osc.connect(g); g.connect(ctx.destination);
       osc.type = 'sine';
-      osc.frequency.setValueAtTime(freq, t + i * 0.08);
-      g.gain.setValueAtTime(0, t + i * 0.08);
-      g.gain.linearRampToValueAtTime(0.13, t + i * 0.08 + 0.04);
-      g.gain.exponentialRampToValueAtTime(0.001, t + i * 0.08 + 0.6);
-      osc.start(t + i * 0.08);
-      osc.stop(t + i * 0.08 + 0.6);
+      osc.frequency.value = freq;
+      const start = t + 0.3 + i * 0.1;
+      g.gain.setValueAtTime(0.08, start);
+      g.gain.exponentialRampToValueAtTime(0.001, start + 0.4);
+      osc.start(start); osc.stop(start + 0.4);
     });
   } catch(e) {}
 }
@@ -284,7 +340,11 @@ function fireDancingDragon() {
   // Show 1-2-3 dice
   const diceEl = document.createElement('div');
   diceEl.className = 'dragon-dice';
-  diceEl.innerHTML = '<div class="dragon-die">1</div><div class="dragon-die">2</div><div class="dragon-die">3</div>';
+  diceEl.innerHTML = `
+    <div class="dragon-die" data-face="1"><div class="dp dp-c"></div></div>
+    <div class="dragon-die" data-face="2"><div class="dp dp-a"></div><div class="dp dp-b"></div></div>
+    <div class="dragon-die" data-face="3"><div class="dp dp-a"></div><div class="dp dp-c"></div><div class="dp dp-b"></div></div>
+  `;
   document.body.appendChild(diceEl);
 
   // Dragon dances
