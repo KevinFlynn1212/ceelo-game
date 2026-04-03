@@ -18,7 +18,7 @@
     padding: 40px;
   }
   h1 { color: #f5c842; font-size: 1.2rem; letter-spacing: 0.2em; text-transform: uppercase; }
-  .btn-row { display: flex; gap: 20px; }
+  .btn-row { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; }
   button {
     padding: 16px 32px;
     border-radius: 12px;
@@ -30,216 +30,311 @@
     transition: transform 0.1s;
   }
   button:active { transform: scale(0.96); }
-  .btn-strung {
-    background: rgba(255,220,50,0.15);
-    border-color: #f5c842;
-    color: #f5c842;
-  }
-  .btn-dragon {
-    background: rgba(200,30,30,0.15);
-    border-color: #cc3333;
-    color: #ff6666;
-  }
+  .btn-strung { background: rgba(255,220,50,0.15); border-color: #f5c842; color: #f5c842; }
+  .btn-dragon { background: rgba(200,30,30,0.15); border-color: #cc3333; color: #ff6666; }
+  .label { font-size: 0.8rem; color: #888; text-align: center; margin-top: -10px; }
 
-  /* Strungflowers shimmer */
-  @keyframes strungShimmer {
-    0%   { opacity: 0; }
-    15%  { opacity: 1; }
-    70%  { opacity: 0.7; }
-    100% { opacity: 0; }
+  /* ── Strungflowers: coin/flower rain ── */
+  @keyframes coinRain {
+    0%   { transform: translate(var(--rx), -60px) rotate(0deg); opacity: 1; }
+    80%  { opacity: 1; }
+    100% { transform: translate(calc(var(--rx) + var(--drift)), 110vh) rotate(var(--spin)); opacity: 0; }
   }
-  .strung-shimmer {
-    position: fixed; inset: 0; z-index: 9400; pointer-events: none;
-    background: radial-gradient(ellipse at 50% 40%, rgba(255,220,50,0.3) 0%, rgba(255,180,0,0.12) 50%, transparent 80%);
-    animation: strungShimmer 2s ease-out forwards;
-  }
-
-  /* Strungflowers particle */
-  @keyframes strungParticle {
-    0%   { transform: translate(0,0) scale(1); opacity: 1; }
-    100% { transform: translate(var(--px), var(--py)) scale(0); opacity: 0; }
-  }
-  .strung-particle {
+  .coin-rain {
     position: fixed;
-    pointer-events: none;
-    z-index: 9500;
-    font-size: var(--ps, 1.2rem);
-    animation: strungParticle var(--pd, 1s) ease-out var(--pdelay, 0s) forwards;
-  }
-
-  /* Dragon particle */
-  @keyframes dragonParticle {
-    0%   { transform: translate(0,0) scale(1) rotate(0deg); opacity: 1; }
-    60%  { opacity: 0.8; }
-    100% { transform: translate(var(--px), var(--py)) scale(0.2) rotate(var(--pr, 180deg)); opacity: 0; }
-  }
-  .dragon-particle {
-    position: fixed;
+    top: 0;
+    left: var(--cx, 50%);
     pointer-events: none;
     z-index: 9500;
     font-size: var(--ps, 1.4rem);
-    animation: dragonParticle var(--pd, 0.9s) ease-out var(--pdelay, 0s) forwards;
+    animation: coinRain var(--pd, 1.4s) ease-in var(--pdelay, 0s) forwards;
+    filter: drop-shadow(0 0 6px rgba(255,220,50,0.8));
+  }
+
+  /* Shimmer burst from center */
+  @keyframes strungBurst {
+    0%   { transform: translate(-50%,-50%) scale(0); opacity: 0.9; }
+    60%  { opacity: 0.6; }
+    100% { transform: translate(-50%,-50%) scale(4); opacity: 0; }
+  }
+  .strung-burst {
+    position: fixed;
+    left: 50%; top: 45%;
+    width: 200px; height: 200px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,230,50,0.7) 0%, rgba(255,180,0,0.3) 50%, transparent 80%);
+    pointer-events: none;
+    z-index: 9400;
+    animation: strungBurst 1s ease-out forwards;
+  }
+
+  @keyframes strungShimmer {
+    0%   { opacity: 0; }
+    10%  { opacity: 1; }
+    70%  { opacity: 0.5; }
+    100% { opacity: 0; }
+  }
+  .strung-shimmer {
+    position: fixed; inset: 0; z-index: 9390; pointer-events: none;
+    background: radial-gradient(ellipse at 50% 40%, rgba(255,220,50,0.25) 0%, rgba(255,180,0,0.08) 60%, transparent 85%);
+    animation: strungShimmer 2.5s ease-out forwards;
+  }
+
+  /* ── Dancing Dragon ── */
+  /* Dragon swoops in from top-right, grows, then chomps down */
+  @keyframes dragonSwoop {
+    0%   { transform: translate(120vw, -30vh) scale(0.2) rotate(-30deg); opacity: 0; }
+    30%  { opacity: 1; }
+    65%  { transform: translate(0vw, 0vh) scale(1) rotate(0deg); opacity: 1; }
+    80%  { transform: translate(0vw, 0vh) scale(1.15) rotate(-5deg); }
+    90%  { transform: translate(0vw, 0vh) scale(1.05) rotate(3deg); }
+    100% { transform: translate(-120vw, 20vh) scale(0.3) rotate(20deg); opacity: 0; }
+  }
+  .dragon-swoop {
+    position: fixed;
+    left: 50%; top: 35%;
+    transform-origin: center center;
+    pointer-events: none;
+    z-index: 9600;
+    font-size: 8rem;
+    filter: drop-shadow(0 0 30px rgba(255,60,0,0.9));
+    animation: dragonSwoop 2s cubic-bezier(0.25,0.46,0.45,0.94) forwards;
+  }
+
+  /* Dice being eaten — shake then disappear */
+  @keyframes diceShake {
+    0%,100% { transform: translate(0,0) rotate(0deg); }
+    15% { transform: translate(-8px,4px) rotate(-10deg); }
+    30% { transform: translate(8px,-5px) rotate(10deg); }
+    45% { transform: translate(-6px,6px) rotate(-8deg); }
+    60% { transform: translate(6px,-3px) rotate(6deg); }
+    75% { transform: translate(-4px,4px) rotate(-4deg); opacity: 0.5; }
+    90% { transform: translate(0,0) rotate(0deg) scale(0.3); opacity: 0; }
+  }
+  .dice-eaten {
+    position: fixed;
+    left: 50%; top: 42%;
+    pointer-events: none;
+    z-index: 9550;
+    font-size: 2.8rem;
+    transform: translateX(-50%);
+    animation: diceShake 1.4s ease-in-out 0.5s forwards;
+    filter: drop-shadow(0 0 8px rgba(255,100,0,0.7));
+  }
+
+  /* Fire trail behind dragon */
+  @keyframes firePuff {
+    0%   { transform: translate(var(--fx), var(--fy)) scale(0.5); opacity: 0.9; }
+    100% { transform: translate(var(--fx), calc(var(--fy) - 60px)) scale(1.5); opacity: 0; }
+  }
+  .fire-puff {
+    position: fixed;
+    pointer-events: none;
+    z-index: 9590;
+    font-size: var(--fs, 1.5rem);
+    animation: firePuff var(--fd, 0.6s) ease-out var(--fdelay, 0s) forwards;
   }
 
   /* Screen shake */
   @keyframes screenShake {
     0%,100% { transform: translate(0,0); }
-    10%  { transform: translate(-6px, 3px); }
-    20%  { transform: translate(6px, -4px); }
-    30%  { transform: translate(-4px, 5px); }
-    40%  { transform: translate(5px, -3px); }
-    50%  { transform: translate(-3px, 4px); }
-    60%  { transform: translate(4px, -2px); }
-    70%  { transform: translate(-2px, 3px); }
-    80%  { transform: translate(3px, -1px); }
-    90%  { transform: translate(-1px, 2px); }
+    10%  { transform: translate(-8px, 4px); }
+    20%  { transform: translate(8px, -5px); }
+    30%  { transform: translate(-6px, 6px); }
+    40%  { transform: translate(6px, -4px); }
+    50%  { transform: translate(-4px, 5px); }
+    60%  { transform: translate(5px, -3px); }
+    70%  { transform: translate(-3px, 4px); }
+    80%  { transform: translate(3px, -2px); }
+    90%  { transform: translate(-2px, 2px); }
   }
-  .screen-shaking { animation: screenShake 0.5s ease-out; }
+  .screen-shaking { animation: screenShake 0.6s ease-out; }
 
-  /* Dragon smoke */
   @keyframes dragonSmoke {
     0%   { opacity: 0; transform: scale(0.8); }
-    20%  { opacity: 0.7; transform: scale(1); }
-    100% { opacity: 0; transform: scale(1.3); }
+    20%  { opacity: 0.8; transform: scale(1); }
+    100% { opacity: 0; transform: scale(1.4); }
   }
   .dragon-smoke {
-    position: fixed; inset: 0; z-index: 9400; pointer-events: none;
-    background: radial-gradient(ellipse at 50% 60%, rgba(180,20,0,0.4) 0%, rgba(80,0,0,0.25) 50%, transparent 75%);
-    animation: dragonSmoke 1.2s ease-out forwards;
+    position: fixed; inset: 0; z-index: 9380; pointer-events: none;
+    background: radial-gradient(ellipse at 50% 50%, rgba(200,30,0,0.45) 0%, rgba(80,0,0,0.2) 55%, transparent 80%);
+    animation: dragonSmoke 1.5s ease-out forwards;
   }
 
   /* Flash overlays */
   @keyframes strungFlash {
     0%,100% { background: transparent; }
-    15%     { background: rgba(255,220,50,0.35); }
-    30%     { background: transparent; }
-    45%     { background: rgba(255,220,50,0.25); }
+    10%     { background: rgba(255,230,50,0.4); }
+    25%     { background: transparent; }
+    40%     { background: rgba(255,220,50,0.2); }
   }
   @keyframes dragonFlash {
     0%,100% { background: transparent; }
-    20%     { background: rgba(220,30,30,0.4); }
-    40%     { background: transparent; }
-    60%     { background: rgba(180,20,20,0.3); }
+    15%     { background: rgba(220,30,30,0.5); }
+    35%     { background: transparent; }
+    55%     { background: rgba(180,20,20,0.3); }
   }
   .flash-overlay { position: fixed; inset: 0; z-index: 99; pointer-events: none; }
-  .flash-overlay.strung { animation: strungFlash 1.2s ease forwards; }
-  .flash-overlay.dragon { animation: dragonFlash 1.0s ease forwards; }
-
-  .label { font-size: 0.8rem; color: #888; text-align: center; margin-top: -10px; }
+  .flash-overlay.strung { animation: strungFlash 1.4s ease forwards; }
+  .flash-overlay.dragon { animation: dragonFlash 1.2s ease forwards; }
 </style>
 </head>
 <body>
-  <h1>🎲 Animation Preview</h1>
+  <h1>🎲 Animation Preview — v2</h1>
   <div class="btn-row">
     <div style="display:flex;flex-direction:column;gap:8px;align-items:center;">
-      <button class="btn-strung" onclick="fireStrungflowers()">🌟 Strungflowers (4-5-6)</button>
-      <div class="label">Golden shimmer + star burst + chime</div>
+      <button class="btn-strung" onclick="fireStrungflowers()">🌸 Strungflowers (4-5-6)</button>
+      <div class="label">Coins &amp; flowers raining down</div>
     </div>
     <div style="display:flex;flex-direction:column;gap:8px;align-items:center;">
       <button class="btn-dragon" onclick="fireDancingDragon()">🐉 Dancing Dragon (1-2-3)</button>
-      <div class="label">Screen shake + fire burst + bass thud</div>
+      <div class="label">Dragon swoops in and eats the dice</div>
     </div>
   </div>
 
 <script>
 function fireStrungflowers() {
+  // Screen flash
   const flash = document.createElement('div');
   flash.className = 'flash-overlay strung';
   document.body.appendChild(flash);
-  setTimeout(() => flash.remove(), 1300);
+  setTimeout(() => flash.remove(), 1500);
 
+  // Central burst
+  const burst = document.createElement('div');
+  burst.className = 'strung-burst';
+  document.body.appendChild(burst);
+  setTimeout(() => burst.remove(), 1100);
+
+  // Shimmer
   const shimmer = document.createElement('div');
   shimmer.className = 'strung-shimmer';
   document.body.appendChild(shimmer);
-  setTimeout(() => shimmer.remove(), 2100);
+  setTimeout(() => shimmer.remove(), 2600);
 
-  const symbols = ['⭐','🌟','✨','🪙','💫','💛','💠'];
-  const cx = window.innerWidth / 2, cy = window.innerHeight * 0.45;
-  for (let i = 0; i < 40; i++) {
+  // Rain of coins + flowers from top
+  const symbols = ['🪙','🪙','🪙','💰','🌸','🌸','🌺','🌼','⭐','💛','🌟'];
+  for (let i = 0; i < 55; i++) {
     const el = document.createElement('div');
-    el.className = 'strung-particle';
+    el.className = 'coin-rain';
     el.textContent = symbols[Math.floor(Math.random() * symbols.length)];
-    const angle = (Math.PI * 2 * i / 40) + (Math.random() - 0.5) * 0.4;
-    const dist = 120 + Math.random() * 200;
-    const px = Math.cos(angle) * dist;
-    const py = Math.sin(angle) * dist - 80;
-    const size = 0.9 + Math.random() * 1.2;
-    const dur = 0.8 + Math.random() * 0.7;
-    const delay = Math.random() * 0.3;
-    el.style.cssText = `left:${cx}px;top:${cy}px;--px:${px}px;--py:${py}px;--ps:${size}rem;--pd:${dur}s;--pdelay:${delay}s;`;
+    const cx = (10 + Math.random() * 80) + 'vw'; // spread across screen
+    const drift = (Math.random() - 0.5) * 120;
+    const spin = Math.round(Math.random() * 720 - 360);
+    const size = 1.0 + Math.random() * 1.2;
+    const dur = 1.2 + Math.random() * 1.4;
+    const delay = Math.random() * 0.8;
+    const rx = (Math.random() - 0.5) * 30;
+    el.style.cssText = `--cx:${cx};--rx:${rx}px;--drift:${drift}px;--spin:${spin}deg;--ps:${size}rem;--pd:${dur}s;--pdelay:${delay}s;`;
     document.body.appendChild(el);
-    setTimeout(() => el.remove(), (dur + delay) * 1000 + 100);
+    setTimeout(() => el.remove(), (dur + delay) * 1000 + 200);
   }
 
+  // Rising chime
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
     const t = ctx.currentTime;
-    [523, 659, 784, 1047, 1319].forEach((freq, i) => {
+    [523, 659, 784, 1047, 1319, 1568].forEach((freq, i) => {
       const osc = ctx.createOscillator();
       const g = ctx.createGain();
       osc.connect(g); g.connect(ctx.destination);
       osc.type = 'sine';
-      osc.frequency.setValueAtTime(freq, t + i * 0.07);
-      g.gain.setValueAtTime(0, t + i * 0.07);
-      g.gain.linearRampToValueAtTime(0.12, t + i * 0.07 + 0.04);
-      g.gain.exponentialRampToValueAtTime(0.001, t + i * 0.07 + 0.5);
-      osc.start(t + i * 0.07);
-      osc.stop(t + i * 0.07 + 0.5);
+      osc.frequency.setValueAtTime(freq, t + i * 0.08);
+      g.gain.setValueAtTime(0, t + i * 0.08);
+      g.gain.linearRampToValueAtTime(0.13, t + i * 0.08 + 0.04);
+      g.gain.exponentialRampToValueAtTime(0.001, t + i * 0.08 + 0.6);
+      osc.start(t + i * 0.08);
+      osc.stop(t + i * 0.08 + 0.6);
     });
   } catch(e) {}
 }
 
 function fireDancingDragon() {
+  // Flash
   const flash = document.createElement('div');
   flash.className = 'flash-overlay dragon';
   document.body.appendChild(flash);
-  setTimeout(() => flash.remove(), 1100);
+  setTimeout(() => flash.remove(), 1300);
 
-  document.body.classList.remove('screen-shaking');
-  void document.body.offsetWidth;
-  document.body.classList.add('screen-shaking');
-  setTimeout(() => document.body.classList.remove('screen-shaking'), 550);
-
+  // Smoke bg
   const smoke = document.createElement('div');
   smoke.className = 'dragon-smoke';
   document.body.appendChild(smoke);
-  setTimeout(() => smoke.remove(), 1300);
+  setTimeout(() => smoke.remove(), 1600);
 
-  const symbols = ['🔥','🐉','💨','💥','☠️','🔴','🖤'];
-  const cx = window.innerWidth / 2, cy = window.innerHeight * 0.45;
-  for (let i = 0; i < 30; i++) {
-    const el = document.createElement('div');
-    el.className = 'dragon-particle';
-    el.textContent = symbols[Math.floor(Math.random() * symbols.length)];
-    const angle = (Math.PI * 2 * i / 30) + (Math.random() - 0.5) * 0.5;
-    const dist = 80 + Math.random() * 180;
-    const px = Math.cos(angle) * dist;
-    const py = Math.sin(angle) * dist - 60;
-    const size = 1.0 + Math.random() * 1.4;
-    const dur = 0.6 + Math.random() * 0.5;
-    const delay = Math.random() * 0.25;
-    const rot = Math.round(Math.random() * 360 - 180);
-    el.style.cssText = `left:${cx}px;top:${cy}px;--px:${px}px;--py:${py}px;--ps:${size}rem;--pd:${dur}s;--pdelay:${delay}s;--pr:${rot}deg;`;
-    document.body.appendChild(el);
-    setTimeout(() => el.remove(), (dur + delay) * 1000 + 100);
+  // Dice on screen (to be "eaten")
+  const diceEl = document.createElement('div');
+  diceEl.className = 'dice-eaten';
+  diceEl.textContent = '🎲🎲🎲';
+  document.body.appendChild(diceEl);
+  setTimeout(() => diceEl.remove(), 2000);
+
+  // Dragon swoops in
+  const dragon = document.createElement('div');
+  dragon.className = 'dragon-swoop';
+  dragon.textContent = '🐉';
+  document.body.appendChild(dragon);
+  setTimeout(() => dragon.remove(), 2100);
+
+  // Fire puffs trailing behind dragon
+  const fireCx = window.innerWidth / 2, fireCy = window.innerHeight * 0.4;
+  for (let i = 0; i < 18; i++) {
+    setTimeout(() => {
+      const f = document.createElement('div');
+      f.className = 'fire-puff';
+      f.textContent = ['🔥','💥','🔥'][Math.floor(Math.random()*3)];
+      const fx = fireCx + (Math.random() - 0.5) * 200 + 'px';
+      const fy = fireCy + (Math.random() - 0.5) * 100 + 'px';
+      const fs = 1.2 + Math.random() * 1.0;
+      const fd = 0.4 + Math.random() * 0.4;
+      f.style.cssText = `left:${fx};top:${fy};--fx:0px;--fy:0px;--fs:${fs}rem;--fd:${fd}s;--fdelay:0s;`;
+      document.body.appendChild(f);
+      setTimeout(() => f.remove(), fd * 1000 + 100);
+    }, i * 80);
   }
 
+  // Screen shake (slight delay for drama)
+  setTimeout(() => {
+    document.body.classList.remove('screen-shaking');
+    void document.body.offsetWidth;
+    document.body.classList.add('screen-shaking');
+    setTimeout(() => document.body.classList.remove('screen-shaking'), 650);
+  }, 500);
+
+  // Bass roar
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
     const t = ctx.currentTime;
+
+    // Low roar
     const osc = ctx.createOscillator();
     const g = ctx.createGain();
     const dist = ctx.createWaveShaper();
     const curve = new Float32Array(256);
-    for (let i = 0; i < 256; i++) curve[i] = (i / 128 - 1) * 8;
+    for (let i = 0; i < 256; i++) curve[i] = (i / 128 - 1) * 10;
     dist.curve = curve;
     osc.connect(dist); dist.connect(g); g.connect(ctx.destination);
     osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(80, t);
-    osc.frequency.exponentialRampToValueAtTime(30, t + 0.6);
-    g.gain.setValueAtTime(0.25, t);
-    g.gain.exponentialRampToValueAtTime(0.001, t + 0.7);
-    osc.start(t); osc.stop(t + 0.7);
+    osc.frequency.setValueAtTime(100, t);
+    osc.frequency.exponentialRampToValueAtTime(40, t + 0.8);
+    g.gain.setValueAtTime(0.3, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 1.0);
+    osc.start(t); osc.stop(t + 1.0);
+
+    // Chomping crunch at 0.6s
+    setTimeout(() => {
+      const ctx2 = new (window.AudioContext || window.webkitAudioContext)();
+      const bufLen = ctx2.sampleRate * 0.15;
+      const buf = ctx2.createBuffer(1, bufLen, ctx2.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < bufLen; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i/bufLen, 2);
+      const src = ctx2.createBufferSource();
+      src.buffer = buf;
+      const gn = ctx2.createGain();
+      gn.gain.value = 0.4;
+      src.connect(gn); gn.connect(ctx2.destination);
+      src.start();
+    }, 600);
   } catch(e) {}
 }
 </script>
