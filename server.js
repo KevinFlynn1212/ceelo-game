@@ -897,17 +897,8 @@ io.on('connection', socket => {
       const midGame = room.state === 'rolling' || room.state === 'shootout';
       const p = makePlayer(socket.id, n);
       if (midGame) p.done = true;
-      // Try to insert at preferred seat position (only if that slot is empty)
-      const preferred = (seatIdx !== undefined && Number.isInteger(seatIdx) && seatIdx >= 0 && seatIdx < MAX_PLAYERS) ? seatIdx : null;
-      if (preferred !== null && preferred >= room.players.length) {
-        // Seat is beyond current players, just push — they'll appear at next available
-        room.players.push(p);
-      } else if (preferred !== null && preferred < room.players.length) {
-        // Insert before the player at that index (shifts them right)
-        room.players.splice(preferred, 0, p);
-      } else {
-        room.players.push(p);
-      }
+      // Simply push — seat visual position handled client-side
+      room.players.push(p);
     } else {
       if (room.spectators.length >= MAX_SPECTATORS)
         return socket.emit('error', { msg: 'Spectator slots full.' });
