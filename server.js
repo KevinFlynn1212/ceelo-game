@@ -883,6 +883,7 @@ io.on('connection', socket => {
       sysMsg(room, `🎲 ${spec.name} is back in!`);
       broadcast(room);
       broadcastLobby();
+      checkAutoStart(room);
       return;
     }
 
