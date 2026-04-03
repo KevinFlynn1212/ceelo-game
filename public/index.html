@@ -2048,6 +2048,7 @@
       _rollQueue = [];
       _rollAnimating = false;
       _animatingForPlayer = null;
+      _pendingRoundEnd = null;
       _winnerDismissedSent = false;
     }
     // Clean up countdown overlay when leaving countdown state
@@ -2058,18 +2059,31 @@
     }
   });
 
+  // ── Roll queue ───────────────────────────────────────────────────────────────
   // Queue so rapid back-to-back rolls don't overlap
   let _rollQueue = [], _rollAnimating = false;
+  let _pendingRoundEnd = null; // holds round_end data until all animations finish
+
   function enqueueRoll(playerId, dice, evaluation) {
     _rollQueue.push({ playerId, dice, evaluation });
     if (!_rollAnimating) drainRollQueue();
   }
+
   function drainRollQueue() {
-    if (_rollQueue.length === 0) { _rollAnimating = false; return; }
+    if (_rollQueue.length === 0) {
+      _rollAnimating = false;
+      // If round_end arrived while we were animating, show winner now
+      if (_pendingRoundEnd) {
+        const data = _pendingRoundEnd;
+        _pendingRoundEnd = null;
+        setTimeout(() => showWinner(data), 400);
+      }
+      return;
+    }
     _rollAnimating = true;
     const { playerId, dice, evaluation } = _rollQueue.shift();
     _diceRevealedFor.delete(playerId);
-    const onDone = () => setTimeout(drainRollQueue, 400); // pause between rolls
+    const onDone = () => setTimeout(drainRollQueue, 300);
     if (playerId === myId) {
       animateDice(dice, evaluation, onDone);
     } else {
@@ -2081,12 +2095,9 @@
     enqueueRoll(playerId, dice, evaluation);
   });
 
-  // re_ante_offer handler removed
-
   socket.on('shootout_start', ({ playerIds, round, timerEnd }) => {
     addChatMessage({ type: 'system', text: `🔫 Shootout Round ${round}! Players: ${playerIds.length}` });
     startTimer(timerEnd);
-    // Show shootout banner briefly
     const banner = document.getElementById('shootout-banner');
     if (banner) {
       banner.style.display = 'block';
@@ -2098,24 +2109,13 @@
     _blockGameScreen = true;
     hideRoundStartCountdown();
 
-    // Every player who rolled must have their animation complete before we show the winner.
-    // We wait until:
-    //   1. The roll queue is empty AND no animation is running
-    //   2. Every player in data.results has their dice revealed (_diceRevealedFor)
-    // Cap at 8s so we never hang forever.
-    const playerIds = (data.results || []).map(p => p.id);
-    const deadline = Date.now() + 8000;
-
-    const waitForAnims = () => {
-      const queueDone = !_rollAnimating && _rollQueue.length === 0;
-      const allRevealed = playerIds.every(id => _diceRevealedFor.has(id));
-      if ((queueDone && allRevealed) || Date.now() > deadline) {
-        setTimeout(() => showWinner(data), 300); // brief pause after last die settles
-      } else {
-        setTimeout(waitForAnims, 100);
-      }
-    };
-    waitForAnims();
+    if (_rollAnimating || _rollQueue.length > 0) {
+      // Animations still running — stash and show winner when queue drains
+      _pendingRoundEnd = data;
+    } else {
+      // Queue already empty — show winner after short pause
+      setTimeout(() => showWinner(data), 400);
+    }
   });
 
   // ── Between-rounds countdown (Play Again / Sit Out) ───────────────────────
@@ -2403,12 +2403,13 @@
         if (player.id === myId) slot.classList.add('is-me');
         if (isActiveTurn) slot.classList.add('active-turn');
         if (player.done) slot.classList.add('done');
-        if (isWinner) {
+        const showAsWinner = isWinner && _diceRevealedFor.has(player.id);
+        if (showAsWinner) {
           slot.classList.add('is-winner');
           slot.dataset.playerId = player.id;
-          if (!_coinLaunchedFor.has(player.id)) {
+          // Only launch seat coins after animation is done and winner is showing
+          if (!_coinLaunchedFor.has(player.id) && _diceRevealedFor.has(player.id) && document.getElementById('alley-winner')) {
             _coinLaunchedFor.add(player.id);
-            // Query fresh seat element after render settles
             const pid = player.id;
             setTimeout(() => {
               const liveSeat = document.querySelector(`.hud-slot.is-winner[data-player-id="${pid}"]`);
@@ -2421,7 +2422,7 @@
 
         // Action banner — top of slot, matches reference design
         let actionText = '', actionClass = 'act-waiting';
-        if (isWinner) {
+        if (isWinner && _diceRevealedFor.has(player.id)) {
           actionText = player.id === myId ? '🏆 YOU WIN!' : '🏆 WINNER';
           actionClass = 'act-win';
         } else if (player.done) {
