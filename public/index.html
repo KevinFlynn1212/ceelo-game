@@ -2407,15 +2407,7 @@
         if (showAsWinner) {
           slot.classList.add('is-winner');
           slot.dataset.playerId = player.id;
-          // Only launch seat coins after animation is done and winner is showing
-          if (!_coinLaunchedFor.has(player.id) && _diceRevealedFor.has(player.id) && document.getElementById('alley-winner')) {
-            _coinLaunchedFor.add(player.id);
-            const pid = player.id;
-            setTimeout(() => {
-              const liveSeat = document.querySelector(`.hud-slot.is-winner[data-player-id="${pid}"]`);
-              if (liveSeat) launchCoinsFromSeat(liveSeat);
-            }, 300);
-          }
+          // seat coins now fired directly from showWinner
         }
 
         const initial = (player.name || '?')[0].toUpperCase();
@@ -3329,8 +3321,18 @@
     // Stay on game screen so alley + dice stay visible
     showScreen('game');
 
-    // Fly coins if someone won
-    if (winner && !isTie && !allDancing) launchCoins(winner === myId ? 30 : 12);
+    // Fly coins if someone won — big fountain + seat burst together
+    if (winner && !isTie && !allDancing) {
+      launchCoins(winner === myId ? 30 : 12);
+      // Also fire seat coin burst from the winner's HUD slot immediately
+      setTimeout(() => {
+        const winnerSlot = document.querySelector('.hud-slot[data-player-id="' + winner + '"]');
+        if (winnerSlot && !_coinLaunchedFor.has(winner)) {
+          _coinLaunchedFor.add(winner);
+          launchCoinsFromSeat(winnerSlot);
+        }
+      }, 100);
+    }
 
     if (winnerDismissTimer) clearTimeout(winnerDismissTimer);
     winnerDismissTimer = setTimeout(() => dismissWinner(), 8000);
