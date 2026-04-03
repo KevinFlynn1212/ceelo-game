@@ -290,11 +290,11 @@ function fireStrungflowers() {
     setTimeout(() => el.remove(), (dur + delay) * 1000 + 100);
   }
 
-  // Triumphant fanfare
+  // Strungflowers fanfare
+  try { const snd = new Audio('/strung-fanfare.mp3'); snd.volume = 0.85; snd.play().catch(()=>{}); } catch(e) {}
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
     const t = ctx.currentTime;
-    // Big chord hit then arpeggio
     [[523,659,784], [659,784,1047], [784,1047,1319]].forEach((chord, ci) => {
       chord.forEach(freq => {
         const osc = ctx.createOscillator();

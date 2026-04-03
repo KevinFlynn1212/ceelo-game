@@ -3359,31 +3359,11 @@
       setTimeout(() => el.remove(), (dur + delay) * 1000 + 100);
     }
 
-    // Triumphant fanfare
+    // Strungflowers fanfare sound
     try {
-      const ctx = new (window.AudioContext || window.webkitAudioContext)();
-      const t = ctx.currentTime;
-      [[523,659,784],[659,784,1047],[784,1047,1319]].forEach((chord, ci) => {
-        chord.forEach(freq => {
-          const osc = ctx.createOscillator(), g = ctx.createGain();
-          osc.connect(g); g.connect(ctx.destination);
-          osc.type = 'sine'; osc.frequency.value = freq;
-          const s = t + ci * 0.12;
-          g.gain.setValueAtTime(0, s);
-          g.gain.linearRampToValueAtTime(0.1, s + 0.03);
-          g.gain.exponentialRampToValueAtTime(0.001, s + 0.5);
-          osc.start(s); osc.stop(s + 0.5);
-        });
-      });
-      [1319,1568,2093].forEach((freq, i) => {
-        const osc = ctx.createOscillator(), g = ctx.createGain();
-        osc.connect(g); g.connect(ctx.destination);
-        osc.type = 'sine'; osc.frequency.value = freq;
-        const s = t + 0.3 + i * 0.1;
-        g.gain.setValueAtTime(0.08, s);
-        g.gain.exponentialRampToValueAtTime(0.001, s + 0.4);
-        osc.start(s); osc.stop(s + 0.4);
-      });
+      const snd = new Audio('/strung-fanfare.mp3');
+      snd.volume = 0.85;
+      snd.play().catch(()=>{});
     } catch(e) {}
   }
 
