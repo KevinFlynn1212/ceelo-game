@@ -1956,7 +1956,7 @@
     </div>
 
     <!-- Spectator notice -->
-    <div class="spectator-banner" id="spectator-banner">👁 Spectating — you are not in this round</div>
+    <div class="spectator-banner" id="spectator-banner">👁 Spectating — tap an empty seat die to join the game</div>
 
     <!-- Result label (floated above roll button, below dice landing area) -->
     <div class="result-label" id="result-label"></div>
@@ -2359,11 +2359,11 @@
   }
 
   function joinRoom(roomId) {
-    isSpectator = false;
-    // Stop any previous ambient sound so it restarts with the correct new theme
+    // Always enter as spectator — player clicks a seat die to actually join
+    isSpectator = true;
     stopAmbientSound();
     _justLeft = false;
-    socket.emit('join_room', { name: myName, roomId });
+    socket.emit('join_room', { name: myName, roomId, spectator: true });
     clearChat();
   }
 
@@ -3499,12 +3499,13 @@
     socket.emit('roll_dice');
   });
 
-  // Join from empty seat in HUD
+  // Join from empty seat die in HUD — upgrades spectator to player
   document.getElementById('players-list').addEventListener('click', (e) => {
     const btn = e.target.closest('[data-join-seat]');
     if (!btn) return;
     if (!myName || !currentRoom) return;
-    socket.emit('join_room', { name: myName, roomId: currentRoom });
+    // If already a spectator in the room, server will handle the upgrade
+    socket.emit('join_room', { name: myName, roomId: currentRoom, spectator: false });
   });
 
   // ===== LEAVE =====
