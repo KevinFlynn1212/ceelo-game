@@ -2588,14 +2588,17 @@
       && state.players[state.currentTurnIndex]
       && state.players[state.currentTurnIndex].id === myId;
 
-    if (me.done || !isMyTurn || animating) {
+    // During shootout, use shootoutDone instead of done
+    const effectiveDone = state.state === 'shootout' ? me.shootoutDone : me.done;
+    if (effectiveDone || !isMyTurn || animating) {
       // Not your turn — hide the button completely
       if (wrapper) wrapper.style.display = 'none';
     } else {
       // Your turn — show with gold glow
       if (wrapper) wrapper.style.display = '';
       btn.disabled = false;
-      btn.textContent = me.rollCount > 0 ? '🎲 ROLL AGAIN' : '🎲 THROW DICE';
+      const isShootout = state.state === 'shootout';
+      btn.textContent = isShootout ? '⚔️ SHOOTOUT ROLL' : (me.rollCount > 0 ? '🎲 ROLL AGAIN' : '🎲 THROW DICE');
       btn.style.boxShadow = '0 0 24px rgba(245,200,66,0.5), 0 4px 20px rgba(0,0,0,0.6)';
       btn.style.animation = 'none';
     }
@@ -3774,7 +3777,11 @@
   // ===== ROLL =====
   document.getElementById('btn-roll').addEventListener('click', () => {
     if (animating) return;
-    socket.emit('roll_dice');
+    if (roomState && roomState.state === 'shootout') {
+      socket.emit('shootout_roll');
+    } else {
+      socket.emit('roll_dice');
+    }
   });
 
   // Join from empty seat die in HUD — upgrades spectator to player
