@@ -34,6 +34,11 @@
   .btn-dragon { background: rgba(200,30,30,0.15); border-color: #cc3333; color: #ff6666; }
   .label { font-size: 0.8rem; color: #888; text-align: center; margin-top: -10px; }
 
+  @keyframes strungParticle {
+    0%   { transform: translate(0,0) scale(1); opacity: 1; }
+    100% { transform: translate(var(--px), var(--py)) scale(0); opacity: 0; }
+  }
+
   /* ── Strungflowers: explosion burst ── */
   @keyframes strungExplode {
     0%   { transform: translate(var(--ex), var(--ey)) scale(0.3) rotate(0deg); opacity: 1; }
@@ -269,23 +274,28 @@ function fireStrungflowers() {
   document.body.appendChild(shimmer);
   setTimeout(() => shimmer.remove(), 1900);
 
-  // Explosion burst — particles fire outward from center
+  // Explosion burst — coins & flowers fire outward from center
   const symbols = ['🪙','🪙','🪙','🪙','🪙','💰','💰','💰','🌸','🌸','🌸','🌸','🌺','🌺','🌼','🌷','🌷','🌛'];
+  const cx = window.innerWidth / 2, cy = window.innerHeight * 0.42;
   const count = 100;
   for (let i = 0; i < count; i++) {
     const el = document.createElement('div');
-    el.className = 'strung-explode';
     el.textContent = symbols[Math.floor(Math.random() * symbols.length)];
-    // Fire outward in all directions
-    const angle = (Math.PI * 2 * i / count) + (Math.random() - 0.5) * 0.3;
+    const angle = (Math.PI * 2 * i / count) + (Math.random() - 0.5) * 0.4;
     const dist = 60 + Math.random() * 340;
-    const ex2 = Math.cos(angle) * dist;
-    const ey2 = Math.sin(angle) * dist;
+    const px = Math.cos(angle) * dist;
+    const py = Math.sin(angle) * dist;
     const size = 1.2 + Math.random() * 1.6;
     const dur = 0.6 + Math.random() * 0.8;
     const delay = Math.random() * 0.2;
-    const spin = Math.round(Math.random() * 720 - 360);
-    el.style.cssText = `--ex:0px;--ey:0px;--ex2:${ex2}px;--ey2:${ey2}px;--ps:${size}rem;--pd:${dur}s;--pdelay:${delay}s;--espin:${spin}deg;`;
+    el.style.cssText = `
+      position:fixed; pointer-events:none; z-index:9500;
+      left:${cx}px; top:${cy}px;
+      font-size:${size}rem;
+      filter: drop-shadow(0 0 6px rgba(255,220,50,0.8));
+      animation: strungParticle ${dur}s ease-out ${delay}s forwards;
+      --px:${px}px; --py:${py}px;
+    `;
     document.body.appendChild(el);
     setTimeout(() => el.remove(), (dur + delay) * 1000 + 100);
   }
