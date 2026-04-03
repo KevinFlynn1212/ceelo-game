@@ -2280,6 +2280,7 @@
   // Queue so rapid back-to-back rolls don't overlap
   let _rollQueue = [], _rollAnimating = false;
   let _pendingRoundEnd = null; // holds round_end data until all animations finish
+  let _specialAnimDelay = 0;   // extra delay after 123/456 animations
 
   function enqueueRoll(playerId, dice, evaluation) {
     _rollQueue.push({ playerId, dice, evaluation });
@@ -2289,11 +2290,13 @@
   function drainRollQueue() {
     if (_rollQueue.length === 0) {
       _rollAnimating = false;
-      // If round_end arrived while we were animating, show winner now
+      // If round_end arrived while we were animating, show winner after special anim delay
       if (_pendingRoundEnd) {
         const data = _pendingRoundEnd;
         _pendingRoundEnd = null;
-        setTimeout(() => showWinner(data), 150);
+        const delay = Math.max(150, _specialAnimDelay);
+        _specialAnimDelay = 0;
+        setTimeout(() => showWinner(data), delay);
       }
       return;
     }
@@ -2330,8 +2333,10 @@
       // Animations still running — stash and show winner when queue drains
       _pendingRoundEnd = data;
     } else {
-      // Queue already empty — show winner after short pause
-      setTimeout(() => showWinner(data), 150);
+      // Queue already empty — show winner after short pause (or special anim delay)
+      const delay = Math.max(150, _specialAnimDelay);
+      _specialAnimDelay = 0;
+      setTimeout(() => showWinner(data), delay);
     }
   });
 
@@ -2630,7 +2635,7 @@
           4: '<div class="pip pip-a"></div><div class="pip pip-b"></div><div class="pip pip-c"></div><div class="pip pip-d"></div>',
           5: '<div class="pip pip-a"></div><div class="pip pip-b"></div><div class="pip pip-c"></div><div class="pip pip-d"></div><div class="pip pip-e"></div>',
         };
-        slot.innerHTML = `<button class="btn-join-seat${canJoin ? '' : ' no-action'}" ${canJoin ? 'data-join-seat="true"' : ''}>
+        slot.innerHTML = `<button class="btn-join-seat${canJoin ? '' : ' no-action'}" ${canJoin ? `data-join-seat="true" data-seat-idx="${idx}"` : ''}>
           <div class="join-die" data-face="${face}">${pipMap[face] || ''}</div>
           <span class="join-label">${label}</span>
         </button>`;
@@ -3236,8 +3241,8 @@
               _animatingForPlayer = null;
               // Fire special animations for 456 / 123
               if (evaluation) {
-                if (evaluation.type === '456') setTimeout(fireStrungflowers, 100);
-                else if (evaluation.type === '123') setTimeout(fireDancingDragon, 100);
+                if (evaluation.type === '456') { setTimeout(fireStrungflowers, 100); _specialAnimDelay = 6500; }
+                else if (evaluation.type === '123') { setTimeout(fireDancingDragon, 100); _specialAnimDelay = 3200; }
               }
               if (roomState) renderPlayers(roomState); // refresh HUD now that dice are done
               if (evaluation) document.getElementById('result-label').textContent = (evaluation.emoji||'') + ' ' + (evaluation.label||'');
@@ -3292,8 +3297,8 @@
               _diceRevealedFor.add(playerId);
               // Fire special animations for other player's 456 / 123
               if (evaluation) {
-                if (evaluation.type === '456') setTimeout(fireStrungflowers, 100);
-                else if (evaluation.type === '123') setTimeout(fireDancingDragon, 100);
+                if (evaluation.type === '456') { setTimeout(fireStrungflowers, 100); _specialAnimDelay = 6500; }
+                else if (evaluation.type === '123') { setTimeout(fireDancingDragon, 100); _specialAnimDelay = 3200; }
               }
               if (roomState) renderPlayers(roomState);
               if (evaluation) document.getElementById('result-label').textContent = (evaluation.emoji||'')+ ' '+(evaluation.label||'');
@@ -3789,8 +3794,8 @@
     const btn = e.target.closest('[data-join-seat]');
     if (!btn) return;
     if (!myName || !currentRoom) return;
-    // If already a spectator in the room, server will handle the upgrade
-    socket.emit('join_room', { name: myName, roomId: currentRoom, spectator: false });
+    const seatIdx = parseInt(btn.dataset.seatIdx ?? '0');
+    socket.emit('join_room', { name: myName, roomId: currentRoom, spectator: false, seatIdx });
   });
 
   // ===== LEAVE =====
