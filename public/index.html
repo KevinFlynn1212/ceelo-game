@@ -1680,6 +1680,7 @@
   }
   .strung-particle {
     position: fixed;
+    left: 50%; top: 42%;
     pointer-events: none;
     z-index: 9500;
     font-size: var(--ps, 1.2rem);
@@ -3338,21 +3339,21 @@
     document.body.appendChild(shimmer);
     setTimeout(() => shimmer.remove(), 1900);
 
-    // COINS & FLOWERS explosion — 60 particles burst outward
-    const symbols = ['🪙','🪙','🪙','💰','💰','🌸','🌸','🌸','🌺','🌼','🌷','🌛'];
+    // COINS & FLOWERS explosion — lots of them!
+    const symbols = ['🪙','🪙','🪙','🪙','🪙','💰','💰','💰','🌸','🌸','🌸','🌸','🌺','🌺','🌼','🌷','🌷','🌛'];
     const cx = window.innerWidth / 2, cy = window.innerHeight * 0.42;
-    const count = 60;
+    const count = 100;
     for (let i = 0; i < count; i++) {
       const el = document.createElement('div');
       el.className = 'strung-particle';
       el.textContent = symbols[Math.floor(Math.random() * symbols.length)];
-      const angle = (Math.PI * 2 * i / count) + (Math.random() - 0.5) * 0.3;
-      const dist = 80 + Math.random() * 280;
+      const angle = (Math.PI * 2 * i / count) + (Math.random() - 0.5) * 0.4;
+      const dist = 60 + Math.random() * 340;
       const px = Math.cos(angle) * dist;
       const py = Math.sin(angle) * dist;
-      const size = 1.0 + Math.random() * 1.3;
-      const dur = 0.5 + Math.random() * 0.6;
-      const delay = Math.random() * 0.15;
+      const size = 1.2 + Math.random() * 1.6;
+      const dur = 0.6 + Math.random() * 0.8;
+      const delay = Math.random() * 0.2;
       el.style.cssText = `left:${cx}px;top:${cy}px;--px:${px}px;--py:${py}px;--ps:${size}rem;--pd:${dur}s;--pdelay:${delay}s;`;
       document.body.appendChild(el);
       setTimeout(() => el.remove(), (dur + delay) * 1000 + 100);
