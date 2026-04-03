@@ -1346,24 +1346,44 @@
     padding: 4px;
     transition: transform 0.15s;
   }
-  .btn-join-seat:hover { transform: scale(1.1); }
+  .btn-join-seat:hover { transform: scale(1.08); }
   .btn-join-seat:active { transform: scale(0.95); }
+  .btn-join-seat.no-action { cursor: default; pointer-events: none; }
   .join-die {
-    width: 42px;
-    height: 42px;
-    background: radial-gradient(circle at 38% 35%, #ff4545, #991010);
-    border-radius: 7px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.5rem;
-    box-shadow: 0 3px 12px rgba(0,0,0,0.7), inset 0 1px 2px rgba(255,120,120,0.25);
-    opacity: 0.85;
-    transition: opacity 0.2s, box-shadow 0.2s;
+    width: 46px;
+    height: 46px;
+    background: radial-gradient(circle at 38% 32%, #ff5555, #8b0a0a);
+    border-radius: 8px;
+    box-shadow: 0 3px 14px rgba(0,0,0,0.75), inset 0 1px 3px rgba(255,140,140,0.3), inset 0 -2px 4px rgba(0,0,0,0.4);
+    opacity: 0.75;
+    transition: opacity 0.2s, box-shadow 0.2s, transform 0.15s;
+    display: grid;
+    padding: 7px;
+    box-sizing: border-box;
   }
+  /* pip grid layouts per face */
+  .join-die[data-face="1"] { grid-template-areas: ". . ." ". c ." ". . ."; }
+  .join-die[data-face="2"] { grid-template-areas: ". . a" ". . ." "b . ."; }
+  .join-die[data-face="3"] { grid-template-areas: ". . a" ". c ." "b . ."; }
+  .join-die[data-face="4"] { grid-template-areas: "a . b" ". . ." "c . d"; }
+  .join-die[data-face="5"] { grid-template-areas: "a . b" ". c ." "d . e"; }
+  .join-die .pip {
+    width: 7px;
+    height: 7px;
+    background: #fff;
+    border-radius: 50%;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.5);
+    align-self: center;
+    justify-self: center;
+  }
+  .join-die .pip-a { grid-area: a; }
+  .join-die .pip-b { grid-area: b; }
+  .join-die .pip-c { grid-area: c; }
+  .join-die .pip-d { grid-area: d; }
+  .join-die .pip-e { grid-area: e; }
   .btn-join-seat:hover .join-die {
     opacity: 1;
-    box-shadow: 0 4px 18px rgba(220,50,50,0.6), inset 0 1px 2px rgba(255,120,120,0.25);
+    box-shadow: 0 4px 20px rgba(220,40,40,0.65), inset 0 1px 3px rgba(255,140,140,0.3);
   }
   .join-label {
     font-family: 'Cinzel', serif;
@@ -1371,7 +1391,7 @@
     font-weight: 700;
     letter-spacing: 0.15em;
     text-transform: uppercase;
-    color: rgba(245,200,66,0.6);
+    color: rgba(245,200,66,0.5);
   }
   .btn-join-seat:hover .join-label { color: var(--gold); }
 
@@ -2440,17 +2460,22 @@
       if (!player) {
         // Show join button if not already in the game
         const alreadyPlaying = state.players && state.players.some(p => p.id === myId);
-        const isSpec = isSpectator || !state.players || !state.players.some(p => p.id === myId);
-        if (myName && (isSpec || !alreadyPlaying)) {
-          const midGame = state.state === 'rolling' || state.state === 'shootout';
-          const label = midGame ? 'Next' : 'Join';
-          slot.innerHTML = `<button class="btn-join-seat" data-join-seat="true">
-            <div class="join-die">🎲</div>
-            <span class="join-label">${label}</span>
-          </button>`;
-        } else {
-          slot.innerHTML = `<div class="hud-slot-empty" style="margin:auto;text-align:center;">OPEN</div>`;
-        }
+        const canJoin = myName && !alreadyPlaying;
+        const midGame = state.state === 'rolling' || state.state === 'shootout';
+        const label = canJoin ? (midGame ? 'Next Round' : 'Join') : 'Open';
+        const face = idx + 1; // seat 0=1pip, seat 1=2pips, etc.
+        // pip layout per face
+        const pipMap = {
+          1: '<div class="pip pip-c"></div>',
+          2: '<div class="pip pip-a"></div><div class="pip pip-b"></div>',
+          3: '<div class="pip pip-a"></div><div class="pip pip-c"></div><div class="pip pip-b"></div>',
+          4: '<div class="pip pip-a"></div><div class="pip pip-b"></div><div class="pip pip-c"></div><div class="pip pip-d"></div>',
+          5: '<div class="pip pip-a"></div><div class="pip pip-b"></div><div class="pip pip-c"></div><div class="pip pip-d"></div><div class="pip pip-e"></div>',
+        };
+        slot.innerHTML = `<button class="btn-join-seat${canJoin ? '' : ' no-action'}" ${canJoin ? 'data-join-seat="true"' : ''}>
+          <div class="join-die" data-face="${face}">${pipMap[face] || ''}</div>
+          <span class="join-label">${label}</span>
+        </button>`;
       } else {
         const isActiveTurn = state.currentTurnIndex === idx && !player.done;
         const isWinner = player.isWinner;
