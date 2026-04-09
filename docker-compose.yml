@@ -8,15 +8,5 @@ services:
     environment:
       PORT: 3000
       AUTH_PORT: 4001
-    command: >
-      bash -c "
-        apt-get update -qq &&
-        apt-get install -y -qq git python3 make g++ &&
-        rm -rf /app/game &&
-        git clone https://github.com/KevinFlynn1212/ceelo-game.git /app/game &&
-        cd /app/game &&
-        npm install &&
-        node auth-server.js &
-        node server.js
-      "
+    command: sh -c "apt-get update -qq && apt-get install -y -qq git python3 make g++ && rm -rf /app/game && git clone https://github.com/KevinFlynn1212/ceelo-game.git /app/game && cd /app/game && npm install && node auth-server.js & node /app/game/server.js"
     restart: unless-stopped
