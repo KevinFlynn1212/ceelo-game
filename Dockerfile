@@ -4,9 +4,14 @@ RUN apt-get update -qq && apt-get install -y -qq git python3 make g++
 
 WORKDIR /app
 
-RUN git clone https://github.com/KevinFlynn1212/ceelo-game.git /app
+# Copy package.json first for layer caching
+COPY package.json ./
 
+# Install dependencies
 RUN npm install
+
+# Copy all source files
+COPY . .
 
 ENV PORT=3000
 ENV AUTH_PORT=4001
