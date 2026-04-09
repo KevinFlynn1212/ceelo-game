@@ -2,10 +2,21 @@ const express = require('express');
 const http    = require('http');
 const { Server } = require('socket.io');
 const path    = require('path');
+const jwt     = require('jsonwebtoken');
+const { createProxyMiddleware } = require('http-proxy-middleware');
+const db      = require('./db');
+
+const JWT_SECRET = process.env.JWT_SECRET || 'ceelo-dev-secret';
 
 const app    = express();
 const server = http.createServer(app);
 const io     = new Server(server, { cors: { origin: '*' } });
+
+// Proxy /api to auth-server on port 4001
+app.use('/api', createProxyMiddleware({ target: 'http://localhost:4001', changeOrigin: true, on: { error: (err, req, res) => res.status(502).json({ error: 'Auth service unavailable' }) } }));
+
+// Back office
+app.get('/admin', (_req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
 
 app.use(express.static(path.join(__dirname, 'public'), { etag: false, lastModified: false }));
 app.use((req, res, next) => {
@@ -26,7 +37,7 @@ const MAX_CHAT_HISTORY      = 100;
 // MAX_RAISE removed — raises disabled
 const MAX_ROLL_ATTEMPTS     = 7;
 const MAX_MISSED_ROUNDS     = 5;
-const RAKE_PCT              = 0.05;           // 5%
+const RAKE_PCT              = 0.07;           // 7%
 
 const TIMER_ANTE_MS         = 5_000;
 const TIMER_ROLL_MS         = 10_000; // 10s to roll
@@ -388,6 +399,7 @@ function collectAntes(room) {
     if (WalletService.debit(p.wallet, room.ante)) {
       room.pot   += room.ante;
       p.antePaid  = true;
+      if (p.playerId) db.debitBalance(p.playerId, room.ante * 100, 'ante', room.id, room.round + 1, null);
     } else {
       toRemove.push(p.id);
     }
@@ -629,6 +641,8 @@ function endRound(room) {
     room.winner   = topPlayers[0].name;
     room.winnerId = topPlayers[0].id;
     sysMsg(room, `🏆 ${room.winner} wins 金${distributablePot.toLocaleString()}!`);
+    if (topPlayers[0].playerId) db.creditBalance(topPlayers[0].playerId, distributablePot * 100, 'win', room.id, room.round, null);
+    if (rakeAmount > 0) db.logRake(room.id, room.name, room.round, room.pot * 100, rakeAmount * 100, room.players.length);
   } else {
     room.winner   = '—';
     room.winnerId = null;
@@ -791,6 +805,7 @@ function resolveShootout(room) {
     room.winnerId = winners[0].id;
     room.isTie    = false;
     sysMsg(room, `⚔️ SHOOTOUT WINNER: ${room.winner} takes 金${room.pot.toLocaleString()}!`);
+    if (winners[0].playerId) db.creditBalance(winners[0].playerId, room.pot * 100, 'win', room.id, room.round, 'Shootout win');
 
     room.roundHistory.push({
       round:         room.round,
@@ -847,6 +862,17 @@ function removePlayer(room, playerId) {
 io.on('connection', socket => {
   console.log(`[+] ${socket.id} connected`);
 
+  // ── JWT auth (optional — guests still work) ──────────────────────────────
+  const token = socket.handshake.auth?.token;
+  if (token) {
+    try {
+      const payload = jwt.verify(token, JWT_SECRET);
+      socket.data.playerId   = payload.playerId;
+      socket.data.accountId  = payload.accountId;
+      socket.data.dbNickname = payload.nickname;
+    } catch(e) { /* invalid token — continue as guest */ }
+  }
+
   // Send lobby state immediately on connect
   socket.emit('lobby_state', getLobbyState());
 
@@ -857,7 +883,8 @@ io.on('connection', socket => {
 
   // ── Join room ──────────────────────────────────────────────────────────────
   socket.on('join_room', ({ name, roomId, spectator, seatIdx }) => {
-    const n   = (name   ?? '').trim();
+    // Use verified nickname from JWT if available
+    const n   = (socket.data.dbNickname || (name ?? '')).trim();
     const rid = (roomId ?? '').trim();
     if (!n)          return socket.emit('error', { msg: 'Enter your name.' });
     if (n.length > 20) return socket.emit('error', { msg: 'Name too long (max 20).' });
@@ -1045,6 +1072,7 @@ io.on('connection', socket => {
     if (player.wallet.balance > 0) return socket.emit('error', { msg: 'You still have coins!' });
     WalletService.rebuy(player.wallet);
     sysMsg(room, `💸 ${player.name} rebought for 金${STARTING_BALANCE.toLocaleString()}`);
+    if (player.playerId) db.creditBalance(player.playerId, STARTING_BALANCE * 100, 'rebuy', room.id, null, 'Rebuy');
     broadcast(room);
   });
 

@@ -187,7 +187,7 @@
   /* ═══════════════════════════════
      INPUTS
   ═══════════════════════════════ */
-  input[type="text"], input[type="number"] {
+  input[type="text"], input[type="number"], input[type="email"], input[type="password"] {
     background: rgba(10, 6, 2, 0.75);
     border: 2px solid var(--border);
     border-radius: 8px;
@@ -1981,9 +1981,40 @@
   </div>
   <div class="logo">CEE-LO</div>
   <div class="logo-sub">骰子 · Street Dice</div>
-  <div class="login-card">
-    <input type="text" id="input-name" placeholder="Enter your name" maxlength="20" autocomplete="off">
-    <button class="btn" id="btn-enter-lobby">Enter Lobby</button>
+  <div class="login-card" id="auth-card">
+    <!-- Auth tabs -->
+    <div style="display:flex;gap:0;border-bottom:1px solid rgba(180,120,20,0.3);margin-bottom:4px;">
+      <button id="tab-signin" onclick="authTab('signin')" style="flex:1;background:none;border:none;border-bottom:3px solid var(--gold);color:var(--gold);font-family:'Cinzel',serif;font-size:0.75rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;padding:10px;cursor:pointer;">Sign In</button>
+      <button id="tab-register" onclick="authTab('register')" style="flex:1;background:none;border:none;border-bottom:3px solid transparent;color:var(--muted);font-family:'Cinzel',serif;font-size:0.75rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;padding:10px;cursor:pointer;">Create Account</button>
+    </div>
+
+    <!-- Sign In panel -->
+    <div id="panel-signin">
+      <input type="email" id="signin-email" placeholder="Email" autocomplete="email" style="margin-bottom:10px;">
+      <input type="password" id="signin-password" placeholder="Password" autocomplete="current-password" style="margin-bottom:6px;">
+      <div id="signin-error" style="color:#e53935;font-size:0.82rem;min-height:18px;margin-bottom:4px;"></div>
+      <button class="btn" id="btn-signin" onclick="doSignIn()" style="width:100%;">Sign In</button>
+    </div>
+
+    <!-- Register panel -->
+    <div id="panel-register" style="display:none;">
+      <input type="email" id="reg-email" placeholder="Email" style="margin-bottom:2px;">
+      <div id="reg-email-status" style="font-size:0.78rem;min-height:16px;margin-bottom:8px;"></div>
+      <input type="text" id="reg-nickname" placeholder="Nickname (3-20 chars, letters/numbers/_)" maxlength="20" style="margin-bottom:2px;">
+      <div id="reg-nickname-status" style="font-size:0.78rem;min-height:16px;margin-bottom:8px;"></div>
+      <input type="password" id="reg-password" placeholder="Password (min 8 chars)" style="margin-bottom:10px;">
+      <input type="password" id="reg-password2" placeholder="Confirm Password" style="margin-bottom:6px;">
+      <div id="reg-error" style="color:#e53935;font-size:0.82rem;min-height:18px;margin-bottom:4px;"></div>
+      <button class="btn" id="btn-register" onclick="doRegister()" style="width:100%;">Create Account</button>
+    </div>
+
+    <!-- Verify panel -->
+    <div id="panel-verify" style="display:none;text-align:center;padding:12px 0;">
+      <div style="font-size:2rem;margin-bottom:12px;">✉️</div>
+      <div style="color:var(--gold);font-family:'Cinzel',serif;font-size:0.9rem;margin-bottom:8px;">Check your email!</div>
+      <div style="color:var(--muted);font-size:0.82rem;margin-bottom:16px;">Click the link in your inbox to verify your account, then sign in.</div>
+      <button class="btn" onclick="authTab('signin')" style="width:100%;">Back to Sign In</button>
+    </div>
   </div>
 </div>
 
@@ -2210,7 +2241,7 @@
   let _coinLaunchedFor = new Set(); // player IDs who've had seat coin burst this round
 
   // ===== SOCKET =====
-  const socket = io();
+  const socket = io({ auth: { token: localStorage.getItem('ceelo_token') || '' } });
 
   socket.on('connect', () => {
     myId = socket.id;
@@ -2479,12 +2510,125 @@
     if (!s.classList.contains('active')) s.style.display = 'none';
   });
 
-  // ===== LOGIN =====
-  const btnEnterLobby = document.getElementById('btn-enter-lobby');
-  const inputName = document.getElementById('input-name');
+  // ===== AUTH =====
+  function authTab(name) {
+    document.getElementById('panel-signin').style.display   = name === 'signin'   ? '' : 'none';
+    document.getElementById('panel-register').style.display = name === 'register' ? '' : 'none';
+    document.getElementById('panel-verify').style.display   = name === 'verify'   ? '' : 'none';
+    document.getElementById('tab-signin').style.borderBottomColor   = name === 'signin'   ? 'var(--gold)' : 'transparent';
+    document.getElementById('tab-signin').style.color               = name === 'signin'   ? 'var(--gold)' : 'var(--muted)';
+    document.getElementById('tab-register').style.borderBottomColor = name === 'register' ? 'var(--gold)' : 'transparent';
+    document.getElementById('tab-register').style.color             = name === 'register' ? 'var(--gold)' : 'var(--muted)';
+  }
 
-  btnEnterLobby.addEventListener('click', enterLobby);
-  inputName.addEventListener('keydown', (e) => { if (e.key === 'Enter') enterLobby(); });
+  async function doSignIn() {
+    const email    = document.getElementById('signin-email').value.trim();
+    const password = document.getElementById('signin-password').value;
+    const errEl    = document.getElementById('signin-error');
+    errEl.textContent = '';
+    if (!email || !password) { errEl.textContent = 'Email and password required.'; return; }
+    document.getElementById('btn-signin').disabled = true;
+    try {
+      const r = await fetch('/api/auth/login', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      const d = await r.json();
+      if (d.ok) {
+        localStorage.setItem('ceelo_token',      d.token);
+        localStorage.setItem('ceelo_nickname',   d.player.nickname);
+        localStorage.setItem('ceelo_account_id', d.player.accountId);
+        localStorage.setItem('ceelo_balance',    d.player.balance);
+        enterLobbyAuth(d.player);
+      } else {
+        errEl.textContent = d.error || 'Sign in failed.';
+      }
+    } catch { errEl.textContent = 'Connection error. Try again.'; }
+    document.getElementById('btn-signin').disabled = false;
+  }
+
+  async function doRegister() {
+    const email     = document.getElementById('reg-email').value.trim();
+    const nickname  = document.getElementById('reg-nickname').value.trim();
+    const password  = document.getElementById('reg-password').value;
+    const password2 = document.getElementById('reg-password2').value;
+    const errEl     = document.getElementById('reg-error');
+    errEl.textContent = '';
+    if (!email || !nickname || !password) { errEl.textContent = 'All fields required.'; return; }
+    if (password.length < 8) { errEl.textContent = 'Password must be at least 8 characters.'; return; }
+    if (password !== password2) { errEl.textContent = 'Passwords do not match.'; return; }
+    if (!/^[a-zA-Z0-9_]{3,20}$/.test(nickname)) { errEl.textContent = 'Nickname: 3-20 chars, letters/numbers/underscore only.'; return; }
+    document.getElementById('btn-register').disabled = true;
+    try {
+      const r = await fetch('/api/auth/register', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, nickname }),
+      });
+      const d = await r.json();
+      if (d.ok) {
+        authTab('verify');
+      } else {
+        errEl.textContent = d.error || 'Registration failed.';
+      }
+    } catch { errEl.textContent = 'Connection error. Try again.'; }
+    document.getElementById('btn-register').disabled = false;
+  }
+
+  // Live nickname check
+  document.getElementById('reg-nickname').addEventListener('blur', async () => {
+    const val = document.getElementById('reg-nickname').value.trim();
+    const el  = document.getElementById('reg-nickname-status');
+    if (!val) { el.textContent = ''; return; }
+    if (!/^[a-zA-Z0-9_]{3,20}$/.test(val)) { el.style.color='#e53935'; el.textContent='✗ Invalid format'; return; }
+    try {
+      const r = await fetch('/api/auth/check-nickname', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ nickname: val }) });
+      const d = await r.json();
+      el.style.color = d.available ? '#4caf50' : '#e53935';
+      el.textContent = d.available ? '✓ Available' : '✗ Already taken';
+    } catch { el.textContent = ''; }
+  });
+
+  // Live email check
+  document.getElementById('reg-email').addEventListener('blur', async () => {
+    const val = document.getElementById('reg-email').value.trim();
+    const el  = document.getElementById('reg-email-status');
+    if (!val || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) { el.textContent = ''; return; }
+    try {
+      const r = await fetch('/api/auth/check-email', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email: val }) });
+      const d = await r.json();
+      el.style.color = d.available ? '#4caf50' : '#e53935';
+      el.textContent = d.available ? '✓ Available' : '✗ Already registered';
+    } catch { el.textContent = ''; }
+  });
+
+  // Enter key support
+  document.getElementById('signin-password').addEventListener('keydown', e => { if (e.key==='Enter') doSignIn(); });
+  document.getElementById('reg-password2').addEventListener('keydown', e => { if (e.key==='Enter') doRegister(); });
+
+  function enterLobbyAuth(player) {
+    myName = player.nickname;
+    document.getElementById('lobby-player-name').textContent = player.accountId + ' · ' + player.nickname;
+    document.getElementById('lobby-balance').textContent = parseFloat(player.balance).toFixed(2);
+    showScreen('lobby');
+  }
+
+  // Auto-login if valid token stored
+  (async () => {
+    const token = localStorage.getItem('ceelo_token');
+    if (!token) return;
+    try {
+      const r = await fetch('/api/auth/me', { headers: { Authorization: 'Bearer ' + token } });
+      const d = await r.json();
+      if (d.ok) {
+        localStorage.setItem('ceelo_nickname',   d.player.nickname);
+        localStorage.setItem('ceelo_account_id', d.player.accountId);
+        localStorage.setItem('ceelo_balance',    d.player.balance);
+        enterLobbyAuth(d.player);
+      } else {
+        localStorage.removeItem('ceelo_token');
+      }
+    } catch { /* offline or server down, show login */ }
+  })();
 
   // House Rules modal
   const rulesModal = document.getElementById('house-rules-modal');
@@ -2502,10 +2646,12 @@
   });
 
   function enterLobby() {
-    const name = inputName.value.trim();
-    if (!name) { showError('Please enter your name'); return; }
+    const nickname = localStorage.getItem('ceelo_nickname');
+    const name = nickname || '';
+    if (!name) { showError('Please sign in first'); showScreen('login'); return; }
     myName = name;
-    document.getElementById('lobby-player-name').textContent = name;
+    const accountId = localStorage.getItem('ceelo_account_id') || '';
+    document.getElementById('lobby-player-name').textContent = accountId ? accountId + ' · ' + name : name;
     showScreen('lobby');
     socket.emit('get_lobby');
   }
