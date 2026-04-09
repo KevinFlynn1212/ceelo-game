@@ -13,7 +13,7 @@ const server = http.createServer(app);
 const io     = new Server(server, { cors: { origin: '*' } });
 
 // Proxy /api to auth-server on port 4001
-app.use('/api', createProxyMiddleware({ target: 'http://localhost:4001', changeOrigin: true, on: { error: (err, req, res) => res.status(502).json({ error: 'Auth service unavailable' }) } }));
+app.use('/api', createProxyMiddleware({ target: 'http://localhost:4001', changeOrigin: true, pathRewrite: (path) => '/api' + path, on: { error: (err, req, res) => res.status(502).json({ error: 'Auth service unavailable' }) } }));
 
 // Back office
 app.get('/admin', (_req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
