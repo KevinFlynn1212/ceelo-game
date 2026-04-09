@@ -2511,7 +2511,7 @@
   });
 
   // ===== AUTH =====
-  function authTab(name) {
+  window.authTab = function authTab(name) {
     document.getElementById('panel-signin').style.display   = name === 'signin'   ? '' : 'none';
     document.getElementById('panel-register').style.display = name === 'register' ? '' : 'none';
     document.getElementById('panel-verify').style.display   = name === 'verify'   ? '' : 'none';
@@ -2521,7 +2521,7 @@
     document.getElementById('tab-register').style.color             = name === 'register' ? 'var(--gold)' : 'var(--muted)';
   }
 
-  async function doSignIn() {
+  window.doSignIn = async function doSignIn() {
     const email    = document.getElementById('signin-email').value.trim();
     const password = document.getElementById('signin-password').value;
     const errEl    = document.getElementById('signin-error');
@@ -2547,7 +2547,7 @@
     document.getElementById('btn-signin').disabled = false;
   }
 
-  async function doRegister() {
+  window.doRegister = async function doRegister() {
     const email     = document.getElementById('reg-email').value.trim();
     const nickname  = document.getElementById('reg-nickname').value.trim();
     const password  = document.getElementById('reg-password').value;
