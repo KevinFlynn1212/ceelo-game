@@ -19,7 +19,7 @@ app.use((req, res, next) => {
 
 const JWT_SECRET   = process.env.JWT_SECRET   || 'ceelo-dev-secret';
 const ADMIN_TOKEN  = process.env.ADMIN_TOKEN  || 'ceelo-admin-2024';
-const APP_URL      = process.env.APP_URL      || 'http://187.124.64.233:4000';
+const APP_URL      = process.env.APP_URL      || 'https://threediceceelo.com';
 
 // ─── Email ────────────────────────────────────────────────────────────────────
 function getMailer() {
