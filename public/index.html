@@ -1190,9 +1190,9 @@
   /* ── Shootout banner ── */
   .shootout-banner {
     position: absolute;
-    top: 50%;
+    top: 10%;
     left: 50%;
-    transform: translate(-50%, -50%);
+    transform: translate(-50%, 0);
     z-index: 25;
     font-family: 'Cinzel Decorative', serif;
     font-size: 1.5rem;
@@ -2148,9 +2148,9 @@
         <span>⏱ <span id="game-timer" class="timer">—</span></span>
       </div>
       <div class="game-info-actions">
+        <button class="btn-outline" id="btn-leave" style="padding:4px 12px;font-size:0.78rem;">Leave</button>
         <button class="btn-outline" id="btn-add-bot" style="padding:4px 12px;font-size:0.78rem;" title="Add bot player">🤖+</button>
         <button class="chat-toggle-btn" id="btn-chat-toggle" title="Open chat">💬</button>
-        <button class="btn-outline" id="btn-leave" style="padding:4px 12px;font-size:0.78rem;">Leave</button>
       </div>
     </div>
 
@@ -2678,7 +2678,7 @@
       card.className = 'room-card';
       card.dataset.theme = room.theme || 'red';
       const stateClass = room.state === 'waiting' ? 'waiting' : 'active';
-      const stateLabel = room.state === 'waiting' ? 'Waiting' : 'In Progress';
+      const stateLabel = room.state === 'waiting' ? 'Waiting' : 'Join Alley';
       card.innerHTML = `
         <div class="room-card-name">${escHtml(room.name)}</div>
         <div class="room-card-ante">$${room.ante}</div>
