@@ -924,6 +924,8 @@ io.on('connection', socket => {
       room.spectators.splice(existingSpecIdx, 1);
       const newP = makePlayer(socket.id, spec.name);
       if (spec.wallet) newP.wallet = spec.wallet;
+      if (socket.data.playerId) newP.playerId = socket.data.playerId;
+      if (socket.data.accountId) newP.accountId = socket.data.accountId;
       // Mid-game joiners wait for next round
       if (room.state === 'rolling' || room.state === 'shootout') newP.done = true;
       // Assign requested seat
@@ -954,6 +956,8 @@ io.on('connection', socket => {
       // Allow joining any time — mid-game joiners wait for next round
       const midGame = room.state === 'rolling' || room.state === 'shootout';
       const p = makePlayer(socket.id, n);
+      if (socket.data.playerId) p.playerId = socket.data.playerId;
+      if (socket.data.accountId) p.accountId = socket.data.accountId;
       if (midGame) p.done = true;
       // Assign requested seat
       const reqSeat = typeof seatIdx === 'number' ? seatIdx : -1;
