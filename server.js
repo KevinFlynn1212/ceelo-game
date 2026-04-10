@@ -21,21 +21,30 @@ app.use(express.json());
 const http2 = require('http');
 app.use('/api', (req, res, next) => {
   if (req.path.startsWith('/bot')) return next();
-  const body = JSON.stringify(req.body);
+  const hasBody = ['POST','PUT','PATCH'].includes(req.method) && req.body && Object.keys(req.body).length > 0;
+  const body = hasBody ? JSON.stringify(req.body) : null;
+  const headers = { ...req.headers, host: 'localhost:4001' };
+  if (body) {
+    headers['content-type'] = 'application/json';
+    headers['content-length'] = Buffer.byteLength(body);
+  } else {
+    delete headers['content-length'];
+    delete headers['content-type'];
+  }
   const options = {
     hostname: 'localhost',
     port: 4001,
     path: '/api' + req.path + (req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : ''),
     method: req.method,
-    headers: { ...req.headers, 'content-length': Buffer.byteLength(body || ''), host: 'localhost:4001' },
+    headers,
   };
   const proxyReq = http2.request(options, (proxyRes) => {
     res.status(proxyRes.statusCode);
     Object.entries(proxyRes.headers).forEach(([k,v]) => { try { res.setHeader(k,v); } catch(e){} });
     proxyRes.pipe(res);
   });
-  proxyReq.on('error', () => res.status(502).json({ error: 'Auth service unavailable' }));
-  if (body && body !== '{}') proxyReq.write(body);
+  proxyReq.on('error', (e) => { console.error('Proxy error:', e.message); res.status(502).json({ error: 'Auth service unavailable' }); });
+  if (body) proxyReq.write(body);
   proxyReq.end();
 });
 
