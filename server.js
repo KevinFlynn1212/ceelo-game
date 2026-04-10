@@ -17,11 +17,26 @@ app.get('/admin', (_req, res) => res.sendFile(path.join(__dirname, 'public', 'ad
 
 app.use(express.json());
 
-// Proxy /api to auth-server on port 4001 (excluding /api/bot)
-const authProxy = createProxyMiddleware({ target: 'http://localhost:4001', changeOrigin: true, pathRewrite: (path) => '/api' + path, on: { error: (err, req, res) => res.status(502).json({ error: 'Auth service unavailable' }) } });
+// Manual proxy /api to auth-server on port 4001 (excluding /api/bot)
+const http2 = require('http');
 app.use('/api', (req, res, next) => {
   if (req.path.startsWith('/bot')) return next();
-  authProxy(req, res, next);
+  const body = JSON.stringify(req.body);
+  const options = {
+    hostname: 'localhost',
+    port: 4001,
+    path: '/api' + req.path + (req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : ''),
+    method: req.method,
+    headers: { ...req.headers, 'content-length': Buffer.byteLength(body || ''), host: 'localhost:4001' },
+  };
+  const proxyReq = http2.request(options, (proxyRes) => {
+    res.status(proxyRes.statusCode);
+    Object.entries(proxyRes.headers).forEach(([k,v]) => { try { res.setHeader(k,v); } catch(e){} });
+    proxyRes.pipe(res);
+  });
+  proxyReq.on('error', () => res.status(502).json({ error: 'Auth service unavailable' }));
+  if (body && body !== '{}') proxyReq.write(body);
+  proxyReq.end();
 });
 
 app.use(express.static(path.join(__dirname, 'public'), { etag: false, lastModified: false }));
