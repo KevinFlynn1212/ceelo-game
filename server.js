@@ -15,13 +15,13 @@ const io     = new Server(server, { cors: { origin: '*' } });
 // Back office
 app.get('/admin', (_req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
 
-// Bot API must be before the /api proxy
 app.use(express.json());
 
-// Proxy /api to auth-server on port 4001 (excluding /api/bot which is local)
+// Proxy /api to auth-server on port 4001 (excluding /api/bot)
+const authProxy = createProxyMiddleware({ target: 'http://localhost:4001', changeOrigin: true, pathRewrite: (path) => '/api' + path, on: { error: (err, req, res) => res.status(502).json({ error: 'Auth service unavailable' }) } });
 app.use('/api', (req, res, next) => {
   if (req.path.startsWith('/bot')) return next();
-  createProxyMiddleware({ target: 'http://localhost:4001', changeOrigin: true, pathRewrite: (path) => '/api' + path, on: { error: (err, req, res) => res.status(502).json({ error: 'Auth service unavailable' }) } })(req, res, next);
+  authProxy(req, res, next);
 });
 
 app.use(express.static(path.join(__dirname, 'public'), { etag: false, lastModified: false }));
