@@ -2029,6 +2029,9 @@
       <button onclick="doSignOut()" style="background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.15);color:var(--muted);font-family:'Cinzel',serif;font-size:0.75rem;font-weight:700;letter-spacing:0.08em;padding:6px 14px;border-radius:8px;cursor:pointer;text-transform:uppercase;">Sign Out</button>
     </div>
   </div>
+  <div id="lobby-leave-wrap" style="display:none;padding:0 0 12px 0;">
+    <button onclick="doLobbyLeave()" style="background:rgba(200,50,50,0.15);border:1.5px solid rgba(200,50,50,0.4);color:#ff8888;font-family:'Cinzel',serif;font-size:0.75rem;font-weight:700;letter-spacing:0.08em;padding:6px 16px;border-radius:8px;cursor:pointer;text-transform:uppercase;">⬅ Leave Alley</button>
+  </div>
   <div class="rooms-grid" id="rooms-grid"></div>
 </div>
 
@@ -2140,7 +2143,10 @@
 
     <!-- Room info bar (thin dark strip at top) -->
     <div class="game-info-bar">
-      <div class="game-room-name" id="game-room-name">—</div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <button class="btn-outline" id="btn-leave" style="padding:4px 12px;font-size:0.78rem;">Leave</button>
+        <div class="game-room-name" id="game-room-name">—</div>
+      </div>
       <div class="game-info-stats">
         <span>Round <span id="game-round">—</span></span>
         <span>Pot <span class="val-gold" id="game-pot">$0</span></span>
@@ -2148,7 +2154,6 @@
         <span>⏱ <span id="game-timer" class="timer">—</span></span>
       </div>
       <div class="game-info-actions">
-        <button class="btn-outline" id="btn-leave" style="padding:4px 12px;font-size:0.78rem;">Leave</button>
         <button class="btn-outline" id="btn-add-bot" style="padding:4px 12px;font-size:0.78rem;" title="Add bot player">🤖+</button>
         <button class="chat-toggle-btn" id="btn-chat-toggle" title="Open chat">💬</button>
       </div>
@@ -2512,6 +2517,11 @@
   });
 
   // ===== AUTH =====
+  window.doLobbyLeave = function doLobbyLeave() {
+    socket.emit('leave_room');
+    document.getElementById('lobby-leave-wrap').style.display = 'none';
+  };
+
   window.doSignOut = function doSignOut() {
     localStorage.removeItem('ceelo_token');
     localStorage.removeItem('ceelo_nickname');
@@ -2702,6 +2712,7 @@
     _justLeft = false;
     socket.emit('join_room', { name: myName, roomId, spectator: true });
     clearChat();
+    document.getElementById('lobby-leave-wrap').style.display = 'block';
   }
 
   // ===== GAME =====
@@ -4046,6 +4057,7 @@
     if (winnerDismissTimer) { clearTimeout(winnerDismissTimer); winnerDismissTimer = null; }
     showScreen('lobby');
     socket.emit('get_lobby');
+    document.getElementById('lobby-leave-wrap').style.display = 'none';
   }
 
   // ===== ADD BOT =====

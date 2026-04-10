@@ -79,10 +79,10 @@ const TIMER_COUNTDOWN_MS    = 5_000;  // "Play Again / Sit Out" window
 
 // Pre-configured room definitions — each ante level gets its own alley theme
 const ROOM_CONFIGS = [
-  { id: 'room-5',   name: '$5 Alley',   ante: 5,   theme: 'red'  },
-  { id: 'room-10',  name: '$10 Alley',  ante: 10,  theme: 'blue' },
-  { id: 'room-20',  name: '$20 Alley',  ante: 20,  theme: 'green' },
-  { id: 'room-25',  name: '$25 Alley',  ante: 25,  theme: 'gold'  },
+  { id: 'room-5',   name: 'Kyoto',      ante: 5,   theme: 'red'  },
+  { id: 'room-10',  name: 'Vancouver',  ante: 10,  theme: 'blue' },
+  { id: 'room-20',  name: 'New York',   ante: 20,  theme: 'green' },
+  { id: 'room-25',  name: 'Prague',     ante: 25,  theme: 'gold'  },
 ];
 
 // ─── Wallet abstraction ─────────────────────────────────────────────────────────
