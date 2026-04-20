@@ -2151,6 +2151,7 @@
         <span>Round <span id="game-round">—</span></span>
         <span>Pot <span class="val-gold" id="game-pot">$0</span></span>
         <span>Ante <span id="game-ante">—</span></span>
+        <span>Balance <span class="val-gold" id="game-balance">—</span></span>
         <span>⏱ <span id="game-timer" class="timer">—</span></span>
       </div>
       <div class="game-info-actions">
@@ -2628,6 +2629,12 @@
     myName = player.nickname;
     document.getElementById('lobby-player-name').textContent = player.accountId + ' · ' + player.nickname;
     document.getElementById('lobby-balance').textContent = parseFloat(player.balance).toFixed(2);
+    // Re-authenticate the socket with the fresh JWT so the server seeds the real DB balance
+    const newToken = localStorage.getItem('ceelo_token') || '';
+    if (socket.auth.token !== newToken) {
+      socket.auth = { token: newToken };
+      socket.disconnect().connect();
+    }
     showScreen('lobby');
   }
 
@@ -2733,6 +2740,8 @@
     if (me) {
       myBalance = me.balance;
       document.getElementById('lobby-balance').textContent = me.balance;
+      const gbEl = document.getElementById('game-balance');
+      if (gbEl) gbEl.textContent = '$' + parseFloat(me.balance).toFixed(2);
     }
 
     // Dice — show my current roll if any (static display, no animation)
@@ -2908,7 +2917,7 @@
           <div style="display:flex;align-items:center;gap:2px;max-width:100%;justify-content:center;flex-shrink:0;">
             <span class="hud-name">${escHtml(player.name)}</span>${youTag}
           </div>
-          <div class="hud-balance">金${(player.balance||0).toLocaleString()}</div>
+          <div class="hud-balance"><span style="color:var(--muted);font-size:0.6rem;">BAL</span> <span style="color:var(--gold);font-weight:700;">$${parseFloat(player.balance||0).toFixed(2)}</span></div>
           ${miniDiceHtml}
           <div class="hud-result ${resultClass}">${escHtml(resultText)}</div>
         `;
