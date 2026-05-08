@@ -932,7 +932,17 @@ io.on('connection', socket => {
       const spec = room.spectators[existingSpecIdx];
       room.spectators.splice(existingSpecIdx, 1);
       const newP = makePlayer(socket.id, spec.name);
-      if (spec.wallet) newP.wallet = spec.wallet;
+      if (spec.wallet) {
+        newP.wallet = spec.wallet;
+      } else if (socket.data.playerId) {
+        // Spectator had no wallet — seed from DB
+        try {
+          const dbPlayer = db.getPlayerById(socket.data.playerId);
+          if (dbPlayer && dbPlayer.balance != null) {
+            newP.wallet.balance = Math.round(dbPlayer.balance) / 100;
+          }
+        } catch(e) { /* fallback to default */ }
+      }
       if (socket.data.playerId) newP.playerId = socket.data.playerId;
       if (socket.data.accountId) newP.accountId = socket.data.accountId;
       // Mid-game joiners wait for next round
@@ -967,6 +977,15 @@ io.on('connection', socket => {
       const p = makePlayer(socket.id, n);
       if (socket.data.playerId) p.playerId = socket.data.playerId;
       if (socket.data.accountId) p.accountId = socket.data.accountId;
+      // Seed wallet from real DB balance so HUD matches lobby
+      if (socket.data.playerId) {
+        try {
+          const dbPlayer = db.getPlayerById(socket.data.playerId);
+          if (dbPlayer && dbPlayer.balance != null) {
+            p.wallet.balance = Math.round(dbPlayer.balance) / 100;
+          }
+        } catch(e) { /* fallback to default */ }
+      }
       if (midGame) p.done = true;
       // Assign requested seat
       const reqSeat = typeof seatIdx === 'number' ? seatIdx : -1;
@@ -1044,7 +1063,16 @@ io.on('connection', socket => {
       room.spectators.splice(specIdx, 1);
       // Re-create as player, restore wallet if they had one
       const newP = makePlayer(socket.id, spec.name);
-      if (spec.wallet) newP.wallet = spec.wallet;
+      if (spec.wallet) {
+        newP.wallet = spec.wallet;
+      } else if (socket.data.playerId) {
+        try {
+          const dbPlayer = db.getPlayerById(socket.data.playerId);
+          if (dbPlayer && dbPlayer.balance != null) {
+            newP.wallet.balance = Math.round(dbPlayer.balance) / 100;
+          }
+        } catch(e) { /* fallback to default */ }
+      }
       // Assign first available seat
       const takenSeats = new Set(room.players.map(p => p.seatIdx).filter(s => s != null));
       for (let s = 0; s < MAX_PLAYERS; s++) { if (!takenSeats.has(s)) { newP.seatIdx = s; break; } }
